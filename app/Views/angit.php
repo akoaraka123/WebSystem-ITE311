@@ -3,29 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <title>Home Page</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f4f8;
             color: #333;
             text-align: center;
-            padding-top: 100px;
+            padding-top: 80px;
+            margin: 0;
         }
         h1 {
             color: #007bff;
+            font-size: 48px;
+            margin-bottom: 20px;
         }
         p {
             font-size: 18px;
+            margin: 10px 0;
         }
         .highlight {
             color: #28a745;
             font-weight: bold;
         }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .rocket {
+            font-size: 40px;
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome, Future Tech Innovator!</h1>
-    <p>Hello! I'm an <span class="highlight">IT student</span> exploring the world of CodeIgniter and web development.</p>
-    <p>This is my personal playground where I test, learn, and create unique projects. 🚀</p>
+    <div class="container">
+        <h1>Welcome, to my Life!</h1>
+    </div>
 </body>
 </html>

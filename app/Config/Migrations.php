@@ -17,7 +17,7 @@ class Migrations extends BaseConfig
      * and disable it back when you're done.
      */
     public bool $enabled = true;
-
+    public string $type = 'sequential';
     /**
      * --------------------------------------------------------------------------
      * Migrations Table
