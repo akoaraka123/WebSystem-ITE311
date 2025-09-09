@@ -1,39 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Contact Page</title>
+    <title>Homepage</title>
     <style>
-        body { 
-            font-family: Arial; 
-            background-color: #fff8e1; 
-            margin: 0; 
-            padding: 0; 
+        body {
+            font-family: Arial;
+            background-color: #f4f7fb;
+            margin: 0;
+            padding: 0;
         }
-        nav { 
-            background-color: #ff9800; 
-            padding: 10px; 
-            text-align: center; 
+        nav {
+            background-color: #4CAF50;
+            padding: 10px;
+            text-align: center;
         }
-        nav a { 
-            color: white; 
-            margin: 0 15px; 
-            text-decoration: none; 
-            font-weight: bold; 
+        nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+            font-weight: bold;
         }
-        nav a:hover {
-            text-decoration: underline;
+        .container {
+            padding: 20px;
+            text-align: center;
         }
-        .container { 
-            padding: 20px; 
-            text-align: center; 
-        }
-        h1 { color: #555; }
+        h1 { color: #333; }
 
         /* Right-side login/register buttons */
         .side-buttons {
             position: fixed;
             top: 100px;
-            right: 20px;
+            right: 20px; /* dito nag-change mula left */
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -41,7 +38,7 @@
         .side-buttons a {
             display: block;
             padding: 10px 15px;
-            background-color: #ff9800;
+            background-color: #4CAF50;
             color: white;
             text-decoration: none;
             font-weight: bold;
@@ -49,7 +46,7 @@
             transition: background-color 0.2s;
         }
         .side-buttons a:hover {
-            background-color: #e68900;
+            background-color: #45a049;
         }
     </style>
 </head>
@@ -67,8 +64,8 @@
     </div>
 
     <div class="container">
-        <h1>Contact Us</h1>
-        <p>If you have questions, email us at <b>sample@email.com</b></p>
+        <h1>Welcome to My LMS Project</h1>
+        <p>This is the homepage. Here we can put some introduction about the system.</p>
     </div>
 </body>
 </html>
