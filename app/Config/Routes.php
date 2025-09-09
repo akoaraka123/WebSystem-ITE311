@@ -5,15 +5,21 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
-$routes->get('/', 'Home::index');          // Homepage
-$routes->get('about', 'Home::about');      // About
-$routes->get('contact', 'Home::contact');  // Contact
 
+// Public Pages
+$routes->get('/', 'Home::index');
+$routes->get('about', 'Home::about');
+$routes->get('contact', 'Home::contact');
 
-$routes->get('angit', 'Home::angit');      // Extra page
-$routes->get('template', 'Home::template');
+// Authentication
+$routes->get('register', 'Auth::register');
+$routes->post('register', 'Auth::register');
+$routes->get('login', 'Auth::login');
+$routes->post('login', 'Auth::login');
+$routes->get('logout', 'Auth::logout');
+$routes->get('dashboard', 'Auth::dashboard');
 
-// Template version (Bootstrap)
-$routes->get('/template', 'Template::index');
-$routes->get('/template/2', 'Template::page2');
-$routes->get('/template/3', 'Template::page3');
+// ✅ Role-specific Dashboards
+$routes->get('admin/dashboard', 'Auth::adminDashboard');
+$routes->get('instructor/dashboard', 'Auth::instructorDashboard');
+$routes->get('student/dashboard', 'Auth::studentDashboard');
