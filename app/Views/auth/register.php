@@ -10,7 +10,7 @@
         h2 { color: #333; text-align: center; }
         .form-group { margin-bottom: 15px; }
         label { display:block; margin-bottom:5px; }
-        input, select { width: 100%; padding:8px; border-radius:5px; border:1px solid #ccc; }
+        input { width: 100%; padding:8px; border-radius:5px; border:1px solid #ccc; }
         button { width: 100%; padding:10px; background:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer; }
         button:hover { background:#45a049; }
         .alert { padding:10px; margin-bottom:15px; border-radius:5px; }
@@ -60,14 +60,6 @@
             <div class="form-group">
                 <label>Confirm Password</label>
                 <input type="password" name="password_confirm">
-            </div>
-            <div class="form-group">
-                <label>Role</label>
-                <select name="role">
-                    <option value="student" <?= old('role')=='student'?'selected':'' ?>>Student</option>
-                    <option value="instructor" <?= old('role')=='instructor'?'selected':'' ?>>Instructor</option>
-                    <option value="admin" <?= old('role')=='admin'?'selected':'' ?>>Admin</option>
-                </select>
             </div>
             <button type="submit">Register</button>
         </form>
