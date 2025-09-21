@@ -52,7 +52,7 @@ class Auth extends BaseController
         return view('auth/register');
     }
 
-// 2) LOGIN
+// LOGIN FUNCTION
 public function login()
 {
     if ($this->session->get('isLoggedIn')) {
@@ -62,60 +62,40 @@ public function login()
     if ($this->request->getMethod() === 'POST') {
         // ✅ Validation rules
         $rules = [
-            'login'    => 'required|min_length[3]',   // email or username
+            'login'    => 'required|min_length[3]', // pwedeng email o username
             'password' => 'required|min_length[6]'
         ];
 
         if (!$this->validate($rules)) {
-            // Custom error message kapag empty
-            $errors = $this->validation->getErrors();
-
-            if (isset($errors['login'])) {
-                $this->session->setFlashdata('error', 'Please enter your email or username.');
-            } elseif (isset($errors['password'])) {
-                $this->session->setFlashdata('error', 'Please enter your password.');
-            } else {
-                $this->session->setFlashdata('error', 'Invalid input. Please try again.');
-            }
-
+            $this->session->setFlashdata('error', 'Please enter both login and password.');
             return redirect()->back()->withInput();
         }
 
         $login    = $this->request->getPost('login');
         $password = $this->request->getPost('password');
 
-        // Check kung email ba or username
+        // ✅ Check kung email o username
         if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            // Kung email
-            $user = $this->db->table('users')
-                             ->where('email', $login)
-                             ->get()
-                             ->getRowArray();
-
-            if (!$user) {
-                $this->session->setFlashdata('error', 'Email not found or not registered.');
-                return redirect()->back()->withInput();
-            }
+            // Hanapin base sa email
+            $user = $this->db->table('users')->where('email', $login)->get()->getRowArray();
         } else {
-            // Kung username
-            $user = $this->db->table('users')
-                             ->where('name', $login)
-                             ->get()
-                             ->getRowArray();
-
-            if (!$user) {
-                $this->session->setFlashdata('error', 'Username not found.');
-                return redirect()->back()->withInput();
-            }
+            // Hanapin base sa username
+            $user = $this->db->table('users')->where('name', $login)->get()->getRowArray();
         }
 
-        // Check password
+        // ✅ User not found
+        if (!$user) {
+            $this->session->setFlashdata('error', 'Account not found.');
+            return redirect()->back()->withInput();
+        }
+
+        // ✅ Check password
         if (!password_verify($password, $user['password'])) {
             $this->session->setFlashdata('error', 'Incorrect password.');
             return redirect()->back()->withInput();
         }
 
-        // ✅ Success login
+        // ✅ Success login - save session
         $this->session->set([
             'userID'     => $user['id'],
             'name'       => $user['name'],
@@ -125,10 +105,20 @@ public function login()
         ]);
 
         $this->session->setFlashdata('success', 'Welcome back, ' . $user['name'] . '!');
-        return redirect()->to(base_url('dashboard'));
+
+        // ✅ Role-based redirection
+        if ($user['role'] === 'admin') {
+            return redirect()->to('/admin/dashboard');
+        } elseif ($user['role'] === 'teacher') {
+            return redirect()->to('/teacher/dashboard');
+        } else {
+            return redirect()->to('/student/dashboard');
+        }
     }
 
+    // Default view kung GET request
     return view('auth/login');
+
 }
 
 
