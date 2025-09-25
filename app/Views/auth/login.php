@@ -40,12 +40,18 @@
             <?= csrf_field() ?>
             <div class="form-group">
                 <label>Email or Username</label>
-                <input type="text" name="login" value="<?= old('login') ?>">
+                <input type="text" name="login" value="<?= old('login') ?>" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" name="password">
+                <input type="password" name="password" required>
             </div>
             <button type="submit">Login</button>
         </form>
-        <p class="text-center">No account? <a href="<?= base_url('register') ?>">Register
+
+        <p class="text-center">
+            No account? <a href="<?= base_url('register') ?>">Register here</a>
+        </p>
+    </div>
+</body>
+</html>

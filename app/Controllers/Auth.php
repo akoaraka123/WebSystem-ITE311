@@ -45,67 +45,65 @@ class Auth extends BaseController
         return view('auth/register');
     }
 
-    // 2) LOGIN
-    public function login()
-    {
-        $session = \Config\Services::session();
-        $db      = \Config\Database::connect();
+// 2) LOGIN
+public function login()
+{
+    $session = \Config\Services::session();
+    $db      = \Config\Database::connect();
 
-        if ($session->get('isLoggedIn')) {
-            return redirect()->to(base_url('dashboard'));
-        }
-
-        if ($this->request->getMethod() === 'POST') {
-            $rules = [
-                'login'    => 'required|min_length[3]',
-                'password' => 'required|min_length[6]'
-            ];
-
-            if (!$this->validate($rules)) {
-                $session->setFlashdata('error', 'Please enter both login and password.');
-                return redirect()->back()->withInput();
-            }
-
-            $login    = $this->request->getPost('login');
-            $password = $this->request->getPost('password');
-
-            if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-                $user = $db->table('users')->where('email', $login)->get()->getRowArray();
-            } else {
-                $user = $db->table('users')->where('name', $login)->get()->getRowArray();
-            }
-
-            if (!$user) {
-                $session->setFlashdata('error', 'Account not found.');
-                return redirect()->back()->withInput();
-            }
-
-            if (!password_verify($password, $user['password'])) {
-                $session->setFlashdata('error', 'Incorrect password.');
-                return redirect()->back()->withInput();
-            }
-
-            $session->set([
-                'userID'     => $user['id'],
-                'name'       => $user['name'],
-                'email'      => $user['email'],
-                'role'       => $user['role'],
-                'isLoggedIn' => true
-            ]);
-
-            $session->setFlashdata('success', 'Welcome back, ' . $user['name'] . '!');
-
-            if ($user['role'] === 'admin') {
-                return redirect()->to('/admin/dashboard');
-            } elseif ($user['role'] === 'teacher') {
-                return redirect()->to('/teacher/dashboard');
-            } else {
-                return redirect()->to('/student/dashboard');
-            }
-        }
-
-        return view('auth/login');
+    // Redirect if already logged in
+    if ($session->get('isLoggedIn')) {
+        return redirect()->to(base_url('dashboard'));
     }
+
+    if ($this->request->getMethod() === 'POST') {
+        $rules = [
+            'login'    => 'required|min_length[3]',
+            'password' => 'required|min_length[6]'
+        ];
+
+        if (!$this->validate($rules)) {
+            $session->setFlashdata('error', 'Please enter both login and password.');
+            return redirect()->back()->withInput();
+        }
+
+        $login    = $this->request->getPost('login');
+        $password = $this->request->getPost('password');
+
+        // Get user by email or name
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $user = $db->table('users')->where('email', $login)->get()->getRowArray();
+        } else {
+            $user = $db->table('users')->where('name', $login)->get()->getRowArray();
+        }
+
+        if (!$user) {
+            $session->setFlashdata('error', 'Account not found.');
+            return redirect()->back()->withInput();
+        }
+
+        if (!password_verify($password, $user['password'])) {
+            $session->setFlashdata('error', 'Incorrect password.');
+            return redirect()->back()->withInput();
+        }
+
+        // Set session
+        $session->set([
+            'userID'     => $user['id'],
+            'name'       => $user['name'],
+            'email'      => $user['email'],
+            'role'       => $user['role'],
+            'isLoggedIn' => true
+        ]);
+
+        $session->setFlashdata('success', 'Welcome back, ' . $user['name'] . '!');
+
+        // Redirect to unified dashboard
+        return redirect()->to('/dashboard');
+    }
+
+    return view('auth/login');
+}
 
     // 3) LOGOUT
     public function logout()
