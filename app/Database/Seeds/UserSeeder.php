@@ -29,6 +29,10 @@ class UserSeeder extends Seeder
             ]
         ];
 
+        // Insert batch into users table
         $this->db->table('users')->insertBatch($data);
+
+        // Optional: Flash message sa CLI para makita mo kung successful
+        echo "Seeded 3 users: Admin, Teacher, Student ✅\n";
     }
 }

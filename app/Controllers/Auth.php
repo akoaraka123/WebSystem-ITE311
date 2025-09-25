@@ -125,8 +125,14 @@ public function dashboard()
 
     $role   = $session->get('role');
     $userID = $session->get('userID');
-    $data   = [
-        'user' => [
+
+    // Instantiate models
+    $userModel       = new \App\Models\UserModel();
+    $courseModel     = new \App\Models\CourseModel();
+    $enrollmentModel = new \App\Models\EnrollmentModel();
+
+    $data = [
+        'user'  => [
             'id'    => $userID,
             'name'  => $session->get('name'),
             'email' => $session->get('email'),
@@ -137,17 +143,14 @@ public function dashboard()
 
     // Role-specific data
     if ($role == 'admin') {
-        $this->courseModel = new \App\Models\CourseModel();
-        $data['totalUsers']   = $this->userModel->countAll();
-        $data['totalCourses'] = $this->courseModel->countAll();
+        $data['totalUsers']   = $userModel->countAll();
+        $data['totalCourses'] = $courseModel->countAll();
 
     } elseif ($role == 'teacher') {
-        $this->courseModel = new \App\Models\CourseModel();
-        $data['myCourses'] = $this->courseModel->where('teacher_id', $userID)->findAll();
+        $data['myCourses'] = $courseModel->where('teacher_id', $userID)->findAll();
 
     } elseif ($role == 'student') {
-        $this->enrollmentModel = new \App\Models\EnrollmentModel();
-        $data['enrolledCourses'] = $this->enrollmentModel->where('student_id', $userID)->findAll();
+        $data['enrolledCourses'] = $enrollmentModel->where('student_id', $userID)->findAll();
     }
 
     return view('auth/dashboard', $data);
