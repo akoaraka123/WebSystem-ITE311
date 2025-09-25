@@ -113,23 +113,44 @@ public function login()
         return redirect()->to(base_url('login'));
     }
 
-    // 4) DASHBOARD
-    public function dashboard()
-    {
-        $session = \Config\Services::session();
+// 4) DASHBOARD
+public function dashboard()
+{
+    $session = \Config\Services::session();
 
-        if (!$session->get('isLoggedIn')) {
-            return redirect()->to(base_url('login'));
-        }
-
-        return view('auth/dashboard', [
-            'user'  => [
-                'id'    => $session->get('userID'),
-                'name'  => $session->get('name'),
-                'email' => $session->get('email'),
-                'role'  => $session->get('role')
-            ],
-            'flash' => $session->getFlashdata('success')
-        ]);
+    // Security: redirect kung hindi naka-login
+    if (!$session->get('isLoggedIn')) {
+        return redirect()->to(base_url('login'));
     }
+
+    $role   = $session->get('role');
+    $userID = $session->get('userID');
+    $data   = [
+        'user' => [
+            'id'    => $userID,
+            'name'  => $session->get('name'),
+            'email' => $session->get('email'),
+            'role'  => $role
+        ],
+        'flash' => $session->getFlashdata('success')
+    ];
+
+    // Role-specific data
+    if ($role == 'admin') {
+        $this->courseModel = new \App\Models\CourseModel();
+        $data['totalUsers']   = $this->userModel->countAll();
+        $data['totalCourses'] = $this->courseModel->countAll();
+
+    } elseif ($role == 'teacher') {
+        $this->courseModel = new \App\Models\CourseModel();
+        $data['myCourses'] = $this->courseModel->where('teacher_id', $userID)->findAll();
+
+    } elseif ($role == 'student') {
+        $this->enrollmentModel = new \App\Models\EnrollmentModel();
+        $data['enrolledCourses'] = $this->enrollmentModel->where('student_id', $userID)->findAll();
+    }
+
+    return view('auth/dashboard', $data);
+}
+
 }

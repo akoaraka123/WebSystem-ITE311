@@ -11,6 +11,7 @@
         p { margin: 8px 0; }
         .flash { padding: 10px; border-radius: 5px; margin-bottom: 15px; }
         .flash-success { background: #d4edda; color: #155724; }
+        ul { margin-left: 20px; }
     </style>
 </head>
 <body>
@@ -30,6 +31,29 @@
         <p><strong>User ID:</strong> <?= esc($user['id']) ?></p>
         <p><strong>Email:</strong> <?= esc($user['email']) ?></p>
         <p><strong>Role:</strong> <?= esc($user['role']) ?></p>
+
+        <!-- Role-based content -->
+        <?php if ($user['role'] === 'admin'): ?>
+            <h3 style="margin-top:20px;">Admin Stats:</h3>
+            <p>Total Users: <?= $totalUsers ?? 0 ?></p>
+            <p>Total Courses: <?= $totalCourses ?? 0 ?></p>
+
+        <?php elseif ($user['role'] === 'teacher'): ?>
+            <h3 style="margin-top:20px;">My Courses:</h3>
+            <ul>
+                <?php foreach($myCourses ?? [] as $course): ?>
+                    <li><?= esc($course['title']) ?></li>
+                <?php endforeach; ?>
+            </ul>
+
+        <?php elseif ($user['role'] === 'student'): ?>
+            <h3 style="margin-top:20px;">Enrolled Courses:</h3>
+            <ul>
+                <?php foreach($enrolledCourses ?? [] as $course): ?>
+                    <li><?= esc($course['course_name']) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
 
         <p style="margin-top:20px;">You are now logged in. ✅</p>
     </div>
