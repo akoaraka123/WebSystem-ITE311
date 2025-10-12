@@ -6,8 +6,7 @@ use CodeIgniter\Model;
 
 class CourseModel extends Model
 {
-    protected $table      = 'courses';
+    protected $table = 'courses'; // ✅ dapat plural
     protected $primaryKey = 'id';
-    protected $allowedFields = ['title', 'description', 'teacher_id'];
-    protected $useTimestamps = true;
+    protected $allowedFields = ['course_name', 'description', 'teacher_id', 'created_at'];
 }

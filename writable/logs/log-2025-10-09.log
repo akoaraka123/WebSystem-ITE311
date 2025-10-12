@@ -1,0 +1,598 @@
+DEBUG - 2025-10-09 12:06:32 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:08:08 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:08:18 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:08:19 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:08:26 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+ERROR - 2025-10-09 12:08:27 --> mysqli_sql_exception: Table 'lms_batiller.users' doesn't exist in engine in C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php:327
+Stack trace:
+#0 C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php(327): mysqli->query('SELECT 1\nFROM `...', 0)
+#1 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT 1\nFROM `...')
+#2 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT 1\nFROM `...')
+#3 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT 1\nFROM `...', Array, false)
+#4 C:\xampp\htdocs\ITE311-BATILLER\system\Validation\Rules.php(175): CodeIgniter\Database\BaseBuilder->get()
+#5 C:\xampp\htdocs\ITE311-BATILLER\system\Validation\StrictRules\Rules.php(187): CodeIgniter\Validation\Rules->is_unique('marcobatiller07...', 'users.email', Array)
+#6 C:\xampp\htdocs\ITE311-BATILLER\system\Validation\Validation.php(336): CodeIgniter\Validation\StrictRules\Rules->is_unique('marcobatiller07...', 'users.email', Array, NULL, 'email')
+#7 C:\xampp\htdocs\ITE311-BATILLER\system\Validation\Validation.php(201): CodeIgniter\Validation\Validation->processRules('email', 'email', 'marcobatiller07...', Array, Array, 'email')
+#8 C:\xampp\htdocs\ITE311-BATILLER\system\Controller.php(138): CodeIgniter\Validation\Validation->run()
+#9 C:\xampp\htdocs\ITE311-BATILLER\app\Controllers\Auth.php(27): CodeIgniter\Controller->validate(Array)
+#10 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(933): App\Controllers\Auth->register()
+#11 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+#12 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(363): CodeIgniter\CodeIgniter->run()
+#14 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+#15 C:\xampp\htdocs\ITE311-BATILLER\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+#16 {main}
+CRITICAL - 2025-10-09 12:08:27 --> CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.users' doesn't exist in engine
+[Method: POST, Route: register]
+in SYSTEMPATH\Database\BaseConnection.php on line 684.
+ 1 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT 1
+FROM `users`
+WHERE `email` = :email:
+ LIMIT 1', [...], false)
+ 2 SYSTEMPATH\Validation\Rules.php(175): CodeIgniter\Database\BaseBuilder->get()
+ 3 SYSTEMPATH\Validation\StrictRules\Rules.php(187): CodeIgniter\Validation\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...])
+ 4 SYSTEMPATH\Validation\Validation.php(336): CodeIgniter\Validation\StrictRules\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...], null, 'email')
+ 5 SYSTEMPATH\Validation\Validation.php(201): CodeIgniter\Validation\Validation->processRules('email', 'email', 'marcobatiller07@gmail.com', [...], [...], 'email')
+ 6 SYSTEMPATH\Controller.php(138): CodeIgniter\Validation\Validation->run()
+ 7 APPPATH\Controllers\Auth.php(27): CodeIgniter\Controller->validate([...])
+ 8 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->register()
+ 9 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+10 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+11 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+12 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+13 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 12:08:27 --> [Caused by] CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.users' doesn't exist in engine
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 332.
+ 1 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1')
+ 2 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1')
+ 3 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT 1
+FROM `users`
+WHERE `email` = :email:
+ LIMIT 1', [...], false)
+ 4 SYSTEMPATH\Validation\Rules.php(175): CodeIgniter\Database\BaseBuilder->get()
+ 5 SYSTEMPATH\Validation\StrictRules\Rules.php(187): CodeIgniter\Validation\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...])
+ 6 SYSTEMPATH\Validation\Validation.php(336): CodeIgniter\Validation\StrictRules\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...], null, 'email')
+ 7 SYSTEMPATH\Validation\Validation.php(201): CodeIgniter\Validation\Validation->processRules('email', 'email', 'marcobatiller07@gmail.com', [...], [...], 'email')
+ 8 SYSTEMPATH\Controller.php(138): CodeIgniter\Validation\Validation->run()
+ 9 APPPATH\Controllers\Auth.php(27): CodeIgniter\Controller->validate([...])
+10 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->register()
+11 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+12 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+15 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 12:08:27 --> [Caused by] mysqli_sql_exception: Table 'lms_batiller.users' doesn't exist in engine
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 327.
+ 1 SYSTEMPATH\Database\MySQLi\Connection.php(327): mysqli->query('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1', 0)
+ 2 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1')
+ 3 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1')
+ 4 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT 1
+FROM `users`
+WHERE `email` = :email:
+ LIMIT 1', [...], false)
+ 5 SYSTEMPATH\Validation\Rules.php(175): CodeIgniter\Database\BaseBuilder->get()
+ 6 SYSTEMPATH\Validation\StrictRules\Rules.php(187): CodeIgniter\Validation\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...])
+ 7 SYSTEMPATH\Validation\Validation.php(336): CodeIgniter\Validation\StrictRules\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...], null, 'email')
+ 8 SYSTEMPATH\Validation\Validation.php(201): CodeIgniter\Validation\Validation->processRules('email', 'email', 'marcobatiller07@gmail.com', [...], [...], 'email')
+ 9 SYSTEMPATH\Controller.php(138): CodeIgniter\Validation\Validation->run()
+10 APPPATH\Controllers\Auth.php(27): CodeIgniter\Controller->validate([...])
+11 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->register()
+12 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+13 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+14 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+15 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+16 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+DEBUG - 2025-10-09 12:08:40 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+ERROR - 2025-10-09 12:08:40 --> mysqli_sql_exception: Table 'lms_batiller.users' doesn't exist in engine in C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php:327
+Stack trace:
+#0 C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php(327): mysqli->query('SELECT 1\nFROM `...', 0)
+#1 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT 1\nFROM `...')
+#2 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT 1\nFROM `...')
+#3 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT 1\nFROM `...', Array, false)
+#4 C:\xampp\htdocs\ITE311-BATILLER\system\Validation\Rules.php(175): CodeIgniter\Database\BaseBuilder->get()
+#5 C:\xampp\htdocs\ITE311-BATILLER\system\Validation\StrictRules\Rules.php(187): CodeIgniter\Validation\Rules->is_unique('marcobatiller07...', 'users.email', Array)
+#6 C:\xampp\htdocs\ITE311-BATILLER\system\Validation\Validation.php(336): CodeIgniter\Validation\StrictRules\Rules->is_unique('marcobatiller07...', 'users.email', Array, NULL, 'email')
+#7 C:\xampp\htdocs\ITE311-BATILLER\system\Validation\Validation.php(201): CodeIgniter\Validation\Validation->processRules('email', 'email', 'marcobatiller07...', Array, Array, 'email')
+#8 C:\xampp\htdocs\ITE311-BATILLER\system\Controller.php(138): CodeIgniter\Validation\Validation->run()
+#9 C:\xampp\htdocs\ITE311-BATILLER\app\Controllers\Auth.php(27): CodeIgniter\Controller->validate(Array)
+#10 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(933): App\Controllers\Auth->register()
+#11 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+#12 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(363): CodeIgniter\CodeIgniter->run()
+#14 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+#15 C:\xampp\htdocs\ITE311-BATILLER\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+#16 {main}
+CRITICAL - 2025-10-09 12:08:40 --> CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.users' doesn't exist in engine
+[Method: POST, Route: register]
+in SYSTEMPATH\Database\BaseConnection.php on line 684.
+ 1 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT 1
+FROM `users`
+WHERE `email` = :email:
+ LIMIT 1', [...], false)
+ 2 SYSTEMPATH\Validation\Rules.php(175): CodeIgniter\Database\BaseBuilder->get()
+ 3 SYSTEMPATH\Validation\StrictRules\Rules.php(187): CodeIgniter\Validation\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...])
+ 4 SYSTEMPATH\Validation\Validation.php(336): CodeIgniter\Validation\StrictRules\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...], null, 'email')
+ 5 SYSTEMPATH\Validation\Validation.php(201): CodeIgniter\Validation\Validation->processRules('email', 'email', 'marcobatiller07@gmail.com', [...], [...], 'email')
+ 6 SYSTEMPATH\Controller.php(138): CodeIgniter\Validation\Validation->run()
+ 7 APPPATH\Controllers\Auth.php(27): CodeIgniter\Controller->validate([...])
+ 8 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->register()
+ 9 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+10 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+11 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+12 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+13 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 12:08:40 --> [Caused by] CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.users' doesn't exist in engine
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 332.
+ 1 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1')
+ 2 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1')
+ 3 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT 1
+FROM `users`
+WHERE `email` = :email:
+ LIMIT 1', [...], false)
+ 4 SYSTEMPATH\Validation\Rules.php(175): CodeIgniter\Database\BaseBuilder->get()
+ 5 SYSTEMPATH\Validation\StrictRules\Rules.php(187): CodeIgniter\Validation\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...])
+ 6 SYSTEMPATH\Validation\Validation.php(336): CodeIgniter\Validation\StrictRules\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...], null, 'email')
+ 7 SYSTEMPATH\Validation\Validation.php(201): CodeIgniter\Validation\Validation->processRules('email', 'email', 'marcobatiller07@gmail.com', [...], [...], 'email')
+ 8 SYSTEMPATH\Controller.php(138): CodeIgniter\Validation\Validation->run()
+ 9 APPPATH\Controllers\Auth.php(27): CodeIgniter\Controller->validate([...])
+10 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->register()
+11 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+12 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+15 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 12:08:40 --> [Caused by] mysqli_sql_exception: Table 'lms_batiller.users' doesn't exist in engine
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 327.
+ 1 SYSTEMPATH\Database\MySQLi\Connection.php(327): mysqli->query('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1', 0)
+ 2 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1')
+ 3 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT 1
+FROM `users`
+WHERE `email` = \'marcobatiller07@gmail.com\'
+ LIMIT 1')
+ 4 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT 1
+FROM `users`
+WHERE `email` = :email:
+ LIMIT 1', [...], false)
+ 5 SYSTEMPATH\Validation\Rules.php(175): CodeIgniter\Database\BaseBuilder->get()
+ 6 SYSTEMPATH\Validation\StrictRules\Rules.php(187): CodeIgniter\Validation\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...])
+ 7 SYSTEMPATH\Validation\Validation.php(336): CodeIgniter\Validation\StrictRules\Rules->is_unique('marcobatiller07@gmail.com', 'users.email', [...], null, 'email')
+ 8 SYSTEMPATH\Validation\Validation.php(201): CodeIgniter\Validation\Validation->processRules('email', 'email', 'marcobatiller07@gmail.com', [...], [...], 'email')
+ 9 SYSTEMPATH\Controller.php(138): CodeIgniter\Validation\Validation->run()
+10 APPPATH\Controllers\Auth.php(27): CodeIgniter\Controller->validate([...])
+11 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->register()
+12 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+13 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+14 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+15 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+16 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+DEBUG - 2025-10-09 12:08:48 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+ERROR - 2025-10-09 12:09:30 --> mysqli_sql_exception: Tablespace for table '`lms_batiller`.`migrations`' exists. Please DISCARD the tablespace before IMPORT in C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php:327
+Stack trace:
+#0 C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php(327): mysqli->query('CREATE TABLE `m...', 0)
+#1 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('CREATE TABLE `m...')
+#2 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('CREATE TABLE `m...')
+#3 C:\xampp\htdocs\ITE311-BATILLER\system\Database\Forge.php(570): CodeIgniter\Database\BaseConnection->query('CREATE TABLE `m...')
+#4 C:\xampp\htdocs\ITE311-BATILLER\system\Database\MigrationRunner.php(815): CodeIgniter\Database\Forge->createTable('migrations', true)
+#5 C:\xampp\htdocs\ITE311-BATILLER\system\Database\MigrationRunner.php(162): CodeIgniter\Database\MigrationRunner->ensureTable()
+#6 C:\xampp\htdocs\ITE311-BATILLER\system\Commands\Database\Migrate.php(85): CodeIgniter\Database\MigrationRunner->latest(NULL)
+#7 C:\xampp\htdocs\ITE311-BATILLER\system\CLI\Commands.php(74): CodeIgniter\Commands\Database\Migrate->run(Array)
+#8 C:\xampp\htdocs\ITE311-BATILLER\system\CLI\Console.php(47): CodeIgniter\CLI\Commands->run('migrate', Array)
+#9 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(388): CodeIgniter\CLI\Console->run()
+#10 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(133): CodeIgniter\Boot::runCommand(Object(CodeIgniter\CLI\Console))
+#11 C:\xampp\htdocs\ITE311-BATILLER\spark(87): CodeIgniter\Boot::bootSpark(Object(Config\Paths))
+#12 {main}
+DEBUG - 2025-10-09 12:14:36 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:09 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:13 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:13 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:19 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:37 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:37 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:39 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:39 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:43 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:53 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:22:54 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:23:54 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:24:10 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:24:11 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:24:16 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:24:16 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:24:25 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:24:26 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:24:35 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:24:36 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:26:46 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:26:56 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:26:57 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:27:02 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+ERROR - 2025-10-09 12:27:02 --> mysqli_sql_exception: Table 'lms_batiller.student' doesn't exist in C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php:327
+Stack trace:
+#0 C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php(327): mysqli->query('SELECT *\nFROM `...', 0)
+#1 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *\nFROM `...')
+#2 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *\nFROM `...')
+#3 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *\nFROM `...', Array, false)
+#4 C:\xampp\htdocs\ITE311-BATILLER\app\Controllers\Auth.php(77): CodeIgniter\Database\BaseBuilder->get()
+#5 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(933): App\Controllers\Auth->login()
+#6 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+#7 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#8 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(363): CodeIgniter\CodeIgniter->run()
+#9 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+#10 C:\xampp\htdocs\ITE311-BATILLER\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+#11 {main}
+CRITICAL - 2025-10-09 12:27:02 --> CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.student' doesn't exist
+[Method: POST, Route: login]
+in SYSTEMPATH\Database\BaseConnection.php on line 684.
+ 1 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `student`
+WHERE `name` = :name:', [...], false)
+ 2 APPPATH\Controllers\Auth.php(77): CodeIgniter\Database\BaseBuilder->get()
+ 3 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 4 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 5 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 8 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 12:27:02 --> [Caused by] CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.student' doesn't exist
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 332.
+ 1 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *
+FROM `student`
+WHERE `name` = \'marco\'')
+ 2 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *
+FROM `student`
+WHERE `name` = \'marco\'')
+ 3 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `student`
+WHERE `name` = :name:', [...], false)
+ 4 APPPATH\Controllers\Auth.php(77): CodeIgniter\Database\BaseBuilder->get()
+ 5 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 6 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 7 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 8 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 9 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+10 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 12:27:02 --> [Caused by] mysqli_sql_exception: Table 'lms_batiller.student' doesn't exist
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 327.
+ 1 SYSTEMPATH\Database\MySQLi\Connection.php(327): mysqli->query('SELECT *
+FROM `student`
+WHERE `name` = \'marco\'', 0)
+ 2 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *
+FROM `student`
+WHERE `name` = \'marco\'')
+ 3 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *
+FROM `student`
+WHERE `name` = \'marco\'')
+ 4 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `student`
+WHERE `name` = :name:', [...], false)
+ 5 APPPATH\Controllers\Auth.php(77): CodeIgniter\Database\BaseBuilder->get()
+ 6 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 7 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 8 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 9 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+10 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+11 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+DEBUG - 2025-10-09 12:29:43 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:29:43 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:29:51 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:29:53 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:35:06 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:35:37 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:35:37 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:36:55 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:36:56 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:39:02 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:39:25 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:39:51 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:39:59 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:40:44 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:41:11 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:41:13 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:43:22 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:43:24 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:43:52 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:43:54 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:45:00 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:45:06 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:45:19 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:45:25 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:45:37 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:45:41 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:45:45 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:46:19 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:46:20 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:46:23 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:46:48 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:47:09 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:47:25 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:47:35 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:48:13 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:48:17 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:48:17 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:48:40 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:48:57 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 12:48:57 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:17:15 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:17:23 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:17:25 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:17:25 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:32:55 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:32:57 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:41:06 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:52:26 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:52:39 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:52:42 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:52:44 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:53:14 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:53:16 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:53:17 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:53:22 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:53:30 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:54:22 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:54:24 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:54:25 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:54:25 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:54:34 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:54:40 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:54:47 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:54:54 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:55:04 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:55:53 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:02 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:03 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:03 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:05 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:08 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:10 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:18 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:22 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:25 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:26 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:29 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:31 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:33 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:37 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:39 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:51 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:56:54 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:57:10 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:57:12 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:57:14 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:57:15 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:57:15 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:59:16 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:59:17 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:59:51 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:59:54 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 13:59:59 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:00:04 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:00:08 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:00:13 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:00:17 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:08:41 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:08:41 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:08:53 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:09:01 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:11:11 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+ERROR - 2025-10-09 14:11:11 --> mysqli_sql_exception: Table 'lms_batiller.users' doesn't exist in engine in C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php:327
+Stack trace:
+#0 C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php(327): mysqli->query('SELECT *\nFROM `...', 0)
+#1 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *\nFROM `...')
+#2 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *\nFROM `...')
+#3 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *\nFROM `...', Array, false)
+#4 C:\xampp\htdocs\ITE311-BATILLER\app\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+#5 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(933): App\Controllers\Auth->login()
+#6 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+#7 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#8 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(363): CodeIgniter\CodeIgniter->run()
+#9 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+#10 C:\xampp\htdocs\ITE311-BATILLER\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+#11 {main}
+CRITICAL - 2025-10-09 14:11:11 --> CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.users' doesn't exist in engine
+[Method: POST, Route: login]
+in SYSTEMPATH\Database\BaseConnection.php on line 684.
+ 1 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `users`
+WHERE `email` = :email:', [...], false)
+ 2 APPPATH\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+ 3 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 4 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 5 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 8 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 14:11:11 --> [Caused by] CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.users' doesn't exist in engine
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 332.
+ 1 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'')
+ 2 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'')
+ 3 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `users`
+WHERE `email` = :email:', [...], false)
+ 4 APPPATH\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+ 5 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 6 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 7 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 8 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 9 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+10 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 14:11:11 --> [Caused by] mysqli_sql_exception: Table 'lms_batiller.users' doesn't exist in engine
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 327.
+ 1 SYSTEMPATH\Database\MySQLi\Connection.php(327): mysqli->query('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'', 0)
+ 2 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'')
+ 3 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'')
+ 4 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `users`
+WHERE `email` = :email:', [...], false)
+ 5 APPPATH\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+ 6 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 7 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 8 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 9 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+10 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+11 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+DEBUG - 2025-10-09 14:11:15 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+ERROR - 2025-10-09 14:11:15 --> mysqli_sql_exception: Table 'lms_batiller.users' doesn't exist in engine in C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php:327
+Stack trace:
+#0 C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php(327): mysqli->query('SELECT *\nFROM `...', 0)
+#1 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *\nFROM `...')
+#2 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *\nFROM `...')
+#3 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *\nFROM `...', Array, false)
+#4 C:\xampp\htdocs\ITE311-BATILLER\app\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+#5 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(933): App\Controllers\Auth->login()
+#6 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+#7 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#8 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(363): CodeIgniter\CodeIgniter->run()
+#9 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+#10 C:\xampp\htdocs\ITE311-BATILLER\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+#11 {main}
+CRITICAL - 2025-10-09 14:11:15 --> CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.users' doesn't exist in engine
+[Method: POST, Route: login]
+in SYSTEMPATH\Database\BaseConnection.php on line 684.
+ 1 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `users`
+WHERE `email` = :email:', [...], false)
+ 2 APPPATH\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+ 3 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 4 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 5 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 8 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 14:11:15 --> [Caused by] CodeIgniter\Database\Exceptions\DatabaseException: Table 'lms_batiller.users' doesn't exist in engine
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 332.
+ 1 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'')
+ 2 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'')
+ 3 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `users`
+WHERE `email` = :email:', [...], false)
+ 4 APPPATH\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+ 5 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 6 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 7 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 8 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 9 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+10 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+CRITICAL - 2025-10-09 14:11:15 --> [Caused by] mysqli_sql_exception: Table 'lms_batiller.users' doesn't exist in engine
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 327.
+ 1 SYSTEMPATH\Database\MySQLi\Connection.php(327): mysqli->query('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'', 0)
+ 2 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'')
+ 3 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *
+FROM `users`
+WHERE `email` = \'admin@test.com\'')
+ 4 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `users`
+WHERE `email` = :email:', [...], false)
+ 5 APPPATH\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+ 6 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 7 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 8 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 9 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+10 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+11 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+DEBUG - 2025-10-09 14:11:50 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+ERROR - 2025-10-09 14:11:50 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'lms_batiller' in C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php:201
+Stack trace:
+#0 C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php(201): mysqli->real_connect('localhost', 'root', Object(SensitiveParameterValue), 'lms_batiller', 3306, '', 0)
+#1 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(419): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(614): CodeIgniter\Database\BaseConnection->initialize()
+#3 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *\nFROM `...', Array, false)
+#4 C:\xampp\htdocs\ITE311-BATILLER\app\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+#5 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(933): App\Controllers\Auth->login()
+#6 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+#7 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#8 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(363): CodeIgniter\CodeIgniter->run()
+#9 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+#10 C:\xampp\htdocs\ITE311-BATILLER\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+#11 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'lms_batiller' in C:\xampp\htdocs\ITE311-BATILLER\system\Database\MySQLi\Connection.php:246
+Stack trace:
+#0 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(419): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseConnection.php(614): CodeIgniter\Database\BaseConnection->initialize()
+#2 C:\xampp\htdocs\ITE311-BATILLER\system\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *\nFROM `...', Array, false)
+#3 C:\xampp\htdocs\ITE311-BATILLER\app\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+#4 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(933): App\Controllers\Auth->login()
+#5 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+#6 C:\xampp\htdocs\ITE311-BATILLER\system\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#7 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(363): CodeIgniter\CodeIgniter->run()
+#8 C:\xampp\htdocs\ITE311-BATILLER\system\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+#9 C:\xampp\htdocs\ITE311-BATILLER\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+#10 {main}
+CRITICAL - 2025-10-09 14:11:50 --> CodeIgniter\Database\Exceptions\DatabaseException: Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'lms_batiller'
+[Method: POST, Route: login]
+in SYSTEMPATH\Database\BaseConnection.php on line 465.
+ 1 SYSTEMPATH\Database\BaseConnection.php(614): CodeIgniter\Database\BaseConnection->initialize()
+ 2 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `users`
+WHERE `email` = :email:', [...], false)
+ 3 APPPATH\Controllers\Auth.php(75): CodeIgniter\Database\BaseBuilder->get()
+ 4 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\Auth->login()
+ 5 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Auth))
+ 6 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 7 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 8 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 9 FCPATH\index.php(52): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+DEBUG - 2025-10-09 14:14:04 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:05 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:31 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:32 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:36 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:36 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:41 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:41 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:45 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:45 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:55 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:55 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:58 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:14:58 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:15:02 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:15:02 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:18:23 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.
+DEBUG - 2025-10-09 14:18:23 --> Session: Class initialized using 'CodeIgniter\Session\Handlers\FileHandler' driver.

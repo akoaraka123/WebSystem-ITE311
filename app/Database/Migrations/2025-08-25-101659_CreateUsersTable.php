@@ -19,11 +19,11 @@ class CreateUsersTable extends Migration
         ]);
 
         $this->forge->addKey('id', true);
-        $this->forge->createTable('users');
+        $this->forge->createTable('users', true, ['ENGINE' => 'InnoDB']); // ✅ ensure InnoDB
     }
 
     public function down()
     {
-        $this->forge->dropTable('users');
+        $this->forge->dropTable('users', true);
     }
 }
