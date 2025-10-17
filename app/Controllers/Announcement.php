@@ -14,7 +14,9 @@ class Announcement extends BaseController
                 'title' => 'Welcome to the Student Portal!',
                 'content' => 'This is where announcements will appear.',
                 'date' => date('Y-m-d H:i:s')
+                
             ]
+            
         ];
 
         return view('announcements', $data);

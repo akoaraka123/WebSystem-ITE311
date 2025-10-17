@@ -114,7 +114,7 @@ public function login()
 }
 
 /**
- * 🔸 Helper function for role-based redirection
+ *  Helper function for role-based redirection
  */
 private function redirectByRole($role)
 {
@@ -136,7 +136,7 @@ private function redirectByRole($role)
     {
         $session = \Config\Services::session();
         $session->destroy();
-        return redirect()->to(base_url('login'));
+        return redirect()->to(base_url('/login'));
     }
 
 // 4) DASHBOARD

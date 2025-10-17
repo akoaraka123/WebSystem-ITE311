@@ -7,19 +7,19 @@ use CodeIgniter\Router\RouteCollection;
  */
 
 // ===============================
-// 🏠 Public Pages
+//  Public Pages
 // ===============================
 $routes->get('/', 'Home::index');
 $routes->get('/about', 'Home::about');
 $routes->get('/contact', 'Home::contact');
 
 // ===============================
-// 📢 Announcements (for Students)
+//  Announcements (for Students)
 // ===============================
-$routes->get('/announcements', 'Announcements::index', ['filter' => 'roleauth:student']);
+$routes->get('/announcements', 'Announcement::index');
 
 // ===============================
-// 🔐 Authentication Routes
+//  Authentication Routes
 // ===============================
 $routes->get('/register', 'Auth::register');
 $routes->post('/register', 'Auth::register');
@@ -29,19 +29,34 @@ $routes->post('/login', 'Auth::login');    // Login form submission
 
 $routes->get('/logout', 'Auth::logout');
 
-// Optional unified dashboard (if used before)
+
 $routes->get('/dashboard', 'Auth::dashboard');
 $routes->get('/auth/dashboard', 'Auth::dashboard');
 
-// Enrollment (from previous labs)
+
 $routes->post('/auth/enroll/(:num)', 'Auth::enroll/$1');
 
 // ===============================
-// 🧑‍🏫 Teacher Routes
+//  Teacher Routes (Protected)
 // ===============================
-$routes->get('/teacher/dashboard', 'Teacher::dashboard', ['filter' => 'roleauth:teacher']);
+$routes->group('teacher', ['filter' => 'roleauth:teacher'], function($routes) {
+    $routes->get('dashboard', 'Teacher::dashboard');
+});
 
 // ===============================
-// 👨‍💼 Admin Routes
+//  Admin Routes (Protected)
 // ===============================
-$routes->get('/admin/dashboard', 'Admin::dashboard', ['filter' => 'roleauth:admin']);
+$routes->group('admin', ['filter' => 'roleauth:admin'], function($routes) {
+    $routes->get('dashboard', 'Admin::dashboard');
+});
+
+// ===============================
+//  Student Routes (Protected)
+// ===============================
+$routes->group('student', ['filter' => 'roleauth:student'], function($routes) {
+    $routes->get('dashboard', 'Student::dashboard');
+});
+
+// 📢 Announcements (accessible by student role only)
+$routes->get('/announcements', 'Announcement::index', ['filter' => 'roleauth:student']);
+

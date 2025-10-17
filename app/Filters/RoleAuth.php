@@ -12,18 +12,24 @@ class RoleAuth implements FilterInterface
     {
         $session = session();
 
-        // Kung hindi naka-login, balik sa login page
+        // Check if user is logged in
         if (!$session->get('isLoggedIn')) {
-            return redirect()->to('/login');
+            return redirect()->to('/login')->with('error', 'Please login first.');
         }
 
-        // Role-based restriction
-        $userRole = $session->get('role');
+        // Check role requirement
+        if ($arguments && isset($arguments[0])) {
+            $requiredRole = $arguments[0];
+            $userRole = $session->get('role');
 
-        if (!empty($arguments) && !in_array($userRole, $arguments)) {
-            // If user's role is not allowed for this route
-            return redirect()->to('/unauthorized');
+            // If user's role doesn't match required role
+            if ($userRole !== $requiredRole) {
+                return redirect()->to('/announcements')
+                                 ->with('error', 'Access Denied: Insufficient Permissions');
+            }
         }
+
+        return null; // allow access
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
