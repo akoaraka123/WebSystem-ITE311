@@ -34,6 +34,7 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'roleauth' => \App\Filters\RoleAuth::class, // 🔹 mao ni akong gi add diri sa filter.php
     ];
 
     /**

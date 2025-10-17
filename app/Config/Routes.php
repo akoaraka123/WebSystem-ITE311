@@ -16,7 +16,7 @@ $routes->get('/contact', 'Home::contact');
 // ===============================
 // 📢 Announcements (for Students)
 // ===============================
-$routes->get('/announcements', 'Announcement::index');
+$routes->get('/announcements', 'Announcements::index', ['filter' => 'roleauth:student']);
 
 // ===============================
 // 🔐 Authentication Routes
@@ -39,9 +39,9 @@ $routes->post('/auth/enroll/(:num)', 'Auth::enroll/$1');
 // ===============================
 // 🧑‍🏫 Teacher Routes
 // ===============================
-$routes->get('/teacher/dashboard', 'Teacher::dashboard');
+$routes->get('/teacher/dashboard', 'Teacher::dashboard', ['filter' => 'roleauth:teacher']);
 
 // ===============================
 // 👨‍💼 Admin Routes
 // ===============================
-$routes->get('/admin/dashboard', 'Admin::dashboard');
+$routes->get('/admin/dashboard', 'Admin::dashboard', ['filter' => 'roleauth:admin']);
