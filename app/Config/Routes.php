@@ -8,6 +8,7 @@ use CodeIgniter\Router\RouteCollection;
 
 // Public Pages
 $routes->get('/', 'Home::index');
+$routes->get('/announcements', 'Announcement::index');
 $routes->get('about', 'Home::about');
 $routes->get('contact', 'Home::contact');
 
