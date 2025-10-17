@@ -2,20 +2,21 @@
 
 namespace App\Controllers;
 
-use App\Models\AnnouncementModel;
-use CodeIgniter\Controller;
+use App\Controllers\BaseController;
 
-class Announcement extends Controller
+class Announcement extends BaseController
 {
     public function index()
     {
-        // Load the model
-        $announcementModel = new AnnouncementModel();
+        // For now, static message (we’ll connect DB in Task 2)
+        $data['announcements'] = [
+            [
+                'title' => 'Welcome to the Student Portal!',
+                'content' => 'This is where announcements will appear.',
+                'date' => date('Y-m-d H:i:s')
+            ]
+        ];
 
-        // Fetch all announcements (later gagamitin sa Task 2)
-        $data['announcements'] = $announcementModel->orderBy('created_at', 'DESC')->findAll();
-
-        // Pass data to the view
         return view('announcements', $data);
     }
 }

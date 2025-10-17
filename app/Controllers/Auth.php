@@ -51,12 +51,16 @@ public function login()
     $session = \Config\Services::session();
     $db      = \Config\Database::connect();
 
-    // Redirect if already logged in
+    // 🔹 If already logged in, redirect based on role
     if ($session->get('isLoggedIn')) {
-        return redirect()->to(base_url('dashboard'));
+        $role = $session->get('role');
+        return $this->redirectByRole($role);
     }
 
+    // 🔹 Handle form submission
     if ($this->request->getMethod() === 'POST') {
+
+        // Validation rules
         $rules = [
             'login'    => 'required|min_length[3]',
             'password' => 'required|min_length[6]'
@@ -67,27 +71,30 @@ public function login()
             return redirect()->back()->withInput();
         }
 
+        // Get login credentials
         $login    = $this->request->getPost('login');
         $password = $this->request->getPost('password');
 
-        // Get user by email or name
+        // 🔹 Identify if email or name is used for login
         if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
             $user = $db->table('users')->where('email', $login)->get()->getRowArray();
         } else {
             $user = $db->table('users')->where('name', $login)->get()->getRowArray();
         }
 
+        // 🔹 Check if user exists
         if (!$user) {
             $session->setFlashdata('error', 'Account not found.');
             return redirect()->back()->withInput();
         }
 
+        // 🔹 Verify password
         if (!password_verify($password, $user['password'])) {
             $session->setFlashdata('error', 'Incorrect password.');
             return redirect()->back()->withInput();
         }
 
-        // Set session
+        // 🔹 Set session data
         $session->set([
             'userID'     => $user['id'],
             'name'       => $user['name'],
@@ -98,12 +105,31 @@ public function login()
 
         $session->setFlashdata('success', 'Welcome back, ' . $user['name'] . '!');
 
-        // Redirect to unified dashboard
-        return redirect()->to('/dashboard');
+        // 🔹 Redirect based on role
+        return $this->redirectByRole($user['role']);
     }
 
+    // 🔹 Display login form
     return view('auth/login');
 }
+
+/**
+ * 🔸 Helper function for role-based redirection
+ */
+private function redirectByRole($role)
+{
+    switch ($role) {
+        case 'student':
+            return redirect()->to('/announcements');
+        case 'teacher':
+            return redirect()->to('/teacher/dashboard');
+        case 'admin':
+            return redirect()->to('/admin/dashboard');
+        default:
+            return redirect()->to('/dashboard');
+    }
+}
+
 
     // 3) LOGOUT
     public function logout()
