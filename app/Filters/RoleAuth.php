@@ -2,9 +2,9 @@
 
 namespace App\Filters;
 
+use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
-use CodeIgniter\Filters\FilterInterface;
 
 class RoleAuth implements FilterInterface
 {
@@ -12,28 +12,28 @@ class RoleAuth implements FilterInterface
     {
         $session = session();
 
-        // Check if user is logged in
+        // 1️⃣ Check if user is logged in
         if (!$session->get('isLoggedIn')) {
             return redirect()->to('/login')->with('error', 'Please login first.');
         }
 
-        // Check role requirement
-        if ($arguments && isset($arguments[0])) {
-            $requiredRole = $arguments[0];
-            $userRole = $session->get('role');
+        // 2️⃣ Get current role and page path
+        $role = $session->get('role'); // admin, teacher, or student
+        $uri  = service('uri')->getPath(); // e.g. "teacher/dashboard"
 
-            // If user's role doesn't match required role
-            if ($userRole !== $requiredRole) {
-                return redirect()->to('/announcements')
-                                 ->with('error', 'Access Denied: Insufficient Permissions');
-            }
+        // 3️⃣ Determine allowed role from route group argument
+        $allowedRole = $arguments[0] ?? null;
+
+        // 4️⃣ Block access if role doesn’t match
+        if ($allowedRole && $role !== $allowedRole) {
+            return redirect()->to('/announcements')->with('error', 'Access Denied: Insufficient Permissions.');
         }
 
-        return null; // allow access
+        return $request; // proceed if authorized
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // Nothing here
+        // No after logic
     }
 }

@@ -2,22 +2,19 @@
 
 namespace App\Controllers;
 
-use App\Controllers\BaseController;
+use App\Models\AnnouncementModel;
 
 class Announcement extends BaseController
 {
     public function index()
     {
-        // For now, static message (we’ll connect DB in Task 2)
-        $data['announcements'] = [
-            [
-                'title' => 'Welcome to the Student Portal!',
-                'content' => 'This is where announcements will appear.',
-                'date' => date('Y-m-d H:i:s')
-                
-            ]
-            
-        ];
+        $model = new AnnouncementModel();
+
+        // ✅ Fetch all announcements ordered by date (newest first)
+        $data['announcements'] = $model->orderBy('created_at', 'DESC')->findAll();
+
+        // ✅ Debug (optional, remove after test)
+        // echo '<pre>'; print_r($data['announcements']); die;
 
         return view('announcements', $data);
     }

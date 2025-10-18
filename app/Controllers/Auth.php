@@ -45,22 +45,23 @@ class Auth extends BaseController
         return view('auth/register');
     }
 
-// 2) LOGIN
+// ===============================
+//  LOGIN METHOD (FINAL VERSION)
+// ===============================
 public function login()
 {
     $session = \Config\Services::session();
     $db      = \Config\Database::connect();
 
-    // 🔹 If already logged in, redirect based on role
+    // 🔹 If user already logged in, redirect by role
     if ($session->get('isLoggedIn')) {
-        $role = $session->get('role');
-        return $this->redirectByRole($role);
+        return $this->redirectByRole($session->get('role'));
     }
 
-    // 🔹 Handle form submission
+    // 🔹 Handle login form submission
     if ($this->request->getMethod() === 'POST') {
 
-        // Validation rules
+        // ✅ Validation rules
         $rules = [
             'login'    => 'required|min_length[3]',
             'password' => 'required|min_length[6]'
@@ -71,30 +72,30 @@ public function login()
             return redirect()->back()->withInput();
         }
 
-        // Get login credentials
+        // ✅ Get credentials
         $login    = $this->request->getPost('login');
         $password = $this->request->getPost('password');
 
-        // 🔹 Identify if email or name is used for login
+        // ✅ Identify if email or username used
         if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
             $user = $db->table('users')->where('email', $login)->get()->getRowArray();
         } else {
             $user = $db->table('users')->where('name', $login)->get()->getRowArray();
         }
 
-        // 🔹 Check if user exists
+        // ✅ Check if user exists
         if (!$user) {
             $session->setFlashdata('error', 'Account not found.');
             return redirect()->back()->withInput();
         }
 
-        // 🔹 Verify password
+        // ✅ Verify password
         if (!password_verify($password, $user['password'])) {
             $session->setFlashdata('error', 'Incorrect password.');
             return redirect()->back()->withInput();
         }
 
-        // 🔹 Set session data
+        // ✅ Set session data
         $session->set([
             'userID'     => $user['id'],
             'name'       => $user['name'],
@@ -103,32 +104,34 @@ public function login()
             'isLoggedIn' => true
         ]);
 
-        $session->setFlashdata('success', 'Welcome back, ' . $user['name'] . '!');
+        $session->setFlashdata('success', 'Welcome back, ' . esc($user['name']) . '!');
 
-        // 🔹 Redirect based on role
+        // ✅ Redirect by role
         return $this->redirectByRole($user['role']);
     }
 
-    // 🔹 Display login form
+    // 🔹 Display login page
     return view('auth/login');
 }
 
-/**
- *  Helper function for role-based redirection
- */
+
+// ===============================
+//  Helper function for redirection
+// ===============================
 private function redirectByRole($role)
 {
     switch ($role) {
-        case 'student':
-            return redirect()->to('/announcements');
-        case 'teacher':
-            return redirect()->to('/teacher/dashboard');
         case 'admin':
             return redirect()->to('/admin/dashboard');
+        case 'teacher':
+            return redirect()->to('/teacher/dashboard');
+        case 'student':
+            return redirect()->to('/announcements');
         default:
-            return redirect()->to('/dashboard');
+            return redirect()->to('/login');
     }
 }
+
 
 
     // 3) LOGOUT

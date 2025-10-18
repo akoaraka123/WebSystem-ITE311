@@ -42,7 +42,7 @@
             color: white;
             text-decoration: none;
             font-weight: bold;
-            border-radius: 5px;
+            border-radius: 5px; 
             transition: background-color 0.2s;
         }
         .side-buttons a:hover {
