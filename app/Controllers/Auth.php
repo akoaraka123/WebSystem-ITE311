@@ -113,7 +113,9 @@ public function login()
         return redirect()->to(base_url('login'));
     }
 
-// 4) DASHBOARD
+// ================================
+// DASHBOARD 
+// ================================
 public function dashboard()
 {
     $session = \Config\Services::session();
@@ -131,8 +133,9 @@ public function dashboard()
     $userModel       = new \App\Models\UserModel();
     $courseModel     = new \App\Models\CourseModel();
     $enrollmentModel = new \App\Models\EnrollmentModel();
+    $materialModel   = new \App\Models\MaterialModel();
 
-    // 🔹 Common user data (accessible sa view)
+    // 🔹 Base data
     $data = [
         'user' => [
             'id'    => $userID,
@@ -140,49 +143,74 @@ public function dashboard()
             'email' => $session->get('email'),
             'role'  => $role
         ],
-        'flash' => $session->getFlashdata('success'),
-        // optional defaults para maiwasan undefined variable notice
+        'flash' => [
+            'success' => $session->getFlashdata('success'),
+            'error'   => $session->getFlashdata('error')
+        ],
         'totalUsers'   => null,
         'totalCourses' => null,
         'myCourses'    => [],
         'enrolled'     => [],
-        'available'    => []
+        'available'    => [],
+        'materials'    => []
     ];
 
-    // ===== ROLE-BASED LOGIC (lahat pupunta sa iisang view) =====
-    if ($role === 'admin') {
-        // Admin: show summary
-        $data['totalUsers']   = $userModel->countAll();
-        $data['totalCourses'] = $courseModel->countAll();
+    // ==============================
+    // ROLE-BASED CONTENT LOGIC
+    // ==============================
+    switch ($role) {
 
-    } elseif ($role === 'teacher') {
-        // Teacher: show own courses
-        $data['myCourses'] = $courseModel->where('teacher_id', $userID)->findAll();
+        case 'admin':
+            // Admin: show overview only
+            $data['totalUsers']   = $userModel->countAll();
+            $data['totalCourses'] = $courseModel->countAll();
+            break;
 
-    } elseif ($role === 'student') {
-        // Student: show enrolled and available courses
-        $enrolled = $enrollmentModel->getUserEnrollments($userID);
+        case 'teacher':
+            // Teacher: show only courses assigned to them
+            $myCourses = $courseModel->where('teacher_id', $userID)->findAll();
 
-        // Get enrolled course IDs
-        $enrolledIDs = [];
-        foreach ($enrolled as $course) {
-            $enrolledIDs[] = $course['id']; // joined course ID
-        }
+            foreach ($myCourses as &$course) {
+                // Load materials for each course
+                $course['materials'] = $materialModel->getMaterialsByCourse($course['id']);
+            }
 
-        // Get available courses (not enrolled)
-        if (!empty($enrolledIDs)) {
-            $available = $courseModel->whereNotIn('id', $enrolledIDs)->findAll();
-        } else {
-            $available = $courseModel->findAll();
-        }
+            $data['myCourses'] = $myCourses;
+            break;
 
-        $data['enrolled']  = $enrolled;
-        $data['available'] = $available;
+        case 'student':
+            // Student: show enrolled courses
+            $enrolled = $enrollmentModel->getUserEnrollments($userID);
+            $enrolledIDs = array_column($enrolled, 'id');
+
+            // Available courses: not yet enrolled
+            $available = !empty($enrolledIDs)
+                ? $courseModel->whereNotIn('id', $enrolledIDs)->findAll()
+                : $courseModel->findAll();
+
+            // Materials for each enrolled course
+            $materials = [];
+            foreach ($enrolled as $course) {
+                $materials[$course['id']] = $materialModel->getMaterialsByCourse($course['id']);
+            }
+
+            $data['enrolled']  = $enrolled;
+            $data['available'] = $available;
+            $data['materials'] = $materials;
+            break;
+
+        default:
+            return redirect()->to(base_url('login'));
     }
 
-    // ✅ Lahat ng role iisang view lang
+    // ✅ Render dashboard for all roles
     return view('auth/dashboard', $data);
 }
+
+
+
+
+
 
 public function enroll($course_id)
 {
@@ -192,7 +220,7 @@ public function enroll($course_id)
     if (!$session->get('isLoggedIn') || $session->get('role') !== 'student') {
         if ($this->request->isAJAX()) {
             return $this->response->setStatusCode(401)
-                                  ->setJSON(['message' => 'Unauthorized']);
+                                  ->setJSON(['success' => false, 'message' => 'Unauthorized']);
         }
         return redirect()->to(base_url('login'));
     }
@@ -205,7 +233,10 @@ public function enroll($course_id)
     // Check kung naka-enroll na
     if ($enrollmentModel->isAlreadyEnrolled($userID, $course_id)) {
         if ($this->request->isAJAX()) {
-            return $this->response->setJSON(['message' => 'You are already enrolled in this course.']);
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'You are already enrolled in this course.'
+            ]);
         }
         $session->setFlashdata('success', 'You are already enrolled in this course.');
         return redirect()->to(base_url('auth/dashboard'));
@@ -220,12 +251,16 @@ public function enroll($course_id)
 
     // Return response depende sa request type
     if ($this->request->isAJAX()) {
-        return $this->response->setJSON(['message' => 'You have successfully enrolled in the course!']);
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'You have successfully enrolled in the course!'
+        ]);
     }
 
     $session->setFlashdata('success', 'You have successfully enrolled in the course!');
     return redirect()->to(base_url('auth/dashboard'));
 }
+
     
 
 
