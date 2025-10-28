@@ -1,124 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Upload Material</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            background-color: #f4f7fb; 
-            margin: 0; 
-            padding: 0; 
-        }
-        .container { 
-            max-width: 600px; 
-            margin: 80px auto; 
-            background: #fff; 
-            padding: 25px; 
-            border-radius: 10px; 
-            box-shadow: 0 2px 10px #ccc; 
-        }
-        h2 { 
-            color: #333; 
-            margin-bottom: 20px; 
-            text-align: center;
-        }
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-weight: bold; 
-        }
-        input[type="file"] { 
-            width: 100%; 
-            margin-bottom: 20px; 
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background: #fafafa;
-        }
-        .btn-submit {
-            padding: 10px 15px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-        }
-        .btn-submit:hover { 
-            background: #0056b3; 
-        }
-        .btn-back {
-            display: inline-block;
-            text-align: center;
-            padding: 8px 15px;
-            background: #6c757d;
-            color: white;
-            border-radius: 4px;
-            text-decoration: none;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .btn-back:hover {
-            background: #5a6268;
-        }
-        .flash {
-            padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .flash-success { 
-            background: #d4edda; 
-            color: #155724; 
-            border: 1px solid #c3e6cb;
-        }
-        .flash-error { 
-            background: #f8d7da; 
-            color: #721c24; 
-            border: 1px solid #f5c6cb;
-        }
-    </style>
-</head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style> body { background-color:#f4f7fb; } </style>
+    </head>
 <body>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h4 class="card-title mb-3">Upload Material for Course ID: <?= esc($course_id) ?></h4>
 
-<div class="container">
-    <h2>📁 Upload Course Material</h2>
+          <!-- Flash Messages -->
+          <?php if (session()->getFlashdata('success')): ?>
+            <div class="alert alert-success"><?= session()->getFlashdata('success') ?></div>
+          <?php endif; ?>
+          <?php if (session()->getFlashdata('error')): ?>
+            <div class="alert alert-danger"><?= session()->getFlashdata('error') ?></div>
+          <?php endif; ?>
 
-    <!-- Flash Messages -->
-    <?php if (session()->getFlashdata('success')): ?>
-        <div class="flash flash-success"><?= esc(session()->getFlashdata('success')) ?></div>
-    <?php endif; ?>
-    <?php if (session()->getFlashdata('error')): ?>
-        <div class="flash flash-error"><?= esc(session()->getFlashdata('error')) ?></div>
-    <?php endif; ?>
-
-    <!-- Upload Form -->
-    <form action="<?= base_url('materials/upload/' . $course_id) ?>" method="post" enctype="multipart/form-data">
-        <?= csrf_field() ?>
-        <label for="material">Select File:</label>
-        <input type="file" 
-               name="material" 
-               id="material" 
-               accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.png,.jpg,.jpeg,.gif,.txt" 
-               required 
-               onchange="checkFileSize(this)">
-        <button type="submit" class="btn-submit">Upload</button>
-        <a href="<?= base_url('dashboard') ?>" class="btn-back">⬅ Back to Dashboard</a>
-    </form>
-
-    <script>
-        // ✅ Client-side file size check (50MB max)
-        function checkFileSize(input) {
-            const file = input.files[0];
-            if (file && file.size > 50 * 1024 * 1024) { // 50 MB
-                alert("❌ File is too big! Maximum size is 50MB.");
-                input.value = ""; // Reset file input
-            }
-        }
-    </script>
+          <!-- Upload Form -->
+          <form action="<?= base_url('materials/upload/'.$course_id) ?>" method="post" enctype="multipart/form-data" class="mt-3">
+            <?= csrf_field() ?>
+            <div class="mb-3">
+              <label for="material" class="form-label">Choose file</label>
+              <input class="form-control" type="file" id="material" name="material" required>
+              <div class="form-text">Allowed types: pdf, doc, docx, ppt, pptx, xls, xlsx, zip, rar, png, jpg, jpeg, gif, txt</div>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">Upload Material</button>
+              <a href="<?= base_url('dashboard') ?>" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

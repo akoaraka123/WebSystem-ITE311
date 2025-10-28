@@ -15,4 +15,9 @@ class MaterialModel extends Model
     {
         return $this->where('course_id', $course_id)->findAll();
     }
+
+    public function insertMaterial(array $data)
+    {
+        return $this->insert($data);
+    }
 }

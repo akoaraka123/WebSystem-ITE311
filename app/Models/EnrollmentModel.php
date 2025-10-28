@@ -32,4 +32,10 @@ class EnrollmentModel extends Model
                     ->where('course_id', $courseID)
                     ->delete();
     }
+
+    // ✅ Explicit insert helper used by Course::enroll
+    public function enrollUser(array $data)
+    {
+        return $this->insert($data);
+    }
 }

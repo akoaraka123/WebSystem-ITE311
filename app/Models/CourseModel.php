@@ -8,5 +8,5 @@ class CourseModel extends Model
 {
     protected $table = 'courses'; // ✅ dapat plural
     protected $primaryKey = 'id';
-    protected $allowedFields = ['course_name', 'description', 'teacher_id', 'created_at'];
+    protected $allowedFields = ['title', 'description', 'teacher_id', 'created_at', 'updated_at'];
 }

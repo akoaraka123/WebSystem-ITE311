@@ -8,7 +8,7 @@ use CodeIgniter\Controller;
 class Materials extends Controller
 {
     // ==============================
-    // UPLOAD MATERIAL
+    // UPLOAD MATERIAL (STANDARD FORM)
     // ==============================
     public function upload($course_id)
     {
@@ -19,59 +19,113 @@ class Materials extends Controller
         if ($this->request->getMethod() === 'post') {
             $file = $this->request->getFile('material');
 
-            // Check if file exists
+            
             if (!$file || !$file->isValid()) {
                 $error = $file ? $file->getErrorString() : 'No file selected';
-                $session->setFlashdata('error', "Upload failed: $error");
+                $session->setFlashdata('error', "❌ Upload failed: $error");
                 return redirect()->back()->withInput();
             }
 
-            // Allowed file types
-            $allowedTypes = ['pdf','doc','docx','ppt','pptx','xls','xlsx','zip','rar','png','jpg','jpeg','gif','txt'];
+            $allowedTypes = [
+                'pdf', 'doc', 'docx', 'ppt', 'pptx',
+                'xls', 'xlsx', 'zip', 'rar',
+                'png', 'jpg', 'jpeg', 'gif', 'txt'
+            ];
             $ext = strtolower($file->getClientExtension());
             if (!in_array($ext, $allowedTypes)) {
-                $session->setFlashdata('error', 'Invalid file type. Allowed: ' . implode(', ', $allowedTypes));
+                $session->setFlashdata('error', '❌ Invalid file type. Allowed: ' . implode(', ', $allowedTypes));
                 return redirect()->back()->withInput();
             }
 
-            // Ensure upload folder exists
-            $uploadPath = FCPATH . 'uploads/materials';
-            if (!is_dir($uploadPath)) {
-                if (!mkdir($uploadPath, 0777, true)) {
-                    $session->setFlashdata('error', 'Cannot create upload folder. Check folder permissions.');
-                    return redirect()->back()->withInput();
-                }
-            }
+            $uploadPath = ROOTPATH . 'public/uploads/materials/';
+            if (!is_dir($uploadPath)) mkdir($uploadPath, 0777, true);
 
-            // Sanitize filename
             $originalName = $file->getClientName();
             $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $originalName);
-            $newName = time() . '_' . $safeName; // unique filename
+            $newName = time() . '_' . $safeName;
 
-            // Move file
-            if ($file->move($uploadPath, $newName)) {
-                // Save to DB
-                $data = [
-                    'course_id' => $course_id,
-                    'file_name' => $originalName, // show original name
-                    'file_path' => 'uploads/materials/' . $newName,
-                    'created_at' => date('Y-m-d H:i:s')
-                ];
-                $materialModel->insert($data);
-
-                $session->setFlashdata('success', '🎉 Material uploaded successfully!');
-                return redirect()->to(base_url('dashboard'));
-
-            } else {
-                $errorCode = $file->getError();
-                $errorMsg  = $file->getErrorString();
-                $session->setFlashdata('error', "❌ Upload failed! Error code: $errorCode — $errorMsg");
+            try {
+                if ($file->move($uploadPath, $newName)) {
+                    $materialModel->insertMaterial([
+                        'course_id' => $course_id,
+                        'file_name' => $originalName,
+                        'file_path' => 'uploads/materials/' . $newName,
+                        'created_at'=> date('Y-m-d H:i:s'),
+                    ]);
+                    $session->setFlashdata('success', '✅ Material uploaded successfully!');
+                    return redirect()->to(base_url('dashboard'));
+                } else {
+                    $session->setFlashdata('error', '❌ Upload failed: ' . $file->getErrorString());
+                    return redirect()->back()->withInput();
+                }
+            } catch (\Exception $e) {
+                $session->setFlashdata('error', '❌ Upload error: ' . $e->getMessage());
                 return redirect()->back()->withInput();
             }
         }
 
-        // GET request: show form
         return view('materials/upload', ['course_id' => $course_id]);
+    }
+
+    // ==============================
+    // AJAX UPLOAD MATERIAL
+    // ==============================
+    public function upload_ajax($course_id)
+    {
+        helper(['form', 'url']);
+        $materialModel = new MaterialModel();
+
+        $response = ['success' => false, 'message' => '', 'csrf_hash' => csrf_hash()];
+
+        // Process as long as a file is provided, regardless of request method quirks
+        $file = $this->request->getFile('material');
+
+        if (!$file || !$file->isValid()) {
+            $response['message'] = $file ? $file->getErrorString() : 'No file selected';
+            $response['csrf_hash'] = csrf_hash();
+            return $this->response->setJSON($response);
+        }
+
+        $allowedTypes = ['pdf','doc','docx','ppt','pptx','xls','xlsx','zip','rar','png','jpg','jpeg','gif','txt'];
+        $ext = strtolower($file->getClientExtension());
+
+        if (!in_array($ext, $allowedTypes)) {
+            $response['message'] = 'Invalid file type. Allowed: ' . implode(', ', $allowedTypes);
+            $response['csrf_hash'] = csrf_hash();
+            return $this->response->setJSON($response);
+        }
+
+        $uploadPath = ROOTPATH . 'public/uploads/materials/';
+        if (!is_dir($uploadPath)) mkdir($uploadPath, 0777, true);
+
+        $originalName = $file->getClientName();
+        $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $originalName);
+        $newName = time() . '_' . $safeName;
+
+        try {
+            if ($file->move($uploadPath, $newName)) {
+                $insertID = $materialModel->insertMaterial([
+                    'course_id' => $course_id,
+                    'file_name' => $originalName,
+                    'file_path' => 'uploads/materials/' . $newName,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+
+                $response['success'] = true;
+                $response['id'] = $insertID;
+                $response['file_name'] = $originalName;
+                $response['csrf_hash'] = csrf_hash();
+                return $this->response->setJSON($response);
+            } else {
+                $response['message'] = $file->getErrorString();
+                $response['csrf_hash'] = csrf_hash();
+                return $this->response->setJSON($response);
+            }
+        } catch (\Exception $e) {
+            $response['message'] = 'Upload error: ' . $e->getMessage();
+            $response['csrf_hash'] = csrf_hash();
+            return $this->response->setJSON($response);
+        }
     }
 
     // ==============================
@@ -79,15 +133,31 @@ class Materials extends Controller
     // ==============================
     public function download($id)
     {
+        $session = session();
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'));
+        }
+
         $materialModel = new MaterialModel();
         $material = $materialModel->find($id);
 
-        if ($material && file_exists(FCPATH . $material['file_path'])) {
-            return $this->response->download(FCPATH . $material['file_path'], null);
+        $filePath = ROOTPATH . 'public/' . ($material['file_path'] ?? '');
+        if (!$material || !is_file($filePath)) {
+            $session->setFlashdata('error', '❌ File not found or already deleted.');
+            return redirect()->back();
         }
 
-        session()->setFlashdata('error', 'File not found or already removed.');
-        return redirect()->back();
+        $role = $session->get('role');
+        if ($role === 'student') {
+            $userID = $session->get('userID');
+            $enrollmentModel = new \App\Models\EnrollmentModel();
+            if (!$enrollmentModel->isAlreadyEnrolled($userID, $material['course_id'])) {
+                $session->setFlashdata('error', '❌ Access denied. You are not enrolled in this course.');
+                return redirect()->back();
+            }
+        }
+
+        return $this->response->download($filePath, null);
     }
 
     // ==============================
@@ -99,13 +169,13 @@ class Materials extends Controller
         $material = $materialModel->find($id);
 
         if ($material) {
-            $filePath = FCPATH . $material['file_path'];
+            $filePath = ROOTPATH . 'public/' . $material['file_path'];
             if (file_exists($filePath)) unlink($filePath);
-
+            
             $materialModel->delete($id);
             session()->setFlashdata('success', '🗑️ Material deleted successfully.');
         } else {
-            session()->setFlashdata('error', 'Material not found.');
+            session()->setFlashdata('error', '❌ Material not found.');
         }
 
         return redirect()->back();
@@ -119,14 +189,13 @@ class Materials extends Controller
         $materialModel = new MaterialModel();
         $materials = $materialModel->where('course_id', $course_id)->findAll();
 
-        $data = [];
-        foreach ($materials as $mat) {
-            $data[] = [
+        $data = array_map(static function($mat){
+            return [
                 'id' => $mat['id'],
                 'file_name' => $mat['file_name'],
-                'download_url' => base_url('materials/download/'.$mat['id'])
+                'download_url' => base_url('materials/download/' . $mat['id']),
             ];
-        }
+        }, $materials);
 
         return $this->response->setJSON($data);
     }
