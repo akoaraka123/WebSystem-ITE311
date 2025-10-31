@@ -27,6 +27,7 @@
     <?= view('templates/header') ?>
 
     <div class="container">
+        <?= csrf_field() ?>
         <h2>Welcome, <?= esc($user['name']) ?> 🎉</h2>
 
         <!-- Flash Messages -->
@@ -211,6 +212,84 @@ $(document).ready(function() {
             }
         });
     });
+
+    // ========== Notifications (Lab 8) ==========
+    const notifBadge = $('#notifBadge');
+    const notifDropdown = $('#notifDropdown');
+    const notifList = $('#notifList');
+    const notifBell = $('#notifBell');
+
+    function fetchNotifications(limit=10){
+        $.get('<?= base_url('notifications') ?>', {limit}, function(resp){
+            if (!resp || !resp.success) return;
+            if (resp.csrf_hash) {
+                const csrfInput = $('input[name^="<?= csrf_token() ?>"]').first();
+                csrfInput.val(resp.csrf_hash);
+            }
+            // Badge
+            if (resp.unread > 0){
+                notifBadge.text(resp.unread).show();
+            } else {
+                notifBadge.hide();
+            }
+            // List
+            let html = '';
+            if (resp.items && resp.items.length){
+                resp.items.forEach(function(it){
+                    const time = it.created_at ? it.created_at : '';
+                    const safeMsg = $('<div>').text(it.message).html();
+                    html += '<div class="alert alert-info d-flex justify-content-between align-items-start" role="alert" data-notif-id="'+ it.id +'">'
+                         +  '<div><div>'+ safeMsg +'</div><div style="font-size:12px; color:#666;">'+ time +'</div></div>'
+                         +  '<button type="button" class="btn btn-sm btn-outline-secondary notif-mark" data-id="'+ it.id +'">Mark as Read</button>'
+                         +  '</div>';
+                });
+            } else {
+                html = '<div class="alert alert-light" role="alert">No notifications.</div>';
+            }
+            notifList.html(html);
+        }, 'json');
+    }
+
+    function markAllRead(){
+        const csrfInput = $('input[name^="<?= csrf_token() ?>"]').first();
+        const csrfName = csrfInput.attr('name');
+        const csrfHash = csrfInput.val();
+        $.post('<?= base_url('notifications/read') ?>', {[csrfName]: csrfHash}, function(resp){
+            if (resp && resp.csrf_hash) csrfInput.val(resp.csrf_hash);
+            notifBadge.hide();
+        }, 'json');
+    }
+
+    // Toggle dropdown on bell click (no auto mark-all to follow guide)
+    notifBell.on('click', function(e){
+        e.preventDefault();
+        notifDropdown.toggle();
+    });
+
+    // Mark a single notification as read (button in each alert)
+    $(document).on('click', '.notif-mark', function(){
+        const btn = $(this);
+        const id = btn.data('id');
+        const csrfInput = $('input[name^="<?= csrf_token() ?>"]').first();
+        const csrfName = csrfInput.attr('name');
+        const csrfHash = csrfInput.val();
+        $.post('<?= base_url('notifications/mark_read') ?>/'+id, {[csrfName]: csrfHash}, function(resp){
+            if (resp && resp.csrf_hash) csrfInput.val(resp.csrf_hash);
+            if (resp && resp.success){
+                // Remove from list and decrement badge visually
+                btn.closest('[data-notif-id="'+id+'"]').remove();
+                const current = parseInt(notifBadge.text() || '0', 10);
+                const next = Math.max(0, current - 1);
+                if (next > 0){ notifBadge.text(next).show(); } else { notifBadge.hide(); }
+                // Re-fetch to ensure consistency without page refresh
+                fetchNotifications(10);
+            }
+        }, 'json');
+    });
+
+    // Initial fetch and polling every 60s as per guide
+    fetchNotifications(10);
+    setInterval(fetchNotifications, 60000);
 });
 </script>
 

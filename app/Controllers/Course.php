@@ -7,6 +7,41 @@ use App\Models\EnrollmentModel;
 
 class Course extends BaseController
 {
+    public function unenroll($courseID)
+    {
+        $session = session();
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'student') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $userID = (int) $session->get('userID');
+        $courseID = (int) $courseID;
+        if ($courseID <= 0) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Invalid course.', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $courseModel = new CourseModel();
+        $course = $courseModel->find($courseID);
+        if (!$course) {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Course not found.', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $enrollModel = new EnrollmentModel();
+        $removed = $enrollModel->unenroll($userID, $courseID);
+
+        // Clear related notifications for both student and teacher
+        $notif = new \App\Models\NotificationModel();
+        $notif->clearEnrollmentNotifs($userID, (int)($course['teacher_id'] ?? 0), (string)($course['title'] ?? ''));
+
+        return $this->response->setJSON([
+            'success' => (bool) $removed,
+            'message' => $removed ? 'Unenrolled and notifications cleared.' : 'No enrollment to remove.',
+            'csrf_hash' => csrf_hash(),
+        ]);
+    }
     public function enroll()
     {
         $session = session();
@@ -40,6 +75,15 @@ class Course extends BaseController
             'course_id' => $courseID,
             'enrollment_date' => date('Y-m-d H:i:s')
         ]);
+
+        // Create notifications
+        $notif = new \App\Models\NotificationModel();
+        // Notify the student
+        $notif->add($userID, 'You enrolled in: ' . ($course['title'] ?? 'a course'));
+        // Notify the course teacher
+        if (!empty($course['teacher_id'])) {
+            $notif->add((int)$course['teacher_id'], 'A student enrolled in your course: ' . ($course['title'] ?? ''));
+        }
 
         return $this->response->setJSON(['success' => true, 'message' => 'You have successfully enrolled in the course!', 'csrf_hash' => csrf_hash()]);
     }

@@ -62,6 +62,13 @@ $routes->match(['get', 'post'], 'materials/testUpload', 'Materials::testUpload')
 
 // Enrollment (AJAX)
 $routes->post('course/enroll', 'Course::enroll');
+$routes->post('course/unenroll/(:num)', 'Course::unenroll/$1');
+
+// Notifications
+$routes->get('notifications', 'Notifications::index');
+$routes->post('notifications/read', 'Notifications::markRead');
+$routes->post('notifications/mark_read/(:num)', 'Notifications::mark_as_read/$1');
+$routes->post('notifications/add', 'Notifications::add');
 
 // ========================================
 // OPTIONAL: 404 Override
