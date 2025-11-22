@@ -234,8 +234,25 @@ class Materials extends Controller
             if (file_exists($filePath)) unlink($filePath);
             
             $materialModel->delete($id);
+            
+            // Check if this is an AJAX request
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Material deleted successfully.'
+                ]);
+            }
+            
             session()->setFlashdata('success', '🗑️ Material deleted successfully.');
         } else {
+            // Check if this is an AJAX request
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Material not found.'
+                ]);
+            }
+            
             session()->setFlashdata('error', '❌ Material not found.');
         }
 

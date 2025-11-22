@@ -449,9 +449,20 @@
                                 <div class="p-6">
                                     <div class="flex items-center justify-between mb-4">
                                         <h3 class="text-lg font-semibold text-gray-900"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
-                                        <span class="px-3 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
-                                            <?= isset($enrollments) && is_array($enrollments) ? ($enrollments[$course['id']] ?? 0) : 0 ?> Students
-                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-3 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                                                <?= isset($enrollments) && is_array($enrollments) ? ($enrollments[$course['id']] ?? 0) : 0 ?> Students
+                                            </span>
+                                            <form action="<?= base_url('course/delete/' . $course['id']) ?>" method="POST" style="display: inline;">
+                                                <?= csrf_field() ?>
+                                                <button type="submit" 
+                                                        onclick="return confirm('Are you sure you want to delete this course? This will also delete all materials and enrollments.')"
+                                                        class="p-2 text-red-600 rounded-full hover:bg-red-50 transition-colors duration-200"
+                                                        title="Delete course">
+                                                    <i class="w-4 h-4 fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                     
                                     <?php if (!empty($course['description'])): ?>
@@ -976,6 +987,40 @@ $(document).ready(function() {
     setInterval(function() {
         fetchNotifications();
     }, 30000);
+
+    // Handle material deletion
+    $('.delete-material').on('click', function(e) {
+        e.preventDefault();
+        var materialId = $(this).data('material-id');
+        var materialItem = $(this).closest('li');
+        
+        if (confirm('Are you sure you want to delete this material?')) {
+            $.ajax({
+                url: '<?= base_url('materials/delete') ?>/' + materialId,
+                type: 'POST',
+                data: {
+                    '<?= csrf_token() ?>': $('input[name="<?= csrf_token() ?>"]').val()
+                },
+                success: function(response) {
+                    console.log('Delete response:', response);
+                    if (response.success) {
+                        // Remove the material from the list
+                        materialItem.fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                        // Show success message
+                        alert(response.message || 'Material deleted successfully!');
+                    } else {
+                        alert(response.message || 'Failed to delete material');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Delete error:', xhr.responseText);
+                    alert('An error occurred while deleting the material');
+                }
+            });
+        }
+    });
 
 });
 </script>

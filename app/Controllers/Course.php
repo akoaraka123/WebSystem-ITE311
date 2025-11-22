@@ -282,4 +282,58 @@ class Course extends BaseController
 
         return $this->response->setJSON(['success' => true, 'message' => 'You have successfully enrolled in the course!', 'csrf_hash' => csrf_hash()]);
     }
+
+    public function delete($id = null)
+    {
+        $session = session();
+        
+        // Security: only teachers can delete courses
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
+            $session->setFlashdata('error', 'Unauthorized to delete courses.');
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        // Validate course ID
+        if (!$id || !is_numeric($id)) {
+            $session->setFlashdata('error', 'Invalid course ID.');
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        $userID = $session->get('userID');
+        
+        // Check if course exists and belongs to this teacher
+        $course = $this->courseModel->find($id);
+        if (!$course) {
+            $session->setFlashdata('error', 'Course not found.');
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        if ($course['teacher_id'] != $userID) {
+            $session->setFlashdata('error', 'You can only delete your own courses.');
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        try {
+            // Delete all enrollments for this course
+            $this->enrollmentModel->where('course_id', $id)->delete();
+            
+            // Delete all materials for this course
+            $materialModel = new \App\Models\MaterialModel();
+            $materialModel->where('course_id', $id)->delete();
+            
+            // Delete the course
+            $this->courseModel->delete($id);
+            
+            // Create notification for the teacher
+            $notif = new \App\Models\NotificationModel();
+            $notif->add($userID, 'You deleted your course: ' . ($course['title'] ?? 'Untitled Course'));
+            
+            $session->setFlashdata('success', 'Course and all related data deleted successfully.');
+            
+        } catch (\Exception $e) {
+            $session->setFlashdata('error', 'Failed to delete course: ' . $e->getMessage());
+        }
+
+        return redirect()->to(base_url('dashboard'));
+    }
 }

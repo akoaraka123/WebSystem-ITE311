@@ -21,6 +21,12 @@ class EnrollmentModel extends Model
                     ->findAll();
     }
 
+    // Alias for getUserEnrollments - used by Course controller
+    public function getEnrolledCourses($userID)
+    {
+        return $this->getUserEnrollments($userID);
+    }
+
     // Check if user is already enrolled in a course
     public function isAlreadyEnrolled($userID, $courseID)
     {

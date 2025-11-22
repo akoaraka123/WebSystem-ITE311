@@ -238,24 +238,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Danger Zone -->
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-6">
-                            <h3 class="text-lg font-medium text-red-900 mb-4">Danger Zone</h3>
-                            <p class="text-sm text-red-700 mb-4">Irreversible actions for your account.</p>
-                            
-                            <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h4 class="text-sm font-medium text-red-900">Delete Account</h4>
-                                        <p class="text-xs text-red-700">Permanently delete your account and all data</p>
-                                    </div>
-                                    <button class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">
-                                        Delete Account
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </main>

@@ -20,6 +20,7 @@ class Auth extends BaseController
             $rules = [
                 'name'             => 'required|min_length[3]|max_length[100]',
                 'email'            => 'required|valid_email|is_unique[users.email]',
+                'role'             => 'required|in_list[student,teacher]',
                 'password'         => 'required|min_length[6]',
                 'password_confirm' => 'required|matches[password]'
             ];
@@ -29,7 +30,7 @@ class Auth extends BaseController
                     'name'       => $this->request->getPost('name'),
                     'email'      => $this->request->getPost('email'),
                     'password'   => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
-                    'role'       => 'user', // default role
+                    'role'       => $this->request->getPost('role') ?: 'user', // use role from form or default
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s')
                 ]);
@@ -385,6 +386,105 @@ public function enroll($course_id = null)
     }
 
     $session->setFlashdata('success', 'You have successfully enrolled in the course!');
+    return redirect()->to(base_url('auth/dashboard'));
+}
+
+public function unenroll($course_id = null)
+{
+    $session = \Config\Services::session();
+    
+    // Get course_id from URL parameter or POST data
+    if ($course_id === null) {
+        $course_id = $this->request->getPost('course_id');
+    }
+    
+    // Debug: log the course_id
+    log_message('debug', 'Unenrollment attempt for course_id: ' . $course_id);
+
+    // Security: redirect kung hindi naka-login o hindi student
+    if (!$session->get('isLoggedIn') || $session->get('role') !== 'student') {
+        if ($this->request->isAJAX()) {
+            return $this->response->setStatusCode(401)
+                                  ->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        }
+        return redirect()->to(base_url('login'));
+    }
+    
+    // Check if course_id is valid
+    if (!$course_id || !is_numeric($course_id)) {
+        if ($this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)
+                                  ->setJSON(['success' => false, 'message' => 'Invalid course ID']);
+        }
+        $session->setFlashdata('error', 'Invalid course ID');
+        return redirect()->to(base_url('auth/dashboard'));
+    }
+
+    $userID = $session->get('userID');
+
+    // Load Enrollment Model
+    $enrollmentModel = new \App\Models\EnrollmentModel();
+
+    // Check kung naka-enroll
+    if (!$enrollmentModel->isAlreadyEnrolled($userID, $course_id)) {
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'You are not enrolled in this course.'
+            ]);
+        }
+        $session->setFlashdata('error', 'You are not enrolled in this course.');
+        return redirect()->to(base_url('auth/dashboard'));
+    }
+
+    // Unenroll user sa course
+    try {
+        $enrollmentModel->unenroll($userID, $course_id);
+        
+        log_message('debug', 'Unenrollment successful for user_id: ' . $userID . ', course_id: ' . $course_id);
+        
+        // Create notifications
+        $notif = new \App\Models\NotificationModel();
+        
+        // Get course details for notification
+        $courseModel = new \App\Models\CourseModel();
+        $course = $courseModel->find($course_id);
+        
+        if ($course) {
+            // Notify the student
+            $notif->add($userID, 'You unenrolled from: ' . $course['title']);
+            
+            // Notify the course teacher
+            if (!empty($course['teacher_id'])) {
+                $notif->add((int)$course['teacher_id'], 'A student unenrolled from your course: ' . $course['title']);
+            }
+            
+            log_message('debug', 'Notifications created for unenrollment');
+        }
+        
+    } catch (\Exception $e) {
+        log_message('error', 'Unenrollment failed: ' . $e->getMessage());
+        
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Unenrollment failed: ' . $e->getMessage()
+            ]);
+        }
+        
+        $session->setFlashdata('error', 'Unenrollment failed. Please try again.');
+        return redirect()->to(base_url('auth/dashboard'));
+    }
+
+    // Return response depende sa request type
+    if ($this->request->isAJAX()) {
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'You have successfully unenrolled from the course!'
+        ]);
+    }
+
+    $session->setFlashdata('success', 'You have successfully unenrolled from the course!');
     return redirect()->to(base_url('auth/dashboard'));
 }
 

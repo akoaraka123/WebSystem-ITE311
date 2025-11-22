@@ -9,9 +9,10 @@ use CodeIgniter\Router\RouteCollection;
 // ========================================
 // PUBLIC PAGES
 // ========================================
-$routes->get('/', 'Home::index');
-$routes->get('about', 'Home::about');
-$routes->get('contact', 'Home::contact');
+$routes->get('/', 'Pages::home');
+$routes->get('home', 'Pages::home');
+$routes->get('about', 'Pages::about');
+$routes->get('contact', 'Pages::contact');
 
 // ========================================
 // AUTHENTICATION
@@ -47,12 +48,14 @@ $routes->post('create-course', 'Course::store');
 $routes->get('edit-course/(:num)', 'Course::edit/$1');
 $routes->post('edit-course/(:num)', 'Course::update/$1');
 $routes->get('course/(:num)', 'Course::view/$1');
+$routes->post('course/delete/(:num)', 'Course::delete/$1');
 
 // ========================================
 // ENROLLMENT
 // ========================================
 $routes->post('auth/enroll/(:num)', 'Auth::enroll/$1');
 $routes->post('course/enroll', 'Auth::enroll');
+$routes->post('auth/unenroll/(:num)', 'Auth::unenroll/$1');
 
 // ========================================
 // MATERIALS MANAGEMENT
