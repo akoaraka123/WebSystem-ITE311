@@ -37,8 +37,10 @@ class Materials extends Controller
                 return redirect()->back()->withInput();
             }
 
-            $uploadPath = ROOTPATH . 'public/uploads/materials/';
-            if (!is_dir($uploadPath)) mkdir($uploadPath, 0777, true);
+            $uploadPath = WRITEPATH . 'uploads/materials/';
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
 
             $originalName = $file->getClientName();
             $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $originalName);
@@ -52,6 +54,25 @@ class Materials extends Controller
                         'file_path' => 'uploads/materials/' . $newName,
                         'created_at'=> date('Y-m-d H:i:s'),
                     ]);
+                    
+                    // Create notifications for enrolled students
+                    $notif = new \App\Models\NotificationModel();
+                    $enrollmentModel = new \App\Models\EnrollmentModel();
+                    $courseModel = new \App\Models\CourseModel();
+                    
+                    // Get course details
+                    $course = $courseModel->find($course_id);
+                    if ($course) {
+                        // Get all enrolled students
+                        $enrolledStudents = $enrollmentModel->where('course_id', $course_id)->findAll();
+                        
+                        // Notify each enrolled student
+                        foreach ($enrolledStudents as $enrollment) {
+                            $notif->add($enrollment['user_id'], 
+                                'New material uploaded: ' . $originalName . ' in ' . $course['title']);
+                        }
+                    }
+                    
                     $session->setFlashdata('success', '✅ Material uploaded successfully!');
                     return redirect()->to(base_url('dashboard'));
                 } else {
@@ -77,12 +98,17 @@ class Materials extends Controller
 
         $response = ['success' => false, 'message' => '', 'csrf_hash' => csrf_hash()];
 
+        // Debug: Log the course_id
+        log_message('info', 'Upload AJAX called for course_id: ' . $course_id);
+
         // Process as long as a file is provided, regardless of request method quirks
         $file = $this->request->getFile('material');
 
         if (!$file || !$file->isValid()) {
-            $response['message'] = $file ? $file->getErrorString() : 'No file selected';
+            $error = $file ? $file->getErrorString() . ' (' . $file->getError() . ')' : 'No file selected';
+            $response['message'] = $error;
             $response['csrf_hash'] = csrf_hash();
+            log_message('error', 'File validation failed: ' . $error);
             return $this->response->setJSON($response);
         }
 
@@ -95,21 +121,53 @@ class Materials extends Controller
             return $this->response->setJSON($response);
         }
 
-        $uploadPath = ROOTPATH . 'public/uploads/materials/';
-        if (!is_dir($uploadPath)) mkdir($uploadPath, 0777, true);
+        $uploadPath = WRITEPATH . 'uploads/materials/';
+        if (!is_dir($uploadPath)) {
+            mkdir($uploadPath, 0777, true);
+        }
+        
+        log_message('info', 'Upload path: ' . $uploadPath);
+        log_message('info', 'File size: ' . $file->getSize() . ' bytes');
+        log_message('info', 'File mime type: ' . $file->getMimeType());
 
         $originalName = $file->getClientName();
         $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $originalName);
         $newName = time() . '_' . $safeName;
+        
+        log_message('info', 'Original name: ' . $originalName);
+        log_message('info', 'New name: ' . $newName);
+        log_message('info', 'Full path: ' . $uploadPath . $newName);
 
         try {
             if ($file->move($uploadPath, $newName)) {
+                log_message('info', 'File moved successfully');
+                
                 $insertID = $materialModel->insertMaterial([
                     'course_id' => $course_id,
                     'file_name' => $originalName,
                     'file_path' => 'uploads/materials/' . $newName,
                     'created_at' => date('Y-m-d H:i:s'),
                 ]);
+                
+                log_message('info', 'Material inserted with ID: ' . $insertID);
+
+                // Create notifications for enrolled students
+                $notif = new \App\Models\NotificationModel();
+                $enrollmentModel = new \App\Models\EnrollmentModel();
+                $courseModel = new \App\Models\CourseModel();
+                
+                // Get course details
+                $course = $courseModel->find($course_id);
+                if ($course) {
+                    // Get all enrolled students
+                    $enrolledStudents = $enrollmentModel->where('course_id', $course_id)->findAll();
+                    
+                    // Notify each enrolled student
+                    foreach ($enrolledStudents as $enrollment) {
+                        $notif->add($enrollment['user_id'], 
+                            'New material uploaded: ' . $originalName . ' in ' . $course['title']);
+                    }
+                }
 
                 $response['success'] = true;
                 $response['id'] = $insertID;
@@ -117,11 +175,14 @@ class Materials extends Controller
                 $response['csrf_hash'] = csrf_hash();
                 return $this->response->setJSON($response);
             } else {
-                $response['message'] = $file->getErrorString();
+                $error = $file->getErrorString();
+                log_message('error', 'File move failed: ' . $error);
+                $response['message'] = $error;
                 $response['csrf_hash'] = csrf_hash();
                 return $this->response->setJSON($response);
             }
         } catch (\Exception $e) {
+            log_message('error', 'Upload exception: ' . $e->getMessage());
             $response['message'] = 'Upload error: ' . $e->getMessage();
             $response['csrf_hash'] = csrf_hash();
             return $this->response->setJSON($response);
@@ -141,7 +202,7 @@ class Materials extends Controller
         $materialModel = new MaterialModel();
         $material = $materialModel->find($id);
 
-        $filePath = ROOTPATH . 'public/' . ($material['file_path'] ?? '');
+        $filePath = WRITEPATH . ($material['file_path'] ?? '');
         if (!$material || !is_file($filePath)) {
             $session->setFlashdata('error', '❌ File not found or already deleted.');
             return redirect()->back();

@@ -7,6 +7,204 @@ use App\Models\EnrollmentModel;
 
 class Course extends BaseController
 {
+    protected $courseModel;
+    protected $enrollmentModel;
+
+    public function __construct()
+    {
+        $this->courseModel = new CourseModel();
+        $this->enrollmentModel = new EnrollmentModel();
+    }
+
+    public function index()
+    {
+        $session = session();
+        
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'));
+        }
+
+        $role = $session->get('role');
+        
+        if ($role === 'admin') {
+            // Admin sees all courses
+            $courses = $this->courseModel->findAll();
+        } elseif ($role === 'student') {
+            // Student sees available courses (not enrolled)
+            $enrolled = $this->enrollmentModel->getEnrolledCourses($session->get('userID'));
+            $enrolledIds = array_column($enrolled, 'course_id');
+            $courses = $this->courseModel->getAvailableCourses($enrolledIds);
+        } else {
+            // Teachers see their own courses
+            $courses = $this->courseModel->getTeacherCourses($session->get('userID'));
+        }
+
+        $data = [
+            'title' => 'Courses - LMS',
+            'courses' => $courses,
+            'user' => $session->get()
+        ];
+
+        return view('courses/index', $data);
+    }
+
+    public function myCourses()
+    {
+        $session = session();
+        
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'));
+        }
+
+        $role = $session->get('role');
+        
+        if ($role === 'student') {
+            $courses = $this->enrollmentModel->getEnrolledCourses($session->get('userID'));
+        } elseif ($role === 'teacher') {
+            $courses = $this->courseModel->getTeacherCourses($session->get('userID'));
+        } else {
+            $courses = [];
+        }
+
+        $data = [
+            'title' => 'My Courses - LMS',
+            'courses' => $courses,
+            'user' => $session->get()
+        ];
+
+        return view('courses/my-courses', $data);
+    }
+
+    public function create()
+    {
+        $session = session();
+        
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        $data = [
+            'title' => 'Create Course - LMS',
+            'user' => $session->get()
+        ];
+
+        return view('courses/create', $data);
+    }
+
+    public function store()
+    {
+        $session = session();
+        
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        $rules = [
+            'title' => 'required|min_length[3]|max_length[200]',
+            'description' => 'required|min_length[10]'
+        ];
+
+        if ($this->validate($rules)) {
+            $data = [
+                'title' => $this->request->getPost('title'),
+                'description' => $this->request->getPost('description'),
+                'teacher_id' => $session->get('userID'),
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+
+            $this->courseModel->insert($data);
+            $session->setFlashdata('success', 'Course created successfully!');
+            return redirect()->to(base_url('my-courses'));
+        } else {
+            $session->setFlashdata('error', 'Please correct the errors below.');
+            return redirect()->to(base_url('create-course'))->withInput();
+        }
+    }
+
+    public function edit($id)
+    {
+        $session = session();
+        
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'));
+        }
+
+        $course = $this->courseModel->find($id);
+        
+        if (!$course || ($session->get('role') === 'teacher' && $course['teacher_id'] != $session->get('userID'))) {
+            $session->setFlashdata('error', 'Course not found or access denied.');
+            return redirect()->to(base_url('my-courses'));
+        }
+
+        $data = [
+            'title' => 'Edit Course - LMS',
+            'course' => $course,
+            'user' => $session->get()
+        ];
+
+        return view('courses/edit', $data);
+    }
+
+    public function update($id)
+    {
+        $session = session();
+        
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'));
+        }
+
+        $course = $this->courseModel->find($id);
+        
+        if (!$course || ($session->get('role') === 'teacher' && $course['teacher_id'] != $session->get('userID'))) {
+            $session->setFlashdata('error', 'Course not found or access denied.');
+            return redirect()->to(base_url('my-courses'));
+        }
+
+        $rules = [
+            'title' => 'required|min_length[3]|max_length[200]',
+            'description' => 'required|min_length[10]'
+        ];
+
+        if ($this->validate($rules)) {
+            $data = [
+                'title' => $this->request->getPost('title'),
+                'description' => $this->request->getPost('description'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ];
+
+            $this->courseModel->update($id, $data);
+            $session->setFlashdata('success', 'Course updated successfully!');
+            return redirect()->to(base_url('my-courses'));
+        } else {
+            $session->setFlashdata('error', 'Please correct the errors below.');
+            return redirect()->to(base_url('edit-course/' . $id))->withInput();
+        }
+    }
+
+    public function view($id)
+    {
+        $session = session();
+        
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'));
+        }
+
+        $course = $this->courseModel->find($id);
+        
+        if (!$course) {
+            $session->setFlashdata('error', 'Course not found.');
+            return redirect()->to(base_url('courses'));
+        }
+
+        $data = [
+            'title' => $course['title'] . ' - LMS',
+            'course' => $course,
+            'user' => $session->get()
+        ];
+
+        return view('courses/view', $data);
+    }
+
     public function unenroll($courseID)
     {
         $session = session();
@@ -22,15 +220,13 @@ class Course extends BaseController
                 ->setJSON(['success' => false, 'message' => 'Invalid course.', 'csrf_hash' => csrf_hash()]);
         }
 
-        $courseModel = new CourseModel();
-        $course = $courseModel->find($courseID);
+        $course = $this->courseModel->find($courseID);
         if (!$course) {
             return $this->response->setStatusCode(404)
                 ->setJSON(['success' => false, 'message' => 'Course not found.', 'csrf_hash' => csrf_hash()]);
         }
 
-        $enrollModel = new EnrollmentModel();
-        $removed = $enrollModel->unenroll($userID, $courseID);
+        $removed = $this->enrollmentModel->unenroll($userID, $courseID);
 
         // Clear related notifications for both student and teacher
         $notif = new \App\Models\NotificationModel();
@@ -42,6 +238,7 @@ class Course extends BaseController
             'csrf_hash' => csrf_hash(),
         ]);
     }
+    
     public function enroll()
     {
         $session = session();
@@ -58,19 +255,17 @@ class Course extends BaseController
                 ->setJSON(['success' => false, 'message' => 'Invalid course.', 'csrf_hash' => csrf_hash()]);
         }
 
-        $courseModel = new CourseModel();
-        $course = $courseModel->find($courseID);
+        $course = $this->courseModel->find($courseID);
         if (!$course) {
             return $this->response->setStatusCode(404)
                 ->setJSON(['success' => false, 'message' => 'Course not found.', 'csrf_hash' => csrf_hash()]);
         }
 
-        $enrollModel = new EnrollmentModel();
-        if ($enrollModel->isAlreadyEnrolled($userID, $courseID)) {
+        if ($this->enrollmentModel->isAlreadyEnrolled($userID, $courseID)) {
             return $this->response->setJSON(['success' => false, 'message' => 'You are already enrolled in this course.', 'csrf_hash' => csrf_hash()]);
         }
 
-        $enrollModel->enrollUser([
+        $this->enrollmentModel->enrollUser([
             'user_id' => $userID,
             'course_id' => $courseID,
             'enrollment_date' => date('Y-m-d H:i:s')

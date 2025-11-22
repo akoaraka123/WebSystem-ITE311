@@ -29,46 +29,52 @@ $routes->get('dashboard', 'Auth::dashboard');
 $routes->get('auth/dashboard', 'Auth::dashboard');
 
 // ========================================
+// USER MANAGEMENT
+// ========================================
+$routes->get('users', 'User::index');
+$routes->get('profile', 'User::profile');
+$routes->post('profile', 'User::updateProfile');
+$routes->get('settings', 'User::settings');
+$routes->post('settings', 'User::updateSettings');
+
+// ========================================
+// COURSE MANAGEMENT
+// ========================================
+$routes->get('courses', 'Course::index');
+$routes->get('my-courses', 'Course::myCourses');
+$routes->get('create-course', 'Course::create');
+$routes->post('create-course', 'Course::store');
+$routes->get('edit-course/(:num)', 'Course::edit/$1');
+$routes->post('edit-course/(:num)', 'Course::update/$1');
+$routes->get('course/(:num)', 'Course::view/$1');
+
+// ========================================
 // ENROLLMENT
 // ========================================
 $routes->post('auth/enroll/(:num)', 'Auth::enroll/$1');
+$routes->post('course/enroll', 'Auth::enroll');
 
 // ========================================
 // MATERIALS MANAGEMENT
 // ========================================
-
-// Upload materials (Admin)
-$routes->get('admin/course/(:num)/upload', 'Materials::upload/$1');
-$routes->post('admin/course/(:num)/upload', 'Materials::upload/$1');
-
-// Alternate route (optional)
-$routes->get('materials/upload/(:num)', 'Materials::upload/$1');
 $routes->post('materials/upload/(:num)', 'Materials::upload/$1');
-
-// AJAX upload endpoint
 $routes->post('materials/upload_ajax/(:num)', 'Materials::upload_ajax/$1');
-
-// Download material (for enrolled students)
 $routes->get('materials/download/(:num)', 'Materials::download/$1');
+$routes->post('materials/delete/(:num)', 'Materials::delete/$1');
 
-// Delete material (Admin)
-$routes->get('materials/delete/(:num)', 'Materials::delete/$1');
-
-// Fetch materials list by course (AJAX / dashboard use)
-$routes->get('course/(:num)/materials', 'Materials::getMaterials/$1');
-
-// Test upload (for debugging / permission check)
-$routes->match(['get', 'post'], 'materials/testUpload', 'Materials::testUpload');
-
-// Enrollment (AJAX)
-$routes->post('course/enroll', 'Course::enroll');
-$routes->post('course/unenroll/(:num)', 'Course::unenroll/$1');
-
-// Notifications
+// ========================================
+// NOTIFICATIONS
+// ========================================
 $routes->get('notifications', 'Notifications::index');
-$routes->post('notifications/read', 'Notifications::markRead');
+$routes->post('notifications/mark_read', 'Notifications::markRead');
 $routes->post('notifications/mark_read/(:num)', 'Notifications::mark_as_read/$1');
+$routes->post('notifications/mark-read/(:num)', 'Notifications::mark_as_read/$1');
 $routes->post('notifications/add', 'Notifications::add');
+
+// ========================================
+// SEEDER (for testing)
+// ========================================
+$routes->get('seed', 'Seed::index');
 
 // ========================================
 // OPTIONAL: 404 Override
