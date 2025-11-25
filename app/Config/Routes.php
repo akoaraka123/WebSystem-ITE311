@@ -49,6 +49,8 @@ $routes->get('edit-course/(:num)', 'Course::edit/$1');
 $routes->post('edit-course/(:num)', 'Course::update/$1');
 $routes->get('course/(:num)', 'Course::view/$1');
 $routes->post('course/delete/(:num)', 'Course::delete/$1');
+$routes->get('courses/search', 'Course::search');
+$routes->post('courses/search', 'Course::search');
 
 // ========================================
 // ENROLLMENT
@@ -72,6 +74,7 @@ $routes->get('notifications', 'Notifications::index');
 $routes->post('notifications/mark_read', 'Notifications::markRead');
 $routes->post('notifications/mark_read/(:num)', 'Notifications::mark_as_read/$1');
 $routes->post('notifications/mark-read/(:num)', 'Notifications::mark_as_read/$1');
+$routes->get('notifications/resolve/(:num)', 'Notifications::resolve/$1');
 $routes->post('notifications/add', 'Notifications::add');
 
 // ========================================

@@ -167,7 +167,7 @@
                                         <?php if(session('role') == 'teacher'): ?>
                                             <div class="flex items-center text-sm text-gray-500 mb-4">
                                                 <i class="fas fa-users mr-2"></i>
-                                                <span>Students: 0</span>
+                                                <span>Students: <?= esc($enrollmentCounts[$course['id']] ?? 0) ?></span>
                                             </div>
                                         <?php endif; ?>
 

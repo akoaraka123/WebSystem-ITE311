@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
+use App\Models\MaterialModel;
 
 class Course extends BaseController
 {
@@ -42,7 +43,8 @@ class Course extends BaseController
         $data = [
             'title' => 'Courses - LMS',
             'courses' => $courses,
-            'user' => $session->get()
+            'user' => $session->get(),
+            'searchTerm' => ''
         ];
 
         return view('courses/index', $data);
@@ -58,10 +60,29 @@ class Course extends BaseController
 
         $role = $session->get('role');
         
+        $enrollmentCounts = [];
+
         if ($role === 'student') {
             $courses = $this->enrollmentModel->getEnrolledCourses($session->get('userID'));
         } elseif ($role === 'teacher') {
             $courses = $this->courseModel->getTeacherCourses($session->get('userID'));
+            if (!empty($courses)) {
+                $courseIds = array_filter(array_map('intval', array_column($courses, 'id')));
+                if (!empty($courseIds)) {
+                    $counts = $this->enrollmentModel
+                        ->select('course_id, COUNT(*) as total')
+                        ->whereIn('course_id', $courseIds)
+                        ->groupBy('course_id')
+                        ->findAll();
+
+                    foreach ($counts as $row) {
+                        $courseId = (int) ($row['course_id'] ?? 0);
+                        if ($courseId > 0) {
+                            $enrollmentCounts[$courseId] = (int) ($row['total'] ?? 0);
+                        }
+                    }
+                }
+            }
         } else {
             $courses = [];
         }
@@ -69,6 +90,7 @@ class Course extends BaseController
         $data = [
             'title' => 'My Courses - LMS',
             'courses' => $courses,
+            'enrollmentCounts' => $enrollmentCounts,
             'user' => $session->get()
         ];
 
@@ -196,9 +218,13 @@ class Course extends BaseController
             return redirect()->to(base_url('courses'));
         }
 
+        $materialModel = new MaterialModel();
+        $materials = $materialModel->getMaterialsByCourse($course['id']);
+
         $data = [
             'title' => $course['title'] . ' - LMS',
             'course' => $course,
+            'materials' => $materials,
             'user' => $session->get()
         ];
 
@@ -335,5 +361,58 @@ class Course extends BaseController
         }
 
         return redirect()->to(base_url('dashboard'));
+    }
+
+    public function search()
+    {
+        $session = session();
+
+        if (!$session->get('isLoggedIn')) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(401)
+                    ->setJSON(['message' => 'Unauthorized']);
+            }
+
+            return redirect()->to(base_url('login'));
+        }
+
+        $searchTerm = trim(
+            $this->request->getGet('search_term')
+                ?? $this->request->getPost('search_term')
+                ?? ''
+        );
+
+        $role = $session->get('role');
+        $courseModel = new CourseModel();
+
+        if ($role === 'student') {
+            $enrolled = $this->enrollmentModel->getEnrolledCourses($session->get('userID'));
+            $enrolledIds = array_filter(array_map('intval', array_column($enrolled, 'course_id')));
+            if (!empty($enrolledIds)) {
+                $courseModel->whereNotIn('id', $enrolledIds);
+            }
+        } elseif ($role === 'teacher') {
+            $courseModel->where('teacher_id', $session->get('userID'));
+        }
+
+        if ($searchTerm !== '') {
+            $courseModel->groupStart()
+                ->like('title', $searchTerm)
+                ->orLike('description', $searchTerm)
+                ->groupEnd();
+        }
+
+        $courses = $courseModel->findAll();
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON($courses);
+        }
+
+        return view('courses/index', [
+            'title' => 'Courses - LMS',
+            'courses' => $courses,
+            'searchTerm' => $searchTerm,
+            'user' => $session->get()
+        ]);
     }
 }

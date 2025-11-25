@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Courses - Learning Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -164,81 +166,176 @@
                         </div>
                     </div>
 
+                    <!-- Search Interface -->
+                    <div class="bg-white rounded-lg shadow p-6 mb-8">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <form id="searchForm" class="d-flex" method="get" action="<?= base_url('courses/search') ?>">
+                                    <div class="input-group">
+                                        <input type="text" id="searchInput" class="form-control" placeholder="Search courses..." name="search_term" value="<?= esc($searchTerm ?? '') ?>">
+                                        <button class="btn btn-outline-primary" type="submit">
+                                            <i class="bi bi-search me-2"></i> Search
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <p class="text-muted small mb-0">Type to filter instantly or submit to search the database without reloading the page.</p>
+                    </div>
+
                     <!-- Courses List -->
-                    <?php if (!empty($courses)): ?>
-                        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div id="coursesContainer" class="row g-4">
+                        <?php if (!empty($courses)): ?>
                             <?php foreach ($courses as $course): ?>
-                                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                                    <div class="p-6">
-                                        <div class="flex items-center justify-between mb-4">
-                                            <h3 class="text-lg font-semibold text-gray-900"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
-                                            <span class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                                                Active
-                                            </span>
-                                        </div>
-                                        
-                                        <?php if (!empty($course['description'])): ?>
-                                            <p class="text-gray-600 text-sm mb-4"><?= esc($course['description']) ?></p>
-                                        <?php endif; ?>
-
-                                        <div class="flex items-center text-sm text-gray-500 mb-4">
-                                            <i class="fas fa-user-tie mr-2"></i>
-                                            <span>Teacher ID: <?= $course['teacher_id'] ?? 'N/A' ?></span>
-                                        </div>
-
-                                        <div class="flex items-center text-sm text-gray-500 mb-6">
-                                            <i class="fas fa-calendar mr-2"></i>
-                                            <span>Created: <?= date('M j, Y', strtotime($course['created_at'] ?? 'now')) ?></span>
-                                        </div>
-
-                                        <div class="flex space-x-2">
-                                            <?php if(session('role') == 'admin'): ?>
-                                                <a href="<?= base_url('course/' . $course['id']) ?>" class="flex-1 px-3 py-2 bg-primary text-white text-sm font-medium rounded hover:bg-opacity-90 text-center">
-                                                    <i class="fas fa-eye mr-1"></i> View
-                                                </a>
-                                                <a href="<?= base_url('edit-course/' . $course['id']) ?>" class="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded hover:bg-gray-200 text-center">
-                                                    <i class="fas fa-edit mr-1"></i> Edit
-                                                </a>
-                                            <?php elseif(session('role') == 'student'): ?>
-                                                <a href="<?= base_url('course/' . $course['id']) ?>" class="w-full px-3 py-2 bg-primary text-white text-sm font-medium rounded hover:bg-opacity-90 text-center">
-                                                    <i class="fas fa-info-circle mr-1"></i> View Details
-                                                </a>
-                                            <?php else: ?>
-                                                <a href="<?= base_url('course/' . $course['id']) ?>" class="flex-1 px-3 py-2 bg-primary text-white text-sm font-medium rounded hover:bg-opacity-90 text-center">
-                                                    <i class="fas fa-eye mr-1"></i> View
-                                                </a>
-                                                <a href="<?= base_url('edit-course/' . $course['id']) ?>" class="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded hover:bg-gray-200 text-center">
-                                                    <i class="fas fa-edit mr-1"></i> Edit
-                                                </a>
-                                            <?php endif; ?>
+                                <div class="col-md-4 mb-4" data-course-item>
+                                    <div class="card course-card h-100 shadow-sm">
+                                        <div class="card-body d-flex flex-column">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <h5 class="card-title mb-0"><?= esc($course['title'] ?? 'Untitled Course') ?></h5>
+                                                <span class="badge bg-success">Active</span>
+                                            </div>
+                                            <p class="card-text flex-grow-1"><?= esc($course['description'] ?? 'No description provided.') ?></p>
+                                            <div class="text-muted small mb-3">
+                                                <i class="fas fa-user-tie me-2"></i>
+                                                <span>Teacher ID: <?= esc($course['teacher_id'] ?? 'N/A') ?></span>
+                                            </div>
+                                            <div class="text-muted small mb-4">
+                                                <i class="fas fa-calendar me-2"></i>
+                                                <span>Created: <?= date('M j, Y', strtotime($course['created_at'] ?? 'now')) ?></span>
+                                            </div>
+                                            <div class="mt-auto">
+                                                <?php if(session('role') == 'admin'): ?>
+                                                    <div class="d-grid gap-2">
+                                                        <a href="<?= base_url('course/' . $course['id']) ?>" class="btn btn-primary">
+                                                            <i class="fas fa-eye me-1"></i> View
+                                                        </a>
+                                                        <a href="<?= base_url('edit-course/' . $course['id']) ?>" class="btn btn-outline-secondary">
+                                                            <i class="fas fa-edit me-1"></i> Edit
+                                                        </a>
+                                                    </div>
+                                                <?php elseif(session('role') == 'student'): ?>
+                                                    <a href="<?= base_url('course/' . $course['id']) ?>" class="btn btn-primary w-100">
+                                                        <i class="fas fa-info-circle me-1"></i> View Details
+                                                    </a>
+                                                <?php else: ?>
+                                                    <div class="d-grid gap-2">
+                                                        <a href="<?= base_url('course/' . $course['id']) ?>" class="btn btn-primary">
+                                                            <i class="fas fa-eye me-1"></i> View
+                                                        </a>
+                                                        <a href="<?= base_url('edit-course/' . $course['id']) ?>" class="btn btn-outline-secondary">
+                                                            <i class="fas fa-edit me-1"></i> Edit
+                                                        </a>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <div class="text-center py-12">
-                            <i class="fas fa-book-open text-6xl text-gray-300 mb-4"></i>
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">No Courses Found</h3>
-                            <p class="text-gray-500 mb-6">
-                                <?php if(session('role') == 'teacher'): ?>
-                                    You haven't created any courses yet. Get started by creating your first course.
-                                <?php elseif(session('role') == 'student'): ?>
-                                    No courses are available for enrollment at the moment.
-                                <?php else: ?>
-                                    No courses have been created in the system yet.
-                                <?php endif; ?>
-                            </p>
-                            <?php if(session('role') == 'teacher'): ?>
-                                <a href="<?= base_url('create-course') ?>" class="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-md hover:bg-opacity-90">
-                                    <i class="fas fa-plus mr-2"></i> Create Your First Course
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
+                        <?php else: ?>
+                            <div class="col-12" data-course-item>
+                                <div class="text-center py-5 bg-white rounded shadow-sm">
+                                    <i class="fas fa-book-open text-4xl text-gray-300 mb-3"></i>
+                                    <h3 class="h5 mb-2">No Courses Found</h3>
+                                    <p class="text-muted mb-4">
+                                        <?php if(session('role') == 'teacher'): ?>
+                                            You haven't created any courses yet. Get started by creating your first course.
+                                        <?php elseif(session('role') == 'student'): ?>
+                                            No courses are available for enrollment at the moment.
+                                        <?php else: ?>
+                                            No courses have been created in the system yet.
+                                        <?php endif; ?>
+                                    </p>
+                                    <?php if(session('role') == 'teacher'): ?>
+                                        <a href="<?= base_url('create-course') ?>" class="btn btn-primary">
+                                            <i class="fas fa-plus me-2"></i> Create Your First Course
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </main>
         </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(function () {
+            const searchEndpoint = '<?= base_url('courses/search') ?>';
+            const courseViewBase = '<?= base_url('course') ?>';
+
+            $('#searchInput').on('keyup', function () {
+                const value = $(this).val().toLowerCase();
+                $('.course-card').each(function () {
+                    const matches = $(this).text().toLowerCase().indexOf(value) > -1;
+                    $(this).closest('[data-course-item]').toggle(matches);
+                });
+            });
+
+            $('#searchForm').on('submit', function (e) {
+                e.preventDefault();
+                const searchTerm = $('#searchInput').val();
+
+                $.get(searchEndpoint, { search_term: searchTerm }, function (data) {
+                    const $container = $('#coursesContainer');
+                    $container.empty();
+
+                    if (Array.isArray(data) && data.length) {
+                        $.each(data, function (index, course) {
+                            const description = course.description ? course.description : 'No description provided.';
+                            const title = course.title ? course.title : 'Untitled Course';
+                            const teacherId = course.teacher_id ? course.teacher_id : 'N/A';
+                            const createdAt = course.created_at ? new Date(course.created_at).toLocaleDateString() : 'Recently added';
+
+                            const card = `
+                                <div class="col-md-4 mb-4" data-course-item>
+                                    <div class="card course-card h-100 shadow-sm">
+                                        <div class="card-body d-flex flex-column">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <h5 class="card-title mb-0">${title}</h5>
+                                                <span class="badge bg-success">Active</span>
+                                            </div>
+                                            <p class="card-text flex-grow-1">${description}</p>
+                                            <div class="text-muted small mb-3">
+                                                <i class="fas fa-user-tie me-2"></i>
+                                                <span>Teacher ID: ${teacherId}</span>
+                                            </div>
+                                            <div class="text-muted small mb-4">
+                                                <i class="fas fa-calendar me-2"></i>
+                                                <span>Created: ${createdAt}</span>
+                                            </div>
+                                            <a href="${courseViewBase}/${course.id}" class="btn btn-primary mt-auto">
+                                                <i class="fas fa-eye me-1"></i> View Course
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>`;
+
+                            $container.append(card);
+                        });
+                    } else {
+                        $container.html(`
+                            <div class="col-12">
+                                <div class="alert alert-info text-center">
+                                    No courses found matching your search.
+                                </div>
+                            </div>
+                        `);
+                    }
+                }).fail(function () {
+                    $('#coursesContainer').html(`
+                        <div class="col-12">
+                            <div class="alert alert-danger text-center">
+                                An error occurred while searching. Please try again.
+                            </div>
+                        </div>
+                    `);
+                });
+            });
+        });
+    </script>
 </body>
 </html>

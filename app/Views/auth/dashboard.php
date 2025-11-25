@@ -867,7 +867,7 @@ $(document).ready(function() {
                     
                     html += '<div class="flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 ' + 
                             (!isRead ? 'bg-blue-50 border-l-4 border-l-blue-500' : '') + 
-                            (isClickable ? ' cursor-pointer' : '') + 
+                            (isClickable ? ' cursor-pointer notif-card' : '') + 
                             '" data-notif-id="' + notifId + '" data-action="' + clickAction + '" data-message="' + safeMsg + '">' +
                         '<div class="flex-shrink-0 w-10 h-10 rounded-full ' + bgColor + ' flex items-center justify-center">' +
                             '<i class="fas ' + icon + ' ' + iconColor + ' text-sm"></i>' +
@@ -912,6 +912,36 @@ $(document).ready(function() {
         $('#notifDropdown').toggleClass('hidden');
         fetchNotifications();
         $('#notifTime').text('Just now');
+    });
+
+    // Handle clickable notifications (view course/materials)
+    notifList.on('click', '.notif-card', function(e) {
+        var card = $(this);
+        var notifId = card.data('notif-id');
+        var action = card.data('action');
+
+        if (!notifId || !action) {
+            return;
+        }
+
+        card.addClass('opacity-70');
+
+        $.get('<?= base_url('notifications/resolve') ?>/' + notifId, function(resp) {
+            if (resp && resp.success && resp.url) {
+                window.location.href = resp.url;
+            } else {
+                card.removeClass('opacity-70');
+                alert((resp && resp.message) ? resp.message : 'Unable to open notification.');
+            }
+        }, 'json').fail(function() {
+            card.removeClass('opacity-70');
+            alert('Unable to open notification right now.');
+        });
+    });
+
+    notifList.on('click', '.notif-mark', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
     });
 
     // Mark all notifications as read

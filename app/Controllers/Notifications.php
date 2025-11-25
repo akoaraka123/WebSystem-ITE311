@@ -116,6 +116,86 @@ class Notifications extends BaseController
         ]);
     }
 
+    public function resolve($id)
+    {
+        $session = session();
+        if (!$session->get('isLoggedIn')) {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $notifId = (int) $id;
+        if ($notifId <= 0) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Invalid notification', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $model = new NotificationModel();
+        $notif = $model->find($notifId);
+        if (!$notif || (int) ($notif['user_id'] ?? 0) !== (int) $session->get('userID')) {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Notification not found.', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $course = $this->resolveCourseFromMessage((string) ($notif['message'] ?? ''));
+        if (!$course) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No related course found for this notification.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $model->markAsRead($notifId);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'url' => base_url('course/' . $course['id']),
+            'csrf_hash' => csrf_hash(),
+        ]);
+    }
+
+    private function resolveCourseFromMessage(string $message): ?array
+    {
+        $message = trim($message);
+        if ($message === '') {
+            return null;
+        }
+
+        $courseTitle = null;
+        $prefixes = [
+            'You enrolled in:' => strlen('You enrolled in:'),
+            'A student enrolled in your course:' => strlen('A student enrolled in your course:'),
+        ];
+
+        foreach ($prefixes as $prefix => $length) {
+            if (stripos($message, $prefix) === 0) {
+                $courseTitle = trim(substr($message, $length));
+                break;
+            }
+        }
+
+        if (!$courseTitle) {
+            $needle = ' in ';
+            $pos = strripos($message, $needle);
+            if ($pos !== false) {
+                $courseTitle = trim(substr($message, $pos + strlen($needle)));
+            }
+        }
+
+        if (!$courseTitle) {
+            return null;
+        }
+
+        $courseModel = new \App\Models\CourseModel();
+        $course = $courseModel->where('title', $courseTitle)->first();
+        if (!$course) {
+            $course = $courseModel->like('title', $courseTitle)->first();
+        }
+
+        return $course ?: null;
+    }
+
     // Optional: helper to create a test notification
     public function add()
     {
