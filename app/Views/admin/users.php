@@ -369,18 +369,26 @@
                                 </td>
                                 <td><?= !empty($u['created_at']) ? date('M j, Y', strtotime($u['created_at'])) : 'N/A' ?></td>
                                 <td>
-                                    <?php if ($u['role'] !== 'admin'): ?>
+                                    <?php 
+                                    $currentUserId = session('userID');
+                                    $isCurrentUser = ($u['id'] == $currentUserId);
+                                    $isAdminOffline = ($u['role'] === 'admin' && !$isCurrentUser && !($u['is_online'] ?? false));
+                                    ?>
+                                    
+                                    <?php if ($u['role'] !== 'admin' || $isAdminOffline): ?>
                                         <div style="display: flex; gap: 8px;">
-                                            <button class="btn btn-edit" onclick="openEditModal(<?= $u['id'] ?>, '<?= esc($u['name']) ?>', '<?= esc($u['role']) ?>')">
+                                            <button class="btn btn-edit" onclick="openEditModal(<?= $u['id'] ?>, '<?= esc($u['name']) ?>', '<?= esc($u['role']) ?>', <?= $isAdminOffline ? 'true' : 'false' ?>)">
                                                 <i class="fas fa-edit"></i> Edit
                                             </button>
-                                            <button class="btn btn-delete" onclick="confirmDelete(<?= $u['id'] ?>, '<?= esc($u['name']) ?>')">
-                                                <i class="fas fa-trash"></i> Delete
-                                            </button>
+                                            <?php if ($u['role'] !== 'admin' || $isAdminOffline): ?>
+                                                <button class="btn btn-delete" onclick="confirmDelete(<?= $u['id'] ?>, '<?= esc($u['name']) ?>')">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     <?php else: ?>
                                         <button class="btn btn-disabled" disabled>
-                                            <i class="fas fa-lock"></i> Protected
+                                            <i class="fas fa-lock"></i> <?= $isCurrentUser ? 'Your Account' : 'Online' ?>
                                         </button>
                                     <?php endif; ?>
                                 </td>
@@ -419,6 +427,7 @@
                     <select id="editUserRole" name="role" required>
                         <option value="student">Student</option>
                         <option value="teacher">Teacher</option>
+                        <option value="admin" id="editAdminOption" style="display: none;">Admin</option>
                     </select>
                 </div>
                 
@@ -461,6 +470,7 @@
                     <select id="addUserRole" name="role" required>
                         <option value="student">Student</option>
                         <option value="teacher">Teacher</option>
+                        <option value="admin">Admin</option>
                     </select>
                 </div>
                 
@@ -476,6 +486,40 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+                <h2>Confirm Delete</h2>
+            </div>
+            <div style="padding: 20px 0;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #d32f2f; margin-bottom: 15px;"></i>
+                    <p style="font-size: 16px; color: #333; margin-bottom: 10px;">
+                        <strong>Are you sure you want to delete this account?</strong>
+                    </p>
+                    <p style="font-size: 14px; color: #666; margin-bottom: 5px;">
+                        User: <strong id="deleteUserName"></strong>
+                    </p>
+                    <p style="font-size: 13px; color: #d32f2f; font-weight: bold;">
+                        ⚠️ This action cannot be undone!
+                    </p>
+                </div>
+                <form id="deleteUserForm" method="POST" action="<?= base_url('users/delete') ?>">
+                    <?= csrf_field() ?>
+                    <input type="hidden" id="deleteUserId" name="user_id">
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                        <button type="submit" class="btn btn-delete">
+                            <i class="fas fa-trash"></i> Yes, Delete Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         function openAddModal() {
             document.getElementById('addUserForm').reset();
@@ -486,11 +530,21 @@
             document.getElementById('addModal').style.display = 'none';
         }
 
-        function openEditModal(userId, userName, currentRole) {
+        function openEditModal(userId, userName, currentRole, isAdminOffline = false) {
             document.getElementById('editUserId').value = userId;
             document.getElementById('editUserName').value = userName;
-            document.getElementById('editUserRole').value = currentRole;
             document.getElementById('editUserPassword').value = ''; // Clear password field
+            
+            // Show/hide admin option based on whether editing offline admin
+            const adminOption = document.getElementById('editAdminOption');
+            if (isAdminOffline) {
+                adminOption.style.display = 'block';
+            } else {
+                adminOption.style.display = 'none';
+            }
+            
+            // Set the role value
+            document.getElementById('editUserRole').value = currentRole;
             document.getElementById('editModal').style.display = 'block';
         }
 
@@ -499,43 +553,28 @@
         }
 
         function confirmDelete(userId, userName) {
-            if (confirm('Are you sure you want to delete user "' + userName + '"? This action cannot be undone.')) {
-                // Create a form and submit it
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '<?= base_url('users/delete') ?>';
-                
-                // Add CSRF token - get from existing form
-                const csrfToken = document.querySelector('input[name="<?= csrf_token() ?>"]');
-                if (csrfToken) {
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = csrfToken.name;
-                    csrfInput.value = csrfToken.value;
-                    form.appendChild(csrfInput);
-                }
-                
-                // Add user_id
-                const userIdInput = document.createElement('input');
-                userIdInput.type = 'hidden';
-                userIdInput.name = 'user_id';
-                userIdInput.value = userId;
-                form.appendChild(userIdInput);
-                
-                document.body.appendChild(form);
-                form.submit();
-            }
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserName').textContent = userName;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
         }
 
         // Close modals when clicking outside
         window.onclick = function(event) {
             const editModal = document.getElementById('editModal');
             const addModal = document.getElementById('addModal');
+            const deleteModal = document.getElementById('deleteModal');
             if (event.target == editModal) {
                 closeEditModal();
             }
             if (event.target == addModal) {
                 closeAddModal();
+            }
+            if (event.target == deleteModal) {
+                closeDeleteModal();
             }
         }
     </script>

@@ -23,13 +23,75 @@ class User extends BaseController
             return redirect()->to(base_url('dashboard'));
         }
 
+        $users = $this->userModel->findAll();
+        $currentUserId = $session->get('userID');
+        
+        // Add online status to each user
+        foreach ($users as &$user) {
+            $user['is_online'] = $this->isUserOnline($user['id'], $currentUserId);
+        }
+
         $data = [
             'title' => 'Manage Users - LMS',
-            'users' => $this->userModel->findAll(),
+            'users' => $users,
             'user' => $session->get()
         ];
 
         return view('admin/users', $data);
+    }
+
+    /**
+     * Check if a user is currently online (has active session)
+     */
+    private function isUserOnline($userId, $currentUserId)
+    {
+        // If checking current user, they're always online
+        if ($userId == $currentUserId) {
+            return true;
+        }
+
+        // Check session files for active sessions
+        $sessionPath = WRITEPATH . 'session/';
+        if (!is_dir($sessionPath)) {
+            return false;
+        }
+
+        $sessionFiles = glob($sessionPath . 'ci_session*');
+        $sessionExpiration = 7200; // 2 hours from config
+
+        foreach ($sessionFiles as $file) {
+            // Check if file is readable and not expired
+            if (!is_readable($file)) {
+                continue; // Skip if file is not readable
+            }
+
+            try {
+                $fileTime = @filemtime($file);
+                if ($fileTime === false || $fileTime + $sessionExpiration < time()) {
+                    continue; // Session expired or can't read file time
+                }
+
+                $sessionData = @file_get_contents($file);
+                if ($sessionData === false) {
+                    continue; // Skip if can't read file
+                }
+
+                // Check if this session belongs to the user we're checking
+                if (preg_match('/userID";s:\d+:"' . $userId . '"/', $sessionData) || 
+                    preg_match('/"userID";i:' . $userId . '/', $sessionData)) {
+                    // Also check if they're logged in
+                    if (strpos($sessionData, 'isLoggedIn";b:1') !== false || 
+                        strpos($sessionData, '"isLoggedIn";b:1') !== false) {
+                        return true;
+                    }
+                }
+            } catch (\Exception $e) {
+                // Skip this file if there's an error reading it
+                continue;
+            }
+        }
+
+        return false;
     }
 
     public function create()
@@ -45,7 +107,7 @@ class User extends BaseController
         $rules = [
             'name'  => 'required|min_length[3]|max_length[100]',
             'email' => 'required|valid_email|is_unique[users.email]',
-            'role'  => 'required|in_list[student,teacher]'
+            'role'  => 'required|in_list[student,teacher,admin]'
         ];
 
         if ($this->validate($rules)) {
@@ -186,13 +248,11 @@ class User extends BaseController
             return redirect()->to(base_url('users'));
         }
 
-        // Validate role
-        if (!in_array($newRole, ['student', 'teacher'])) {
-            $session->setFlashdata('error', 'Invalid role selected.');
-            return redirect()->to(base_url('users'));
-        }
-
-        // Get the user to check if they exist and are not admin
+        // Validate role - allow admin if editing offline admin
+        $currentUserId = $session->get('userID');
+        $isEditingOfflineAdmin = false;
+        
+        // Get the user to check if they exist
         $user = $this->userModel->find($userId);
         
         if (!$user) {
@@ -200,10 +260,39 @@ class User extends BaseController
             return redirect()->to(base_url('users'));
         }
 
-        // Protect admin users from being edited
+        // Check if editing an admin user
         if ($user['role'] === 'admin') {
-            $session->setFlashdata('error', 'Admin users cannot be edited.');
-            return redirect()->to(base_url('users'));
+            // Allow editing if:
+            // 1. Not editing yourself (current user)
+            // 2. The admin being edited is offline
+            if ($userId == $currentUserId) {
+                $session->setFlashdata('error', 'You cannot edit your own account.');
+                return redirect()->to(base_url('users'));
+            }
+            
+            // Check if the admin is online
+            if ($this->isUserOnline($userId, $currentUserId)) {
+                $session->setFlashdata('error', 'Cannot edit an admin who is currently online.');
+                return redirect()->to(base_url('users'));
+            }
+            
+            // Admin is offline, allow editing
+            $isEditingOfflineAdmin = true;
+        }
+
+        // Validate role based on whether editing admin or not
+        if ($isEditingOfflineAdmin) {
+            // Allow admin role when editing offline admin
+            if (!in_array($newRole, ['student', 'teacher', 'admin'])) {
+                $session->setFlashdata('error', 'Invalid role selected.');
+                return redirect()->to(base_url('users'));
+            }
+        } else {
+            // Regular users can only be student or teacher
+            if (!in_array($newRole, ['student', 'teacher'])) {
+                $session->setFlashdata('error', 'Invalid role selected.');
+                return redirect()->to(base_url('users'));
+            }
         }
 
         // Prepare update data
@@ -250,10 +339,23 @@ class User extends BaseController
             return redirect()->to(base_url('users'));
         }
 
-        // Protect admin users from being deleted
+        $currentUserId = $session->get('userID');
+        
+        // Protect admin users from being deleted, except offline admins
         if ($user['role'] === 'admin') {
-            $session->setFlashdata('error', 'Admin users cannot be deleted.');
-            return redirect()->to(base_url('users'));
+            // Cannot delete yourself
+            if ($userId == $currentUserId) {
+                $session->setFlashdata('error', 'You cannot delete your own account.');
+                return redirect()->to(base_url('users'));
+            }
+            
+            // Check if the admin is online
+            if ($this->isUserOnline($userId, $currentUserId)) {
+                $session->setFlashdata('error', 'Cannot delete an admin who is currently online.');
+                return redirect()->to(base_url('users'));
+            }
+            
+            // Admin is offline, allow deletion
         }
 
         // Delete the user

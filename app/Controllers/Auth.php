@@ -71,15 +71,24 @@ public function login()
         $login    = $this->request->getPost('login');
         $password = $this->request->getPost('password');
 
-        // Get user by email or name
+        // Use UserModel to respect soft deletes
+        $userModel = new \App\Models\UserModel();
+        
+        // Get user by email or name (UserModel automatically excludes soft-deleted users)
         if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            $user = $db->table('users')->where('email', $login)->get()->getRowArray();
+            $user = $userModel->where('email', $login)->first();
         } else {
-            $user = $db->table('users')->where('name', $login)->get()->getRowArray();
+            $user = $userModel->where('name', $login)->first();
         }
 
         if (!$user) {
             $session->setFlashdata('error', 'Account not found.');
+            return redirect()->back()->withInput();
+        }
+        
+        // Additional check: verify user is not soft-deleted (double check)
+        if (!empty($user['deleted_at'])) {
+            $session->setFlashdata('error', 'This account has been deleted.');
             return redirect()->back()->withInput();
         }
 
