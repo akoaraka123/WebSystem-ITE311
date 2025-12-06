@@ -12,59 +12,55 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            background: #4a90e2;
             min-height: 100vh;
         }
         
         .navbar {
             background: white;
             padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 2px solid #ccc;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .logo {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
-            color: #667eea;
+            color: #1976d2;
         }
         
         .nav-links {
             display: flex;
-            gap: 25px;
+            gap: 20px;
         }
         
         .nav-links a {
             text-decoration: none;
             color: #333;
-            font-weight: 500;
-            transition: color 0.3s;
+            font-weight: bold;
         }
         
         .nav-links a:hover {
-            color: #667eea;
+            color: #1976d2;
         }
         
         .hero {
             text-align: center;
-            padding: 80px 20px;
+            padding: 60px 20px;
             color: white;
         }
         
         .hero h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-            animation: fadeInUp 1s ease;
+            font-size: 36px;
+            margin-bottom: 15px;
         }
         
         .hero p {
-            font-size: 20px;
-            margin-bottom: 30px;
-            opacity: 0.9;
-            animation: fadeInUp 1s ease 0.2s;
+            font-size: 18px;
+            margin-bottom: 25px;
             max-width: 800px;
             margin-left: auto;
             margin-right: auto;
@@ -72,7 +68,7 @@
         
         .about-content {
             background: white;
-            padding: 60px 20px;
+            padding: 50px 20px;
         }
         
         .container {
@@ -81,58 +77,56 @@
         }
         
         .section-title {
-            font-size: 36px;
+            font-size: 28px;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             color: #333;
         }
         
         .mission-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-bottom: 60px;
+            gap: 20px;
+            margin-bottom: 50px;
         }
         
         .mission-card {
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 15px;
+            background: #f5f5f5;
+            padding: 25px;
+            border: 2px solid #999;
+            border-radius: 3px;
             text-align: center;
-            transition: transform 0.3s;
-        }
-        
-        .mission-card:hover {
-            transform: translateY(-5px);
         }
         
         .mission-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
+            font-size: 40px;
+            margin-bottom: 15px;
         }
         
         .mission-card h3 {
-            font-size: 24px;
-            margin-bottom: 15px;
+            font-size: 20px;
+            margin-bottom: 12px;
             color: #333;
         }
         
         .mission-card p {
             color: #666;
-            line-height: 1.6;
+            line-height: 1.5;
+            font-size: 14px;
         }
         
         .stats {
-            background: #667eea;
+            background: #1976d2;
             color: white;
-            padding: 60px 20px;
+            padding: 50px 20px;
             text-align: center;
+            border-top: 3px solid #1565c0;
         }
         
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 30px;
+            gap: 25px;
             max-width: 1000px;
             margin: 0 auto;
         }
@@ -142,76 +136,75 @@
         }
         
         .stat-number {
-            font-size: 48px;
+            font-size: 40px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         
         .stat-label {
-            font-size: 18px;
-            opacity: 0.9;
+            font-size: 16px;
         }
         
         .team {
             background: white;
-            padding: 60px 20px;
+            padding: 50px 20px;
         }
         
         .team-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
+            gap: 20px;
             max-width: 900px;
             margin: 0 auto;
         }
         
         .team-member {
             text-align: center;
-            padding: 30px;
-            background: #f8f9fa;
-            border-radius: 15px;
-            transition: transform 0.3s;
-        }
-        
-        .team-member:hover {
-            transform: translateY(-5px);
+            padding: 25px;
+            background: #f5f5f5;
+            border: 2px solid #999;
+            border-radius: 3px;
         }
         
         .member-avatar {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            margin: 0 auto 20px;
-            background: #667eea;
+            margin: 0 auto 15px;
+            background: #1976d2;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 36px;
+            font-size: 32px;
             color: white;
+            border: 2px solid #1565c0;
         }
         
         .member-name {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             margin-bottom: 5px;
             color: #333;
         }
         
         .member-role {
-            color: #667eea;
-            margin-bottom: 15px;
+            color: #1976d2;
+            margin-bottom: 12px;
+            font-weight: bold;
         }
         
         .member-bio {
             color: #666;
-            line-height: 1.6;
+            line-height: 1.5;
+            font-size: 14px;
         }
         
         .footer {
             background: #333;
             color: white;
-            padding: 40px 20px;
+            padding: 30px 20px;
             text-align: center;
+            border-top: 2px solid #555;
         }
         
         .footer-content {
@@ -219,41 +212,29 @@
             margin: 0 auto;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-            margin-bottom: 30px;
+            gap: 30px;
+            margin-bottom: 20px;
         }
         
         .footer-section h4 {
-            margin-bottom: 15px;
-            color: #667eea;
+            margin-bottom: 12px;
+            color: #1976d2;
         }
         
         .footer-section a {
             color: #ccc;
             text-decoration: none;
             display: block;
-            margin-bottom: 8px;
-            transition: color 0.3s;
+            margin-bottom: 6px;
         }
         
         .footer-section a:hover {
             color: white;
         }
         
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
         @media (max-width: 768px) {
             .hero h1 {
-                font-size: 32px;
+                font-size: 28px;
             }
             
             .hero p {
@@ -269,7 +250,7 @@
 <body>
     <!-- Navigation -->
     <nav class="navbar">
-        <div class="logo">📚 Student LMS</div>
+        <div class="logo">Student LMS</div>
         <div class="nav-links">
             <a href="<?= base_url() ?>">Home</a>
             <a href="<?= base_url('about') ?>">About</a>

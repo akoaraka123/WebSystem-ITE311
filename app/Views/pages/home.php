@@ -12,166 +12,162 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            background: #4a90e2;
             min-height: 100vh;
         }
         
         .navbar {
             background: white;
             padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 2px solid #ccc;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .logo {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
-            color: #667eea;
+            color: #1976d2;
         }
         
         .nav-links {
             display: flex;
-            gap: 25px;
+            gap: 20px;
         }
         
         .nav-links a {
             text-decoration: none;
             color: #333;
-            font-weight: 500;
-            transition: color 0.3s;
+            font-weight: bold;
         }
         
         .nav-links a:hover {
-            color: #667eea;
+            color: #1976d2;
         }
         
         .hero {
             text-align: center;
-            padding: 80px 20px;
+            padding: 60px 20px;
             color: white;
         }
         
         .hero h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-            animation: fadeInUp 1s ease;
+            font-size: 36px;
+            margin-bottom: 15px;
         }
         
         .hero p {
-            font-size: 20px;
-            margin-bottom: 30px;
-            opacity: 0.9;
-            animation: fadeInUp 1s ease 0.2s;
+            font-size: 18px;
+            margin-bottom: 25px;
         }
         
         .btn-group {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             justify-content: center;
-            animation: fadeInUp 1s ease 0.4s;
         }
         
         .btn {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 25px;
+            padding: 12px 25px;
+            border: 2px solid;
+            border-radius: 3px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
             text-decoration: none;
             display: inline-block;
         }
         
         .btn-primary {
             background: white;
-            color: #667eea;
+            color: #1976d2;
+            border-color: white;
         }
         
         .btn-secondary {
             background: transparent;
             color: white;
-            border: 2px solid white;
+            border-color: white;
         }
         
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            background: #f0f0f0;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
         }
         
         .features {
             background: white;
-            padding: 60px 20px;
+            padding: 50px 20px;
             text-align: center;
         }
         
         .features h2 {
-            font-size: 36px;
-            margin-bottom: 40px;
+            font-size: 28px;
+            margin-bottom: 30px;
             color: #333;
         }
         
         .feature-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
+            gap: 20px;
             max-width: 1200px;
             margin: 0 auto;
         }
         
         .feature-card {
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 15px;
-            transition: transform 0.3s;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
+            background: #f5f5f5;
+            padding: 25px;
+            border: 2px solid #999;
+            border-radius: 3px;
         }
         
         .feature-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
+            font-size: 40px;
+            margin-bottom: 15px;
         }
         
         .feature-card h3 {
-            font-size: 20px;
-            margin-bottom: 15px;
+            font-size: 18px;
+            margin-bottom: 10px;
             color: #333;
         }
         
         .feature-card p {
             color: #666;
-            line-height: 1.6;
+            line-height: 1.5;
+            font-size: 14px;
         }
         
         .cta {
-            background: #667eea;
+            background: #1976d2;
             color: white;
-            padding: 60px 20px;
+            padding: 50px 20px;
             text-align: center;
+            border-top: 3px solid #1565c0;
         }
         
         .cta h2 {
-            font-size: 32px;
-            margin-bottom: 20px;
+            font-size: 28px;
+            margin-bottom: 15px;
         }
         
         .cta p {
-            font-size: 18px;
-            margin-bottom: 30px;
-            opacity: 0.9;
+            font-size: 16px;
+            margin-bottom: 25px;
         }
         
         .footer {
             background: #333;
             color: white;
-            padding: 40px 20px;
+            padding: 30px 20px;
             text-align: center;
+            border-top: 2px solid #555;
         }
         
         .footer-content {
@@ -179,41 +175,29 @@
             margin: 0 auto;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-            margin-bottom: 30px;
+            gap: 30px;
+            margin-bottom: 20px;
         }
         
         .footer-section h4 {
-            margin-bottom: 15px;
-            color: #667eea;
+            margin-bottom: 12px;
+            color: #1976d2;
         }
         
         .footer-section a {
             color: #ccc;
             text-decoration: none;
             display: block;
-            margin-bottom: 8px;
-            transition: color 0.3s;
+            margin-bottom: 6px;
         }
         
         .footer-section a:hover {
             color: white;
         }
         
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
         @media (max-width: 768px) {
             .hero h1 {
-                font-size: 32px;
+                font-size: 28px;
             }
             
             .hero p {
@@ -234,7 +218,7 @@
 <body>
     <!-- Navigation -->
     <nav class="navbar">
-        <div class="logo">📚 Student LMS</div>
+        <div class="logo">Student LMS</div>
         <div class="nav-links">
             <a href="<?= base_url() ?>">Home</a>
             <a href="<?= base_url('about') ?>">About</a>

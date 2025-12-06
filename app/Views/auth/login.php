@@ -12,8 +12,8 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            background: #4a90e2;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -22,32 +22,31 @@
         .navbar {
             background: white;
             padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 2px solid #ccc;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .logo {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
-            color: #667eea;
+            color: #1976d2;
         }
         
         .nav-links {
             display: flex;
-            gap: 25px;
+            gap: 20px;
         }
         
         .nav-links a {
             text-decoration: none;
             color: #333;
-            font-weight: 500;
-            transition: color 0.3s;
+            font-weight: bold;
         }
         
         .nav-links a:hover {
-            color: #667eea;
+            color: #1976d2;
         }
         
         .login-container {
@@ -60,58 +59,58 @@
         
         .login-card {
             background: white;
-            padding: 50px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 3px solid #333;
+            border-radius: 5px;
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.2);
             width: 100%;
             max-width: 450px;
             text-align: center;
-            animation: fadeInUp 0.8s ease;
         }
         
         .login-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            color: #667eea;
+            font-size: 50px;
+            margin-bottom: 15px;
         }
         
         .login-title {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: #333;
         }
         
         .login-subtitle {
             color: #666;
-            margin-bottom: 40px;
-            font-size: 16px;
+            margin-bottom: 30px;
+            font-size: 14px;
         }
         
         .alert {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 25px;
+            padding: 12px;
+            border-radius: 3px;
+            margin-bottom: 20px;
             text-align: left;
             display: flex;
             align-items: center;
+            border: 2px solid;
         }
         
         .alert-success {
             background: #d4edda;
             color: #155724;
-            border: 1px solid #c3e6cb;
+            border-color: #c3e6cb;
         }
         
         .alert-danger {
             background: #f8d7da;
             color: #721c24;
-            border: 1px solid #f5c6cb;
+            border-color: #f5c6cb;
         }
         
         .alert-icon {
-            font-size: 20px;
-            margin-right: 12px;
+            font-size: 18px;
+            margin-right: 10px;
         }
         
         .form-group {
@@ -129,24 +128,23 @@
         
         .form-group input {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 12px;
+            border: 2px solid #999;
+            border-radius: 3px;
+            font-size: 14px;
         }
         
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #1976d2;
         }
         
         .form-options {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            font-size: 14px;
+            margin-bottom: 25px;
+            font-size: 13px;
         }
         
         .remember-me {
@@ -155,13 +153,13 @@
         }
         
         .remember-me input {
-            margin-right: 8px;
+            margin-right: 6px;
         }
         
         .forgot-password {
-            color: #667eea;
+            color: #1976d2;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: bold;
         }
         
         .forgot-password:hover {
@@ -170,78 +168,30 @@
         
         .login-btn {
             width: 100%;
-            background: #667eea;
+            background: #1976d2;
             color: white;
-            border: none;
-            padding: 18px;
-            border-radius: 10px;
+            border: 2px solid #1565c0;
+            padding: 15px;
+            border-radius: 3px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         
         .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-        
-        .divider {
-            text-align: center;
-            margin: 30px 0;
-            position: relative;
-        }
-        
-        .divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: #e0e0e0;
-        }
-        
-        .divider span {
-            background: white;
-            padding: 0 20px;
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .social-login {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .social-btn {
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .social-btn:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
+            background: #1565c0;
         }
         
         .signup-link {
             color: #666;
-            font-size: 14px;
+            font-size: 13px;
         }
         
         .signup-link a {
-            color: #667eea;
+            color: #1976d2;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: bold;
         }
         
         .signup-link a:hover {
@@ -249,13 +199,13 @@
         }
         
         .footer-links {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 2px solid #ccc;
             display: flex;
             justify-content: center;
-            gap: 20px;
-            font-size: 13px;
+            gap: 15px;
+            font-size: 12px;
         }
         
         .footer-links a {
@@ -264,18 +214,7 @@
         }
         
         .footer-links a:hover {
-            color: #667eea;
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            color: #1976d2;
         }
         
         @media (max-width: 768px) {
@@ -284,16 +223,12 @@
             }
             
             .login-card {
-                padding: 30px;
-                margin: 20px;
+                padding: 25px;
+                margin: 15px;
             }
             
             .login-title {
-                font-size: 28px;
-            }
-            
-            .social-login {
-                grid-template-columns: 1fr;
+                font-size: 24px;
             }
         }
     </style>
@@ -301,7 +236,7 @@
 <body>
     <!-- Navigation -->
     <nav class="navbar">
-        <div class="logo">📚 Student LMS</div>
+        <div class="logo">Student LMS</div>
         <div class="nav-links">
             <a href="<?= base_url() ?>">Home</a>
             <a href="<?= base_url('about') ?>">About</a>
@@ -313,7 +248,7 @@
     <!-- Login Container -->
     <div class="login-container">
         <div class="login-card">
-            <div class="login-icon">🎓</div>
+            <div class="login-icon">📖</div>
             <h1 class="login-title">Welcome Back!</h1>
             <p class="login-subtitle">Sign in to continue your learning journey</p>
 
@@ -356,20 +291,6 @@
 
                 <button type="submit" class="login-btn">Sign In</button>
             </form>
-
-            <!-- Social Login -->
-            <div class="divider">
-                <span>Or continue with</span>
-            </div>
-            
-            <div class="social-login">
-                <button class="social-btn">
-                    📧 Google
-                </button>
-                <button class="social-btn">
-                    📘 Facebook
-                </button>
-            </div>
 
             <!-- Sign Up Link -->
             <p class="signup-link">

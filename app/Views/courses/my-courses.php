@@ -31,9 +31,37 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
+
+        body.student-shell {
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+
+        body.student-shell .course-card {
+            border: 2px solid #999;
+            border-radius: 3px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.1);
+        }
+
+        body.student-shell .course-card .badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 2px solid #90caf9;
+            border-radius: 3px;
+        }
+
+        body.student-shell .btn {
+            border: 2px solid;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+
+        body.student-shell .bg-primary {
+            background: #1976d2 !important;
+        }
     </style>
 </head>
-<body>
+<body class="<?= session('role') === 'student' ? 'student-shell' : '' ?>">
     <div class="flex h-screen">
         <!-- Sidebar -->
         <div class="flex w-64 flex-col bg-white shadow-lg">
@@ -142,7 +170,7 @@
                     <?php if (!empty($courses)): ?>
                         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             <?php foreach ($courses as $course): ?>
-                                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 course-card">
                                     <div class="p-6">
                                         <div class="flex items-center justify-between mb-4">
                                             <h3 class="text-lg font-semibold text-gray-900"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>

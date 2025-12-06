@@ -33,9 +33,50 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
+
+        body.student-shell {
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+
+        body.student-shell .search-panel {
+            border: 3px solid #333;
+            background: #fff;
+            border-radius: 3px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.1);
+        }
+
+        body.student-shell .search-panel h6 {
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        body.student-shell .card.course-card {
+            border: 2px solid #999;
+            border-radius: 3px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.1);
+        }
+
+        body.student-shell .card.course-card .badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 2px solid #90caf9;
+            border-radius: 3px;
+        }
+
+        body.student-shell .btn {
+            border: 2px solid;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+
+        body.student-shell .bg-primary {
+            background: #1976d2 !important;
+        }
     </style>
 </head>
-<body>
+<body class="<?= session('role') === 'student' ? 'student-shell' : '' ?>">
     <div class="flex h-screen">
         <!-- Sidebar -->
         <div class="flex w-64 flex-col bg-white shadow-lg">
@@ -167,7 +208,10 @@
                     </div>
 
                     <!-- Search Interface -->
-                    <div class="bg-white rounded-lg shadow p-6 mb-8">
+                    <div class="bg-white rounded-lg shadow p-6 mb-8 search-panel">
+                        <?php if(session('role') === 'student'): ?>
+                            <h6 class="mb-1">Quick search</h6>
+                        <?php endif; ?>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <form id="searchForm" class="d-flex" method="get" action="<?= base_url('courses/search') ?>">

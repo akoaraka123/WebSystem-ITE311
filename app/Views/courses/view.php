@@ -11,9 +11,39 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
+
+        body.student-shell {
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+
+        body.student-shell .course-highlight {
+            border: 3px solid #333;
+            border-radius: 3px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.1);
+        }
+
+        body.student-shell .info-card {
+            border: 2px solid #999;
+            background: #fff;
+            border-radius: 3px;
+        }
+
+        body.student-shell .materials-card li {
+            background: #fff;
+            border: 2px solid #999;
+            border-radius: 3px;
+            padding: 10px;
+        }
+
+        body.student-shell .btn {
+            border: 2px solid;
+            font-weight: bold;
+            border-radius: 3px;
+        }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="text-gray-800 <?= session('role') === 'student' ? 'student-shell' : '' ?>">
     <div class="max-w-5xl mx-auto py-10 px-4">
         <div class="flex items-center justify-between mb-6">
             <a href="<?= base_url('courses') ?>" class="inline-flex items-center text-sm text-primary-600 hover:text-primary-800">
@@ -33,7 +63,7 @@
             <?php endif; ?>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden course-highlight">
             <div class="p-8 md:p-10">
                 <div class="flex items-center justify-between mb-6">
                     <div>
@@ -52,7 +82,7 @@
                 <?php endif; ?>
 
                 <div class="grid md:grid-cols-2 gap-6">
-                    <div class="bg-blue-50 rounded-xl p-5">
+                    <div class="bg-blue-50 rounded-xl p-5 info-card">
                         <div class="flex items-center mb-3">
                             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                                 <i class="fas fa-user-tie"></i>
@@ -65,7 +95,7 @@
                         <p class="text-sm text-gray-600">This identifier references the teacher assigned to the course.</p>
                     </div>
 
-                    <div class="bg-purple-50 rounded-xl p-5">
+                    <div class="bg-purple-50 rounded-xl p-5 info-card">
                         <div class="flex items-center mb-3">
                             <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
                                 <i class="fas fa-calendar-alt"></i>
@@ -99,7 +129,7 @@
         </div>
 
         <div class="mt-10">
-            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden course-highlight">
                 <div class="p-8 md:p-10">
                     <div class="flex items-center justify-between mb-6">
                         <div>
@@ -114,7 +144,7 @@
                     </div>
 
                     <?php if (!empty($materials)): ?>
-                        <ul class="divide-y divide-gray-200">
+                        <ul class="divide-y divide-gray-200 materials-card">
                             <?php foreach ($materials as $material): ?>
                                 <li class="py-4 flex items-center justify-between">
                                     <div class="flex items-start">

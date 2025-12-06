@@ -117,9 +117,64 @@
             position: relative;
             z-index: 9999;
         }
+
+        body.student-theme, body.admin-theme, body.teacher-theme {
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        body.student-theme .welcome-card, body.admin-theme .welcome-card, body.teacher-theme .welcome-card {
+            background: #4a90e2;
+            border: 3px solid #333;
+            border-radius: 3px;
+        }
+
+        body.student-theme .course-card, body.admin-theme .course-card, body.teacher-theme .course-card {
+            border: 2px solid #999;
+            background: #fff;
+            border-radius: 3px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.1);
+        }
+
+        body.student-theme .course-card:hover, body.admin-theme .course-card:hover, body.teacher-theme .course-card:hover {
+            border-color: #1976d2;
+        }
+
+        body.student-theme .stat-card, body.admin-theme .stat-card, body.teacher-theme .stat-card {
+            background: #fff;
+            color: #333;
+            border: 2px solid #999;
+            border-radius: 3px;
+        }
+
+        body.student-theme .student-badge, body.admin-theme .student-badge, body.teacher-theme .student-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            font-weight: bold;
+            border: 2px solid #90caf9;
+            padding: 4px 12px;
+            border-radius: 3px;
+        }
+
+        body.student-theme button, body.student-theme .btn,
+        body.admin-theme button, body.admin-theme .btn,
+        body.teacher-theme button, body.teacher-theme .btn {
+            border: 2px solid;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+
+        body.student-theme .sidebar-item, body.admin-theme .sidebar-item, body.teacher-theme .sidebar-item {
+            border-radius: 3px;
+        }
+
+        body.student-theme .lms-header, body.admin-theme .lms-header, body.teacher-theme .lms-header {
+            background: #1976d2;
+            border-bottom: 2px solid #1565c0;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 <?= session('role') === 'student' ? 'student-theme' : (session('role') === 'admin' ? 'admin-theme' : (session('role') === 'teacher' ? 'teacher-theme' : '')) ?>">
     <!-- Sidebar -->
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
