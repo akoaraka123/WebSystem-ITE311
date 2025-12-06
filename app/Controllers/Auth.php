@@ -245,7 +245,7 @@ public function dashboard()
             $data['available'] = [];
             try {
                 // First, let's get all courses to see if any exist
-                $allCourses = $courseModel->select('id, title, description')->findAll();
+                $allCourses = $courseModel->select('id, title, description, school_year, semester')->findAll();
                 log_message('debug', 'All courses in database: ' . json_encode($allCourses));
                 
                 // Test: let's try a simple query without joins
@@ -253,11 +253,11 @@ public function dashboard()
                 log_message('debug', 'Simple findAll result: ' . json_encode($testQuery));
                 
                 if (!empty($enrolledIDs)) {
-                    $data['available'] = $courseModel->select('id, title, description')
+                    $data['available'] = $courseModel->select('id, title, description, school_year, semester')
                                                 ->whereNotIn('id', $enrolledIDs)
                                                 ->findAll();
                 } else {
-                    $data['available'] = $allCourses;
+                    $data['available'] = $courseModel->select('id, title, description, school_year, semester')->findAll();
                 }
                 // Debug: log the available courses
                 log_message('debug', 'Available courses: ' . json_encode($data['available']));

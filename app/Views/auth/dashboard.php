@@ -349,18 +349,53 @@
 
                     <!-- STUDENT DASHBOARD -->
                     <?php if ($user['role'] === 'student'): ?>
+                        <!-- Filter Section -->
+                        <div class="mb-6 bg-white rounded-lg shadow p-4">
+                            <div class="flex flex-wrap items-center gap-4">
+                                <div class="flex-1 min-w-[200px]">
+                                    <label class="block mb-2 text-sm font-medium text-gray-700">School Year</label>
+                                    <select id="filterSchoolYear" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="">All School Years</option>
+                                        <?php
+                                        $currentYear = date('Y');
+                                        for ($i = $currentYear - 2; $i <= $currentYear + 2; $i++) {
+                                            $nextYear = $i + 1;
+                                            echo '<option value="' . $i . '-' . $nextYear . '">' . $i . '-' . $nextYear . '</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                                <div class="flex-1 min-w-[200px]">
+                                    <label class="block mb-2 text-sm font-medium text-gray-700">Semester</label>
+                                    <select id="filterSemester" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="">All Semesters</option>
+                                        <option value="1st Semester">1st Semester</option>
+                                        <option value="2nd Semester">2nd Semester</option>
+                                        <option value="Summer">Summer</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end">
+                                    <button onclick="clearFilters()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                                        <i class="mr-2 fas fa-redo"></i> Clear Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-8">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-xl font-semibold text-gray-800">My Enrolled Courses</h3>
                                 <span class="px-3 py-1 text-sm font-medium text-green-800 bg-green-100 rounded-full">
-                                    <?= !empty($enrolled) ? count($enrolled) . ' Enrolled' : 'Not Enrolled' ?>
+                                    <span id="enrolledCount"><?= !empty($enrolled) ? count($enrolled) : 0 ?></span> Enrolled
                                 </span>
                             </div>
 
                             <?php if (!empty($enrolled)): ?>
-                                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="enrolledCoursesContainer">
                                     <?php foreach ($enrolled as $enrollment): ?>
-                                        <div class="overflow-hidden bg-white rounded-lg shadow course-card">
+                                        <div class="overflow-hidden bg-white rounded-lg shadow course-card course-item" 
+                                             data-school-year="<?= esc($enrollment['school_year'] ?? '') ?>"
+                                             data-semester="<?= esc($enrollment['semester'] ?? '') ?>">
                                             <div class="p-6">
                                                 <div class="flex items-center justify-between mb-3">
                                                     <h3 class="text-lg font-semibold text-gray-900 course-title">
@@ -369,6 +404,20 @@
                                                     <span class="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded">
                                                         Enrolled
                                                     </span>
+                                                </div>
+                                                
+                                                <!-- School Year and Semester Info -->
+                                                <div class="mb-2 flex gap-2 flex-wrap">
+                                                    <?php if (!empty($enrollment['school_year'])): ?>
+                                                        <span class="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
+                                                            <i class="mr-1 fas fa-calendar"></i> <?= esc($enrollment['school_year']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <?php if (!empty($enrollment['semester'])): ?>
+                                                        <span class="px-2 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded">
+                                                            <i class="mr-1 fas fa-calendar-alt"></i> <?= esc($enrollment['semester']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </div>
                                                 
                                                 <?php if (!empty($enrollment['description'])): ?>
@@ -425,8 +474,21 @@
                                     <div class="grid gap-4">
                                         <?php foreach ($available as $course): ?>
                                             <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow">
-                                                <div>
+                                                <div class="flex-1">
                                                     <h4 class="font-medium text-gray-900"><?= esc($course['title'] ?? 'Untitled Course') ?></h4>
+                                                    <!-- School Year and Semester Info -->
+                                                    <div class="mt-2 flex gap-2 flex-wrap">
+                                                        <?php if (!empty($course['school_year'])): ?>
+                                                            <span class="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
+                                                                <i class="mr-1 fas fa-calendar"></i> <?= esc($course['school_year']) ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($course['semester'])): ?>
+                                                            <span class="px-2 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded">
+                                                                <i class="mr-1 fas fa-calendar-alt"></i> <?= esc($course['semester']) ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </div>
                                                     <?php if (!empty($course['description'])): ?>
                                                         <p class="mt-1 text-sm text-gray-600"><?= esc($course['description']) ?></p>
                                                     <?php endif; ?>
@@ -488,6 +550,39 @@
 
         <!-- TEACHER DASHBOARD -->
         <?php if ($user['role'] === 'teacher'): ?>
+            <!-- Filter Section -->
+            <div class="mb-6 bg-white rounded-lg shadow p-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block mb-2 text-sm font-medium text-gray-700">School Year</label>
+                        <select id="filterSchoolYearTeacher" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">All School Years</option>
+                            <?php
+                            $currentYear = date('Y');
+                            for ($i = $currentYear - 2; $i <= $currentYear + 2; $i++) {
+                                $nextYear = $i + 1;
+                                echo '<option value="' . $i . '-' . $nextYear . '">' . $i . '-' . $nextYear . '</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block mb-2 text-sm font-medium text-gray-700">Semester</label>
+                        <select id="filterSemesterTeacher" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">All Semesters</option>
+                            <option value="1st Semester">1st Semester</option>
+                            <option value="2nd Semester">2nd Semester</option>
+                            <option value="Summer">Summer</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="clearFiltersTeacher()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                            <i class="mr-2 fas fa-redo"></i> Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">My Courses</h2>
@@ -498,9 +593,12 @@
                 </div>
 
                 <?php if (!empty($myCourses)): ?>
-                    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="teacherCoursesContainer">
                         <?php foreach ($myCourses as $course): ?>
-                            <div class="overflow-hidden bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300" id="course-<?= esc($course['id']) ?>">
+                            <div class="overflow-hidden bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 course-item-teacher" 
+                                 id="course-<?= esc($course['id']) ?>"
+                                 data-school-year="<?= esc($course['school_year'] ?? '') ?>"
+                                 data-semester="<?= esc($course['semester'] ?? '') ?>">
                                 <div class="p-6">
                                     <div class="flex items-center justify-between mb-4">
                                         <h3 class="text-lg font-semibold text-gray-900"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
@@ -518,6 +616,20 @@
                                                 </button>
                                             </form>
                                         </div>
+                                    </div>
+                                    
+                                    <!-- School Year and Semester Info -->
+                                    <div class="mb-3 flex gap-2 flex-wrap">
+                                        <?php if (!empty($course['school_year'])): ?>
+                                            <span class="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
+                                                <i class="mr-1 fas fa-calendar"></i> <?= esc($course['school_year']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($course['semester'])): ?>
+                                            <span class="px-2 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded">
+                                                <i class="mr-1 fas fa-calendar-alt"></i> <?= esc($course['semester']) ?>
+                                            </span>
+                                        <?php endif; ?>
                                     </div>
                                     
                                     <?php if (!empty($course['description'])): ?>
@@ -543,6 +655,15 @@
                                             <i class="mr-2 fas fa-upload"></i> Upload
                                         </button>
                                     </form>
+
+                                    <!-- Add Student Button -->
+                                    <div class="mb-4">
+                                        <button type="button" 
+                                                onclick="openAddStudentModal(<?= esc($course['id']) ?>, '<?= esc($course['title'], 'attr') ?>')"
+                                                class="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                            <i class="mr-2 fas fa-user-plus"></i> Add Student
+                                        </button>
+                                    </div>
 
                                     <!-- Course Materials -->
                                     <div class="course-materials">
@@ -1107,8 +1228,288 @@ $(document).ready(function() {
         }
     });
 
+    // Filter functions for Student Dashboard
+    function filterCourses() {
+        const schoolYear = document.getElementById('filterSchoolYear')?.value || '';
+        const semester = document.getElementById('filterSemester')?.value || '';
+        const courses = document.querySelectorAll('.course-item');
+        let visibleCount = 0;
+
+        courses.forEach(course => {
+            const courseSchoolYear = course.getAttribute('data-school-year') || '';
+            const courseSemester = course.getAttribute('data-semester') || '';
+            
+            const matchSchoolYear = !schoolYear || courseSchoolYear === schoolYear;
+            const matchSemester = !semester || courseSemester === semester;
+            
+            if (matchSchoolYear && matchSemester) {
+                course.style.display = '';
+                visibleCount++;
+            } else {
+                course.style.display = 'none';
+            }
+        });
+
+        // Update count
+        const countElement = document.getElementById('enrolledCount');
+        if (countElement) {
+            countElement.textContent = visibleCount;
+        }
+    }
+
+    function clearFilters() {
+        document.getElementById('filterSchoolYear').value = '';
+        document.getElementById('filterSemester').value = '';
+        filterCourses();
+    }
+
+    // Filter functions for Teacher Dashboard
+    function filterCoursesTeacher() {
+        const schoolYear = document.getElementById('filterSchoolYearTeacher')?.value || '';
+        const semester = document.getElementById('filterSemesterTeacher')?.value || '';
+        const courses = document.querySelectorAll('.course-item-teacher');
+
+        courses.forEach(course => {
+            const courseSchoolYear = course.getAttribute('data-school-year') || '';
+            const courseSemester = course.getAttribute('data-semester') || '';
+            
+            const matchSchoolYear = !schoolYear || courseSchoolYear === schoolYear;
+            const matchSemester = !semester || courseSemester === semester;
+            
+            if (matchSchoolYear && matchSemester) {
+                course.style.display = '';
+            } else {
+                course.style.display = 'none';
+            }
+        });
+    }
+
+    function clearFiltersTeacher() {
+        document.getElementById('filterSchoolYearTeacher').value = '';
+        document.getElementById('filterSemesterTeacher').value = '';
+        filterCoursesTeacher();
+    }
+
+    // Add event listeners for filters
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterSchoolYear = document.getElementById('filterSchoolYear');
+        const filterSemester = document.getElementById('filterSemester');
+        const filterSchoolYearTeacher = document.getElementById('filterSchoolYearTeacher');
+        const filterSemesterTeacher = document.getElementById('filterSemesterTeacher');
+
+        if (filterSchoolYear) {
+            filterSchoolYear.addEventListener('change', filterCourses);
+        }
+        if (filterSemester) {
+            filterSemester.addEventListener('change', filterCourses);
+        }
+        if (filterSchoolYearTeacher) {
+            filterSchoolYearTeacher.addEventListener('change', filterCoursesTeacher);
+        }
+        if (filterSemesterTeacher) {
+            filterSemesterTeacher.addEventListener('change', filterCoursesTeacher);
+        }
+    });
+
 });
-</script>
+    </script>
+
+    <!-- Add Student Modal -->
+    <div id="addStudentModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true" onclick="closeAddStudentModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4" id="modal-title">
+                                Add Student to Course
+                            </h3>
+                            <p class="text-sm text-gray-500 mb-4" id="courseTitleText"></p>
+                            
+                            <!-- Search Bar -->
+                            <div id="searchBarContainer" class="mb-4 hidden">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <i class="fas fa-search text-gray-400"></i>
+                                    </div>
+                                    <input type="text" 
+                                           id="studentSearchInput" 
+                                           onkeyup="filterStudents()"
+                                           oninput="filterStudents()"
+                                           placeholder="Search" 
+                                           minlength="0"
+                                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                                </div>
+                            </div>
+                            
+                            <!-- Loading State -->
+                            <div id="studentLoading" class="text-center py-4">
+                                <i class="fas fa-spinner fa-spin text-blue-500"></i>
+                                <p class="text-sm text-gray-500 mt-2">Loading students...</p>
+                            </div>
+
+                            <!-- Student List -->
+                            <div id="studentList" class="max-h-96 overflow-y-auto hidden">
+                                <div class="space-y-2" id="studentListContainer">
+                                    <!-- Students will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- No Students Available -->
+                            <div id="noStudents" class="text-center py-4 hidden">
+                                <i class="fas fa-user-slash text-gray-300 text-3xl mb-2"></i>
+                                <p class="text-sm text-gray-500">All students are already enrolled in this course.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeAddStudentModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCourseId = null;
+        let allStudents = []; // Store all students for filtering
+
+        function openAddStudentModal(courseId, courseTitle) {
+            currentCourseId = courseId;
+            document.getElementById('courseTitleText').textContent = 'Course: ' + courseTitle;
+            document.getElementById('addStudentModal').classList.remove('hidden');
+            
+            // Clear search input
+            document.getElementById('studentSearchInput').value = '';
+            
+            // Show loading, hide others
+            document.getElementById('studentLoading').classList.remove('hidden');
+            document.getElementById('studentList').classList.add('hidden');
+            document.getElementById('noStudents').classList.add('hidden');
+            document.getElementById('searchBarContainer').classList.add('hidden');
+
+            // Fetch available students
+            fetch('<?= base_url('course/') ?>' + courseId + '/students/available')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('studentLoading').classList.add('hidden');
+                    
+                    if (data.success && data.students.length > 0) {
+                        allStudents = data.students; // Store students for filtering
+                        renderStudentList(allStudents);
+                        document.getElementById('studentList').classList.remove('hidden');
+                        document.getElementById('searchBarContainer').classList.remove('hidden');
+                    } else {
+                        allStudents = [];
+                        document.getElementById('noStudents').classList.remove('hidden');
+                        document.getElementById('searchBarContainer').classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('studentLoading').classList.add('hidden');
+                    alert('Failed to load students. Please try again.');
+                });
+        }
+
+        function renderStudentList(students) {
+            const studentListContainer = document.getElementById('studentListContainer');
+            studentListContainer.innerHTML = '';
+            
+            if (students.length === 0) {
+                studentListContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-sm text-gray-500">No students found matching your search.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            students.forEach(student => {
+                const studentItem = document.createElement('div');
+                studentItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 student-item';
+                studentItem.setAttribute('data-name', student.name.toLowerCase());
+                studentItem.setAttribute('data-email', student.email.toLowerCase());
+                studentItem.innerHTML = `
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">${student.name}</p>
+                        <p class="text-xs text-gray-500">${student.email}</p>
+                    </div>
+                    <button onclick="addStudentToCourse(${student.id})" 
+                            class="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+                        <i class="fas fa-plus mr-1"></i> Add
+                    </button>
+                `;
+                studentListContainer.appendChild(studentItem);
+            });
+        }
+
+        function filterStudents() {
+            const searchInput = document.getElementById('studentSearchInput');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                // Show all students if search is empty
+                renderStudentList(allStudents);
+                return;
+            }
+            
+            // Filter students by name or email (works with 2+ characters)
+            const filteredStudents = allStudents.filter(student => {
+                const name = student.name.toLowerCase();
+                const email = student.email.toLowerCase();
+                
+                // Check if search term matches name or email (works with any length >= 2)
+                const nameMatch = name.includes(searchTerm);
+                const emailMatch = email.includes(searchTerm);
+                
+                return nameMatch || emailMatch;
+            });
+            
+            renderStudentList(filteredStudents);
+        }
+
+        function closeAddStudentModal() {
+            document.getElementById('addStudentModal').classList.add('hidden');
+            document.getElementById('studentSearchInput').value = '';
+            currentCourseId = null;
+            allStudents = [];
+        }
+
+        function addStudentToCourse(studentId) {
+            if (!currentCourseId) return;
+
+            const formData = new FormData();
+            formData.append('course_id', currentCourseId);
+            formData.append('student_id', studentId);
+            formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+            fetch('<?= base_url('course/add-student') ?>', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Student added successfully!');
+                        // Reload the page to update student count
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to add student');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        }
+
+        // Modal backdrop already handles closing via onclick attribute
+    </script>
 
 </body>
 </html>
