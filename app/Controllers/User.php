@@ -32,6 +32,42 @@ class User extends BaseController
         return view('admin/users', $data);
     }
 
+    public function create()
+    {
+        $session = session();
+        
+        // Check if user is logged in and is admin
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            $session->setFlashdata('error', 'Unauthorized access.');
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        $rules = [
+            'name'  => 'required|min_length[3]|max_length[100]',
+            'email' => 'required|valid_email|is_unique[users.email]',
+            'role'  => 'required|in_list[student,teacher]'
+        ];
+
+        if ($this->validate($rules)) {
+            // Auto-generate password
+            $autoPassword = 'akoaraka123';
+            
+            // Use UserModel to handle password hashing automatically
+            $this->userModel->insert([
+                'name'     => $this->request->getPost('name'),
+                'email'    => $this->request->getPost('email'),
+                'password' => $autoPassword, // Model will hash this automatically
+                'role'     => $this->request->getPost('role')
+            ]);
+
+            $session->setFlashdata('success', 'User created successfully! Password: ' . $autoPassword);
+            return redirect()->to(base_url('users'));
+        } else {
+            $session->setFlashdata('error', 'Please correct the errors below.');
+            return redirect()->to(base_url('users'))->withInput();
+        }
+    }
+
     public function profile()
     {
         $session = session();
@@ -191,6 +227,39 @@ class User extends BaseController
         $this->userModel->update($userId, $updateData);
         
         $session->setFlashdata('success', 'User information updated successfully!');
+        return redirect()->to(base_url('users'));
+    }
+
+    public function delete()
+    {
+        $session = session();
+        
+        // Check if user is logged in and is admin
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            $session->setFlashdata('error', 'Unauthorized access.');
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        $userId = (int) $this->request->getPost('user_id');
+
+        // Get the user to check if they exist and are not admin
+        $user = $this->userModel->find($userId);
+        
+        if (!$user) {
+            $session->setFlashdata('error', 'User not found.');
+            return redirect()->to(base_url('users'));
+        }
+
+        // Protect admin users from being deleted
+        if ($user['role'] === 'admin') {
+            $session->setFlashdata('error', 'Admin users cannot be deleted.');
+            return redirect()->to(base_url('users'));
+        }
+
+        // Delete the user
+        $this->userModel->delete($userId);
+        
+        $session->setFlashdata('success', 'User deleted successfully!');
         return redirect()->to(base_url('users'));
     }
 }

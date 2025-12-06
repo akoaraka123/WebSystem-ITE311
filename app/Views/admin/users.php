@@ -154,6 +154,16 @@
             background: #1565c0;
         }
         
+        .btn-delete {
+            background: #d32f2f;
+            color: white;
+            border-color: #c62828;
+        }
+        
+        .btn-delete:hover {
+            background: #c62828;
+        }
+        
         .btn-disabled {
             background: #ccc;
             color: #666;
@@ -306,8 +316,15 @@
 
     <div class="container">
         <div class="page-header">
-            <h1>Manage Users</h1>
-            <p>View and manage all registered users in the system</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>Manage Users</h1>
+                    <p>View and manage all registered users in the system</p>
+                </div>
+                <button class="btn btn-edit" onclick="openAddModal()" style="margin-top: 0;">
+                    <i class="fas fa-plus"></i> Add New User
+                </button>
+            </div>
         </div>
 
         <!-- Flash Messages -->
@@ -353,9 +370,14 @@
                                 <td><?= !empty($u['created_at']) ? date('M j, Y', strtotime($u['created_at'])) : 'N/A' ?></td>
                                 <td>
                                     <?php if ($u['role'] !== 'admin'): ?>
-                                        <button class="btn btn-edit" onclick="openEditModal(<?= $u['id'] ?>, '<?= esc($u['name']) ?>', '<?= esc($u['role']) ?>')">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </button>
+                                        <div style="display: flex; gap: 8px;">
+                                            <button class="btn btn-edit" onclick="openEditModal(<?= $u['id'] ?>, '<?= esc($u['name']) ?>', '<?= esc($u['role']) ?>')">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            <button class="btn btn-delete" onclick="confirmDelete(<?= $u['id'] ?>, '<?= esc($u['name']) ?>')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </div>
                                     <?php else: ?>
                                         <button class="btn btn-disabled" disabled>
                                             <i class="fas fa-lock"></i> Protected
@@ -414,7 +436,56 @@
         </div>
     </div>
 
+    <!-- Add User Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeAddModal()">&times;</span>
+                <h2>Add New User</h2>
+            </div>
+            <form id="addUserForm" method="POST" action="<?= base_url('users/create') ?>">
+                <?= csrf_field() ?>
+                
+                <div class="form-group">
+                    <label for="addUserName">Full Name</label>
+                    <input type="text" id="addUserName" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="addUserEmail">Email Address</label>
+                    <input type="email" id="addUserEmail" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="addUserRole">Role</label>
+                    <select id="addUserRole" name="role" required>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                    </select>
+                </div>
+                
+                <div class="alert alert-success" style="margin-bottom: 20px; padding: 12px; border-radius: 3px; background: #d4edda; color: #155724; border: 2px solid #c3e6cb;">
+                    <span style="font-weight: bold;">🔑 Auto-generated Password:</span> The password will be automatically set to <strong>akoaraka123</strong>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeAddModal()">Cancel</button>
+                    <button type="submit" class="btn btn-save">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        function openAddModal() {
+            document.getElementById('addUserForm').reset();
+            document.getElementById('addModal').style.display = 'block';
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+        }
+
         function openEditModal(userId, userName, currentRole) {
             document.getElementById('editUserId').value = userId;
             document.getElementById('editUserName').value = userName;
@@ -427,11 +498,44 @@
             document.getElementById('editModal').style.display = 'none';
         }
 
-        // Close modal when clicking outside
+        function confirmDelete(userId, userName) {
+            if (confirm('Are you sure you want to delete user "' + userName + '"? This action cannot be undone.')) {
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<?= base_url('users/delete') ?>';
+                
+                // Add CSRF token - get from existing form
+                const csrfToken = document.querySelector('input[name="<?= csrf_token() ?>"]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = csrfToken.name;
+                    csrfInput.value = csrfToken.value;
+                    form.appendChild(csrfInput);
+                }
+                
+                // Add user_id
+                const userIdInput = document.createElement('input');
+                userIdInput.type = 'hidden';
+                userIdInput.name = 'user_id';
+                userIdInput.value = userId;
+                form.appendChild(userIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Close modals when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('editModal');
-            if (event.target == modal) {
+            const editModal = document.getElementById('editModal');
+            const addModal = document.getElementById('addModal');
+            if (event.target == editModal) {
                 closeEditModal();
+            }
+            if (event.target == addModal) {
+                closeAddModal();
             }
         }
     </script>

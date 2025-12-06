@@ -33,7 +33,9 @@ $routes->get('auth/dashboard', 'Auth::dashboard');
 // USER MANAGEMENT
 // ========================================
 $routes->get('users', 'User::index');
+$routes->post('users/create', 'User::create');
 $routes->post('users/update', 'User::update');
+$routes->post('users/delete', 'User::delete');
 $routes->get('profile', 'User::profile');
 $routes->post('profile', 'User::updateProfile');
 $routes->get('settings', 'User::settings');

@@ -10,6 +10,8 @@ class UserModel extends Model
     protected $primaryKey = 'id';
     protected $allowedFields = ['name', 'email', 'password', 'role'];
     protected $useTimestamps = true;
+    protected $useSoftDeletes = true;
+    protected $deletedField  = 'deleted_at';
 
     // Optional: auto-hash password before insert/update
     protected $beforeInsert = ['hashPassword'];
