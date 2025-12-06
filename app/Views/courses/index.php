@@ -94,8 +94,8 @@
                             <i class="w-5 h-5 mr-3 text-gray-500 fas fa-users"></i>
                             Manage Users
                         </a>
-                        <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-white bg-primary rounded-lg">
-                            <i class="w-5 h-5 mr-3 fas fa-book"></i>
+                        <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= uri_string() == 'courses' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= uri_string() == 'courses' ? '' : 'text-gray-500' ?> fas fa-book"></i>
                             Manage Courses
                         </a>
                     <?php elseif(session('role') == 'teacher'): ?>
@@ -108,8 +108,8 @@
                             Create Course
                         </a>
                     <?php elseif(session('role') == 'student'): ?>
-                        <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-white bg-primary rounded-lg">
-                            <i class="w-5 h-5 mr-3 text-gray-500 fas fa-book-open"></i>
+                        <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= uri_string() == 'courses' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= uri_string() == 'courses' ? '' : 'text-gray-500' ?> fas fa-book-open"></i>
                             Browse Courses
                         </a>
                         <a href="<?= base_url('my-courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">

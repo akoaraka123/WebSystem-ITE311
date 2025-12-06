@@ -34,6 +34,8 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'ratelimit'     => \App\Filters\RateLimit::class,
+        'sessiontimeout' => \App\Filters\SessionTimeout::class,
     ];
 
     /**
@@ -73,6 +75,7 @@ class Filters extends BaseFilters
     public array $globals = [
     'before' => [
         'csrf',
+        'sessiontimeout', // Apply session timeout to all requests
     ],
     'after' => [
         'toolbar',

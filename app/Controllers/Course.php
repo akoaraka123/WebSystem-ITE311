@@ -5,7 +5,6 @@ namespace App\Controllers;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
 use App\Models\MaterialModel;
-use App\Models\UserModel;
 
 class Course extends BaseController
 {
@@ -131,8 +130,6 @@ class Course extends BaseController
             $data = [
                 'title' => $this->request->getPost('title'),
                 'description' => $this->request->getPost('description'),
-                'school_year' => $this->request->getPost('school_year'),
-                'semester' => $this->request->getPost('semester'),
                 'teacher_id' => $session->get('userID'),
                 'created_at' => date('Y-m-d H:i:s')
             ];
@@ -194,8 +191,6 @@ class Course extends BaseController
             $data = [
                 'title' => $this->request->getPost('title'),
                 'description' => $this->request->getPost('description'),
-                'school_year' => $this->request->getPost('school_year'),
-                'semester' => $this->request->getPost('semester'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 
@@ -418,145 +413,6 @@ class Course extends BaseController
             'courses' => $courses,
             'searchTerm' => $searchTerm,
             'user' => $session->get()
-        ]);
-    }
-
-    // Get available students for a course (not yet enrolled)
-    public function getAvailableStudents($courseId)
-    {
-        $session = session();
-        
-        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
-            return $this->response->setStatusCode(401)
-                ->setJSON(['success' => false, 'message' => 'Unauthorized']);
-        }
-
-        // Verify teacher owns this course
-        $course = $this->courseModel->find($courseId);
-        if (!$course || $course['teacher_id'] != $session->get('userID')) {
-            return $this->response->setStatusCode(403)
-                ->setJSON(['success' => false, 'message' => 'Access denied']);
-        }
-
-        // Get all students
-        $userModel = new UserModel();
-        $allStudents = $userModel->where('role', 'student')->findAll();
-
-        // Get enrolled student IDs
-        $enrolled = $this->enrollmentModel->where('course_id', $courseId)->findAll();
-        $enrolledIds = array_column($enrolled, 'user_id');
-
-        // Filter out enrolled students
-        $availableStudents = array_filter($allStudents, function($student) use ($enrolledIds) {
-            return !in_array($student['id'], $enrolledIds);
-        });
-
-        return $this->response->setJSON([
-            'success' => true,
-            'students' => array_values($availableStudents)
-        ]);
-    }
-
-    // Add student to course
-    public function addStudent()
-    {
-        $session = session();
-        
-        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
-            return $this->response->setStatusCode(401)
-                ->setJSON(['success' => false, 'message' => 'Unauthorized']);
-        }
-
-        $courseId = $this->request->getPost('course_id');
-        $studentId = $this->request->getPost('student_id');
-
-        if (!$courseId || !$studentId) {
-            return $this->response->setStatusCode(400)
-                ->setJSON(['success' => false, 'message' => 'Course ID and Student ID are required']);
-        }
-
-        // Verify teacher owns this course
-        $course = $this->courseModel->find($courseId);
-        if (!$course || $course['teacher_id'] != $session->get('userID')) {
-            return $this->response->setStatusCode(403)
-                ->setJSON(['success' => false, 'message' => 'Access denied']);
-        }
-
-        // Check if student exists and is a student
-        $userModel = new UserModel();
-        $student = $userModel->where('id', $studentId)->where('role', 'student')->first();
-        if (!$student) {
-            return $this->response->setStatusCode(404)
-                ->setJSON(['success' => false, 'message' => 'Student not found']);
-        }
-
-        // Check if already enrolled
-        if ($this->enrollmentModel->isAlreadyEnrolled($studentId, $courseId)) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Student is already enrolled in this course'
-            ]);
-        }
-
-        // Enroll student
-        try {
-            $this->enrollmentModel->insert([
-                'user_id' => $studentId,
-                'course_id' => $courseId,
-                'enrollment_date' => date('Y-m-d H:i:s')
-            ]);
-
-            // Create notification
-            $notif = new \App\Models\NotificationModel();
-            $notif->add($studentId, 'You have been enrolled in: ' . $course['title']);
-
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Student added successfully'
-            ]);
-        } catch (\Exception $e) {
-            return $this->response->setStatusCode(500)
-                ->setJSON(['success' => false, 'message' => 'Failed to add student: ' . $e->getMessage()]);
-        }
-    }
-
-    // Get enrolled students for a course
-    public function getEnrolledStudents($courseId)
-    {
-        $session = session();
-        
-        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
-            return $this->response->setStatusCode(401)
-                ->setJSON(['success' => false, 'message' => 'Unauthorized']);
-        }
-
-        // Verify teacher owns this course
-        $course = $this->courseModel->find($courseId);
-        if (!$course || $course['teacher_id'] != $session->get('userID')) {
-            return $this->response->setStatusCode(403)
-                ->setJSON(['success' => false, 'message' => 'Access denied']);
-        }
-
-        // Get enrolled students
-        $userModel = new UserModel();
-        $enrollments = $this->enrollmentModel->where('course_id', $courseId)->findAll();
-        
-        $students = [];
-        foreach ($enrollments as $enrollment) {
-            $student = $userModel->find($enrollment['user_id']);
-            if ($student) {
-                $students[] = [
-                    'id' => $student['id'],
-                    'name' => $student['name'],
-                    'email' => $student['email'],
-                    'enrollment_date' => $enrollment['enrollment_date']
-                ];
-            }
-        }
-
-        return $this->response->setJSON([
-            'success' => true,
-            'students' => $students
         ]);
     }
 }

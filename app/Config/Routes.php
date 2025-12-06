@@ -20,7 +20,7 @@ $routes->get('contact', 'Pages::contact');
 $routes->get('register', 'Auth::register');
 $routes->post('register', 'Auth::register');
 $routes->get('login', 'Auth::login');
-$routes->post('login', 'Auth::login');
+$routes->post('login', 'Auth::login', ['filter' => 'ratelimit']);
 $routes->get('logout', 'Auth::logout');
 
 // ========================================
@@ -61,9 +61,6 @@ $routes->post('courses/search', 'Course::search');
 $routes->post('auth/enroll/(:num)', 'Auth::enroll/$1');
 $routes->post('course/enroll', 'Auth::enroll');
 $routes->post('auth/unenroll/(:num)', 'Auth::unenroll/$1');
-$routes->get('course/(:num)/students/available', 'Course::getAvailableStudents/$1');
-$routes->get('course/(:num)/students/enrolled', 'Course::getEnrolledStudents/$1');
-$routes->post('course/add-student', 'Course::addStudent');
 
 // ========================================
 // MATERIALS MANAGEMENT

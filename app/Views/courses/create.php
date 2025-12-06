@@ -168,35 +168,6 @@
                                     <p class="mt-1 text-xs text-gray-500">Minimum 10 characters required</p>
                                 </div>
 
-                                <!-- School Year and Semester -->
-                                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                    <div>
-                                        <label for="school_year" class="block text-sm font-medium text-gray-700">School Year</label>
-                                        <select id="school_year" name="school_year" 
-                                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
-                                            <option value="">Select School Year</option>
-                                            <?php
-                                            $currentYear = date('Y');
-                                            for ($i = $currentYear - 2; $i <= $currentYear + 2; $i++) {
-                                                $nextYear = $i + 1;
-                                                $selected = (old('school_year') == ($i . '-' . $nextYear)) ? 'selected' : '';
-                                                echo '<option value="' . $i . '-' . $nextYear . '" ' . $selected . '>' . $i . '-' . $nextYear . '</option>';
-                                            }
-                                            ?>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="semester" class="block text-sm font-medium text-gray-700">Semester</label>
-                                        <select id="semester" name="semester" 
-                                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
-                                            <option value="">Select Semester</option>
-                                            <option value="1st Semester" <?= old('semester') == '1st Semester' ? 'selected' : '' ?>>1st Semester</option>
-                                            <option value="2nd Semester" <?= old('semester') == '2nd Semester' ? 'selected' : '' ?>>2nd Semester</option>
-                                            <option value="Summer" <?= old('semester') == 'Summer' ? 'selected' : '' ?>>Summer</option>
-                                        </select>
-                                    </div>
-                                </div>
-
                                 <!-- Course Category -->
                                 <div>
                                     <label for="category" class="block text-sm font-medium text-gray-700">Course Category</label>

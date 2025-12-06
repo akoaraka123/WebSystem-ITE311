@@ -14,7 +14,7 @@ class EnrollmentModel extends Model
     // Get all courses a student is enrolled in
     public function getUserEnrollments($userID)
     {
-        return $this->select('enrollments.id, courses.id as course_id, courses.title, courses.description, courses.school_year, courses.semester, enrollments.enrollment_date')
+        return $this->select('enrollments.id, courses.id as course_id, courses.title, courses.description, enrollments.enrollment_date')
                     ->join('courses', 'courses.id = enrollments.course_id')
                     ->where('enrollments.user_id', $userID)
                     ->orderBy('enrollments.enrollment_date', 'DESC')

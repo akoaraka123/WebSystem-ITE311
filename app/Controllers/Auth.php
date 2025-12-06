@@ -21,11 +21,25 @@ class Auth extends BaseController
                 'name'             => 'required|min_length[3]|max_length[100]',
                 'email'            => 'required|valid_email|is_unique[users.email]',
                 'role'             => 'required|in_list[student,teacher]',
-                'password'         => 'required|min_length[6]',
+                'password'         => 'required|min_length[8]|regex_match[/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/]',
                 'password_confirm' => 'required|matches[password]'
             ];
-
-            if ($this->validate($rules)) {
+            
+            // Custom validation messages for password strength
+            $messages = [
+                'password' => [
+                    'min_length' => 'Password must be at least 8 characters long.',
+                    'regex_match' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).'
+                ]
+            ];
+            
+            if (!$this->validate($rules, $messages)) {
+                $session->setFlashdata('errors', $this->validator->getErrors());
+                return redirect()->back()->withInput();
+            }
+            
+            // If validation passes, proceed with registration
+            {
                 $db->table('users')->insert([
                     'name'       => $this->request->getPost('name'),
                     'email'      => $this->request->getPost('email'),
@@ -93,17 +107,47 @@ public function login()
         }
 
         if (!password_verify($password, $user['password'])) {
-            $session->setFlashdata('error', 'Incorrect password.');
+            // Track failed login attempts
+            $cache = \Config\Services::cache();
+            $ipAddress = $this->request->getIPAddress();
+            $key = 'login_attempts_' . md5($ipAddress);
+            $attempts = $cache->get($key) ?? 0;
+            $attempts++;
+            
+            // Store attempts for 15 minutes
+            $cache->save($key, $attempts, 900);
+            
+            // Lock account after 5 failed attempts
+            if ($attempts >= 5) {
+                $lockoutKey = 'login_lockout_' . md5($ipAddress);
+                $cache->save($lockoutKey, time() + 900, 900); // 15 minutes lockout
+                $session->setFlashdata('error', 'Too many failed login attempts. Please try again in 15 minutes.');
+            } else {
+                $remaining = 5 - $attempts;
+                $session->setFlashdata('error', 'Incorrect password. ' . $remaining . ' attempt(s) remaining.');
+            }
             return redirect()->back()->withInput();
         }
 
+        // Clear failed attempts on successful login
+        $cache = \Config\Services::cache();
+        $ipAddress = $this->request->getIPAddress();
+        $key = 'login_attempts_' . md5($ipAddress);
+        $cache->delete($key);
+        $lockoutKey = 'login_lockout_' . md5($ipAddress);
+        $cache->delete($lockoutKey);
+
+        // Regenerate session ID for security (prevent session fixation)
+        $session->regenerate(true);
+
         // Set session
         $session->set([
-            'userID'     => $user['id'],
-            'name'       => $user['name'],
-            'email'      => $user['email'],
-            'role'       => $user['role'],
-            'isLoggedIn' => true
+            'userID'       => $user['id'],
+            'name'         => $user['name'],
+            'email'        => $user['email'],
+            'role'         => $user['role'],
+            'isLoggedIn'   => true,
+            'last_activity' => time() // Track last activity for session timeout
         ]);
         
         // Debug: log session set
@@ -245,7 +289,7 @@ public function dashboard()
             $data['available'] = [];
             try {
                 // First, let's get all courses to see if any exist
-                $allCourses = $courseModel->select('id, title, description, school_year, semester')->findAll();
+                $allCourses = $courseModel->select('id, title, description')->findAll();
                 log_message('debug', 'All courses in database: ' . json_encode($allCourses));
                 
                 // Test: let's try a simple query without joins
@@ -253,11 +297,11 @@ public function dashboard()
                 log_message('debug', 'Simple findAll result: ' . json_encode($testQuery));
                 
                 if (!empty($enrolledIDs)) {
-                    $data['available'] = $courseModel->select('id, title, description, school_year, semester')
+                    $data['available'] = $courseModel->select('id, title, description')
                                                 ->whereNotIn('id', $enrolledIDs)
                                                 ->findAll();
                 } else {
-                    $data['available'] = $courseModel->select('id, title, description, school_year, semester')->findAll();
+                    $data['available'] = $allCourses;
                 }
                 // Debug: log the available courses
                 log_message('debug', 'Available courses: ' . json_encode($data['available']));

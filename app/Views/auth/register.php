@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Student LMS</title>
+    <!-- Bootstrap CSS for Navigation -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -316,7 +319,10 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Create a password" required>
+                        <input type="password" id="password" name="password" placeholder="Create a password (min. 8 chars, with uppercase, lowercase, number, and special char)" required>
+                        <small class="form-text text-muted" style="display: block; margin-top: 5px; font-size: 12px; color: #666;">
+                            Password must be at least 8 characters and contain: uppercase letter, lowercase letter, number, and special character (@$!%*?&)
+                        </small>
                     </div>
 
                     <div class="form-group">
