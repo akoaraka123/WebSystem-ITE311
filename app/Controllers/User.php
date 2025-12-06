@@ -75,8 +75,9 @@ class User extends BaseController
             ];
 
             // If password is provided, update it too
+            // Don't hash here - UserModel's beforeUpdate hook will handle it
             if ($this->request->getPost('password')) {
-                $data['password'] = password_hash($this->request->getPost('password'), PASSWORD_DEFAULT);
+                $data['password'] = $this->request->getPost('password');
             }
 
             $this->userModel->update($session->get('userID'), $data);
@@ -127,5 +128,69 @@ class User extends BaseController
         // Handle settings update logic here
         $session->setFlashdata('success', 'Settings updated successfully!');
         return redirect()->to(base_url('settings'));
+    }
+
+    public function update()
+    {
+        $session = session();
+        
+        // Check if user is logged in and is admin
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            $session->setFlashdata('error', 'Unauthorized access.');
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        $userId = (int) $this->request->getPost('user_id');
+        $newRole = $this->request->getPost('role');
+        $newName = $this->request->getPost('name');
+
+        // Validate name
+        if (empty($newName) || strlen($newName) < 3 || strlen($newName) > 100) {
+            $session->setFlashdata('error', 'Name must be between 3 and 100 characters.');
+            return redirect()->to(base_url('users'));
+        }
+
+        // Validate role
+        if (!in_array($newRole, ['student', 'teacher'])) {
+            $session->setFlashdata('error', 'Invalid role selected.');
+            return redirect()->to(base_url('users'));
+        }
+
+        // Get the user to check if they exist and are not admin
+        $user = $this->userModel->find($userId);
+        
+        if (!$user) {
+            $session->setFlashdata('error', 'User not found.');
+            return redirect()->to(base_url('users'));
+        }
+
+        // Protect admin users from being edited
+        if ($user['role'] === 'admin') {
+            $session->setFlashdata('error', 'Admin users cannot be edited.');
+            return redirect()->to(base_url('users'));
+        }
+
+        // Prepare update data
+        $updateData = [
+            'name' => $newName,
+            'role' => $newRole
+        ];
+
+        // If password is provided, validate and update it
+        $newPassword = $this->request->getPost('password');
+        if (!empty($newPassword)) {
+            if (strlen($newPassword) < 6) {
+                $session->setFlashdata('error', 'Password must be at least 6 characters long.');
+                return redirect()->to(base_url('users'));
+            }
+            // Don't hash here - UserModel's beforeUpdate hook will handle it
+            $updateData['password'] = $newPassword;
+        }
+
+        // Update the user's information
+        $this->userModel->update($userId, $updateData);
+        
+        $session->setFlashdata('success', 'User information updated successfully!');
+        return redirect()->to(base_url('users'));
     }
 }
