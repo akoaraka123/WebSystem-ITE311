@@ -244,7 +244,6 @@
             <a href="<?= base_url() ?>">Home</a>
             <a href="<?= base_url('about') ?>">About</a>
             <a href="<?= base_url('contact') ?>">Contact</a>
-            <a href="<?= base_url('register') ?>">Register</a>
         </div>
     </nav>
 
@@ -294,11 +293,6 @@
 
                 <button type="submit" class="login-btn">Sign In</button>
             </form>
-
-            <!-- Sign Up Link -->
-            <p class="signup-link">
-                Don't have an account? <a href="<?= base_url('register') ?>">Sign up for free</a>
-            </p>
 
             <!-- Footer Links -->
             <div class="footer-links">

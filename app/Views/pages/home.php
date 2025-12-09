@@ -224,7 +224,6 @@
             <a href="<?= base_url('about') ?>">About</a>
             <a href="<?= base_url('contact') ?>">Contact</a>
             <a href="<?= base_url('login') ?>">Login</a>
-            <a href="<?= base_url('register') ?>">Register</a>
         </div>
     </nav>
 
@@ -233,7 +232,7 @@
         <h1>Welcome to Student LMS</h1>
         <p>Your gateway to amazing online learning experiences</p>
         <div class="btn-group">
-            <a href="<?= base_url('register') ?>" class="btn btn-primary">Get Started</a>
+            <a href="<?= base_url('login') ?>" class="btn btn-primary">Login</a>
             <a href="<?= base_url('about') ?>" class="btn btn-secondary">Learn More</a>
         </div>
     </section>
@@ -268,8 +267,8 @@
     <!-- CTA Section -->
     <section class="cta">
         <h2>Ready to Start Learning?</h2>
-        <p>Join thousands of students already using our platform</p>
-        <a href="<?= base_url('register') ?>" class="btn btn-primary">Sign Up Now</a>
+        <p>Login to access your courses and continue your learning journey</p>
+        <a href="<?= base_url('login') ?>" class="btn btn-primary">Login Now</a>
     </section>
 
     <!-- Footer -->
@@ -288,7 +287,6 @@
             <div class="footer-section">
                 <h4>Account</h4>
                 <a href="<?= base_url('login') ?>">Login</a>
-                <a href="<?= base_url('register') ?>">Register</a>
             </div>
         </div>
         <p>&copy; <?= date('Y') ?> Student LMS. All rights reserved.</p>

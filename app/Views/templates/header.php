@@ -113,16 +113,11 @@ $currentUri = uri_string();
                     </li>
                 </ul>
             <?php else: ?>
-                <!-- Login/Register Links for Non-Logged In Users -->
+                <!-- Login Link for Non-Logged In Users -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link <?= $currentUri == 'login' ? 'active' : '' ?>" href="<?= base_url('login') ?>">
                             <i class="fas fa-sign-in-alt me-1"></i> Login
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?= $currentUri == 'register' ? 'active' : '' ?>" href="<?= base_url('register') ?>">
-                            <i class="fas fa-user-plus me-1"></i> Register
                         </a>
                     </li>
                 </ul>
