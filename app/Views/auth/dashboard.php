@@ -25,7 +25,15 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            position: fixed;
+            font-family: 'Inter', sans-serif;
+        }
         
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -33,7 +41,24 @@
             --warning-gradient: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
         }
         
-        .sidebar { transition: all 0.3s; }
+        #sidebar-container {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 256px !important;
+            z-index: 1000 !important;
+            will-change: auto;
+            transform: translateZ(0);
+        }
+        
+        .sidebar-item {
+            transition: background-color 0.2s ease;
+        }
+        
+        .sidebar-item:hover {
+            background-color: rgba(79, 70, 229, 0.1);
+        }
         .card { transition: transform 0.2s, box-shadow 0.2s; }
         .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
         .notification-badge { 
@@ -80,13 +105,23 @@
             box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
         }
         
+        #sidebar-container {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 256px !important;
+            z-index: 1000 !important;
+            will-change: auto;
+            transform: translateZ(0);
+        }
+        
         .sidebar-item {
-            transition: all 0.2s ease;
+            transition: background-color 0.2s ease;
         }
         
         .sidebar-item:hover {
             background-color: rgba(79, 70, 229, 0.1);
-            padding-left: 1.5rem;
         }
         
         .welcome-card {
@@ -176,10 +211,10 @@
 </head>
 <body class="bg-gray-50 <?= session('role') === 'student' ? 'student-theme' : (session('role') === 'admin' ? 'admin-theme' : (session('role') === 'teacher' ? 'teacher-theme' : '')) ?>">
     <!-- Sidebar -->
-    <div class="flex h-screen overflow-hidden">
+    <div class="flex h-screen overflow-hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%;">
         <!-- Sidebar -->
-        <div class="hidden md:flex md:flex-shrink-0">
-            <div class="flex flex-col w-64 bg-white border-r border-gray-200">
+        <div id="sidebar-container" class="hidden md:flex md:flex-shrink-0">
+            <div class="flex flex-col w-full h-full bg-white border-r border-gray-200" style="overflow-y: auto;">
                 <div class="flex items-center justify-center h-16 px-4 lms-header shadow-lg">
                     <div class="flex items-center">
                         <i class="fas fa-graduation-cap text-2xl mr-3 text-white"></i>
@@ -191,49 +226,87 @@
                 </div>
                 <div class="flex flex-col flex-grow px-4 py-4 overflow-y-auto">
                     <nav class="flex-1 space-y-1">
-                        <a href="<?= base_url('dashboard') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-white bg-primary rounded-lg">
-                            <i class="w-5 h-5 mr-3 fas fa-tachometer-alt"></i>
+                        <?php 
+                        $currentPage = uri_string();
+                        $isDashboard = ($currentPage == 'dashboard' || $currentPage == 'auth/dashboard');
+                        ?>
+                        
+                        <!-- Dashboard -->
+                        <a href="<?= base_url('dashboard') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $isDashboard ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= $isDashboard ? '' : 'text-gray-500' ?> fas fa-tachometer-alt"></i>
                             Dashboard
                         </a>
+                        
                         <?php if(session('role') == 'admin'): ?>
-                            <a href="<?= base_url('users') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                                <i class="w-5 h-5 mr-3 text-gray-500 fas fa-users"></i>
+                            <!-- Admin Navigation -->
+                            <div class="mt-4 mb-2">
+                                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Management</p>
+                            </div>
+                            
+                            <a href="<?= base_url('users') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'users' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'users' ? '' : 'text-gray-500' ?> fas fa-users"></i>
                                 Manage Users
                             </a>
-                            <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                                <i class="w-5 h-5 mr-3 text-gray-500 fas fa-book"></i>
+                            
+                            <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'courses' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'courses' ? '' : 'text-gray-500' ?> fas fa-book"></i>
                                 Manage Courses
                             </a>
+                            
+                            <div class="mt-4 mb-2">
+                                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Configuration</p>
+                            </div>
+                            
+                            <a href="<?= base_url('school-setup') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'school-setup' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'school-setup' ? '' : 'text-gray-500' ?> fas fa-cog"></i>
+                                School Setup
+                            </a>
                         <?php elseif(session('role') == 'teacher'): ?>
-                            <a href="<?= base_url('my-courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                                <i class="w-5 h-5 mr-3 text-gray-500 fas fa-book-reader"></i>
+                            <div class="mt-4 mb-2">
+                                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Teaching</p>
+                            </div>
+                            
+                            <a href="<?= base_url('my-courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'my-courses' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'my-courses' ? '' : 'text-gray-500' ?> fas fa-book-reader"></i>
                                 My Courses
                             </a>
-                            <a href="<?= base_url('create-course') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                                <i class="w-5 h-5 mr-3 text-gray-500 fas fa-plus-circle"></i>
+                            
+                            <a href="<?= base_url('create-course') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'create-course' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'create-course' ? '' : 'text-gray-500' ?> fas fa-plus-circle"></i>
                                 Create Course
                             </a>
                         <?php elseif(session('role') == 'student'): ?>
-                            <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                                <i class="w-5 h-5 mr-3 text-gray-500 fas fa-book-open"></i>
+                            <div class="mt-4 mb-2">
+                                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Learning</p>
+                            </div>
+                            
+                            <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'courses' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'courses' ? '' : 'text-gray-500' ?> fas fa-book-open"></i>
                                 Browse Courses
                             </a>
-                            <a href="<?= base_url('my-courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                                <i class="w-5 h-5 mr-3 text-gray-500 fas fa-graduation-cap"></i>
+                            
+                            <a href="<?= base_url('my-courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'my-courses' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'my-courses' ? '' : 'text-gray-500' ?> fas fa-graduation-cap"></i>
                                 My Learning
                             </a>
                         <?php endif; ?>
                         
                         <hr class="my-4 border-gray-200">
                         
-                        <a href="<?= base_url('profile') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                            <i class="w-5 h-5 mr-3 text-gray-500 fas fa-user"></i>
+                        <div class="mb-2">
+                            <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
+                        </div>
+                        
+                        <a href="<?= base_url('profile') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'profile' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= $currentPage == 'profile' ? '' : 'text-gray-500' ?> fas fa-user"></i>
                             Profile
                         </a>
-                        <a href="<?= base_url('settings') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                            <i class="w-5 h-5 mr-3 text-gray-500 fas fa-cog"></i>
+                        
+                        <a href="<?= base_url('settings') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'settings' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= $currentPage == 'settings' ? '' : 'text-gray-500' ?> fas fa-cog"></i>
                             Settings
                         </a>
+                        
                         <a href="<?= base_url('logout') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50">
                             <i class="w-5 h-5 mr-3 text-red-500 fas fa-sign-out-alt"></i>
                             Logout
@@ -255,7 +328,7 @@
         </div>
 
         <!-- Main Content -->
-        <div class="flex flex-col flex-1 overflow-hidden">
+        <div class="flex flex-col flex-1 overflow-hidden" style="margin-left: 256px; width: calc(100% - 256px);">
             <!-- Top Navigation -->
             <header class="bg-white shadow-sm">
                 <div class="flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -861,11 +934,194 @@
             </div>
         <?php endif; ?>
 
-        <!-- ADMIN DASHBOARD - Recent Uploads -->
+        <!-- ADMIN DASHBOARD -->
         <?php if ($user['role'] === 'admin'): ?>
+            <!-- Statistics Cards -->
+            <div class="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
+                <div class="p-6 bg-white rounded-lg shadow stat-card border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Users</p>
+                            <p class="mt-2 text-3xl font-bold text-gray-900"><?= $totalUsers ?? 0 ?></p>
+                            <div class="mt-2 flex items-center text-xs text-gray-500">
+                                <span class="mr-3"><i class="fas fa-user-graduate mr-1"></i><?= $totalStudents ?? 0 ?> Students</span>
+                                <span class="mr-3"><i class="fas fa-chalkboard-teacher mr-1"></i><?= $totalTeachers ?? 0 ?> Teachers</span>
+                                <span><i class="fas fa-user-shield mr-1"></i><?= $totalAdmins ?? 0 ?> Admins</span>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <i class="text-2xl text-blue-600 fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="<?= base_url('users') ?>" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                            Manage Users <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-white rounded-lg shadow stat-card border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Courses</p>
+                            <p class="mt-2 text-3xl font-bold text-gray-900"><?= $totalCourses ?? 0 ?></p>
+                            <p class="mt-1 text-xs text-gray-500">Active courses in system</p>
+                        </div>
+                        <div class="p-3 bg-green-100 rounded-full">
+                            <i class="text-2xl text-green-600 fas fa-book"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="<?= base_url('courses') ?>" class="text-sm text-green-600 hover:text-green-800 font-medium">
+                            Manage Courses <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-white rounded-lg shadow stat-card border-l-4 border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Enrollments</p>
+                            <p class="mt-2 text-3xl font-bold text-gray-900"><?= $totalEnrollments ?? 0 ?></p>
+                            <p class="mt-1 text-xs text-gray-500">Student enrollments</p>
+                        </div>
+                        <div class="p-3 bg-purple-100 rounded-full">
+                            <i class="text-2xl text-purple-600 fas fa-user-check"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-white rounded-lg shadow stat-card border-l-4 border-orange-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Programs</p>
+                            <p class="mt-2 text-3xl font-bold text-gray-900"><?= $totalPrograms ?? 0 ?></p>
+                            <p class="mt-1 text-xs text-gray-500">Active programs</p>
+                        </div>
+                        <div class="p-3 bg-orange-100 rounded-full">
+                            <i class="text-2xl text-orange-600 fas fa-graduation-cap"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="<?= base_url('school-setup') ?>" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
+                            View Programs <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- School Settings Info -->
+            <?php if (!empty($activeSchoolSettings ?? [])): ?>
+            <div class="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            <i class="fas fa-calendar-alt mr-2 text-blue-600"></i>
+                            Current School Year & Semester
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 mt-3">
+                            <div>
+                                <p class="text-sm text-gray-600">School Year</p>
+                                <p class="text-lg font-bold text-gray-900"><?= esc($activeSchoolSettings['school_year']) ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Semester</p>
+                                <p class="text-lg font-bold text-gray-900"><?= esc($activeSchoolSettings['semester']) ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Start Date</p>
+                                <p class="text-base font-semibold text-gray-900"><?= date('M d, Y', strtotime($activeSchoolSettings['start_date'])) ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">End Date</p>
+                                <p class="text-base font-semibold text-gray-900"><?= date('M d, Y', strtotime($activeSchoolSettings['end_date'])) ?></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <a href="<?= base_url('school-setup') ?>" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-cog mr-2"></i>
+                            Configure
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php else: ?>
+            <div class="mb-8 p-6 bg-yellow-50 rounded-lg shadow border-l-4 border-yellow-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            <i class="fas fa-exclamation-triangle mr-2 text-yellow-600"></i>
+                            School Settings Not Configured
+                        </h3>
+                        <p class="text-sm text-gray-600">Please configure school year, semester, and dates to get started.</p>
+                    </div>
+                    <div class="ml-4">
+                        <a href="<?= base_url('school-setup') ?>" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700">
+                            <i class="fas fa-cog mr-2"></i>
+                            Setup Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Quick Actions -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-bolt mr-2 text-yellow-500"></i>
+                    Quick Actions
+                </h3>
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <a href="<?= base_url('users') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-blue-500">
+                        <div class="flex-shrink-0 p-3 bg-blue-100 rounded-lg">
+                            <i class="text-2xl text-blue-600 fas fa-user-plus"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">Add New User</p>
+                            <p class="text-xs text-gray-500">Create student/teacher</p>
+                        </div>
+                    </a>
+
+                    <a href="<?= base_url('create-course') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-green-500">
+                        <div class="flex-shrink-0 p-3 bg-green-100 rounded-lg">
+                            <i class="text-2xl text-green-600 fas fa-book-medical"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">Create Course</p>
+                            <p class="text-xs text-gray-500">Add new course</p>
+                        </div>
+                    </a>
+
+                    <a href="<?= base_url('school-setup') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-purple-500">
+                        <div class="flex-shrink-0 p-3 bg-purple-100 rounded-lg">
+                            <i class="text-2xl text-purple-600 fas fa-cog"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">School Setup</p>
+                            <p class="text-xs text-gray-500">Configure settings</p>
+                        </div>
+                    </a>
+
+                    <a href="<?= base_url('courses') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-orange-500">
+                        <div class="flex-shrink-0 p-3 bg-orange-100 rounded-lg">
+                            <i class="text-2xl text-orange-600 fas fa-tasks"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">Manage All</p>
+                            <p class="text-xs text-gray-500">Courses & Users</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent File Uploads -->
             <div class="mt-8">
                 <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-900">Recent File Uploads</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-file-upload mr-2 text-gray-500"></i>
+                        Recent File Uploads
+                    </h3>
                     <p class="mt-1 text-sm text-gray-500">All files uploaded by teachers</p>
                 </div>
                 

@@ -383,6 +383,22 @@ public function dashboard()
             $data['totalUsers']   = $userModel->countAll();
             $data['totalCourses'] = $courseModel->countAll();
             
+            // Get user counts by role
+            $data['totalStudents'] = $userModel->where('role', 'student')->countAllResults();
+            $data['totalTeachers'] = $userModel->where('role', 'teacher')->countAllResults();
+            $data['totalAdmins'] = $userModel->where('role', 'admin')->countAllResults();
+            
+            // Get enrollment count
+            $data['totalEnrollments'] = $enrollmentModel->countAllResults();
+            
+            // Get active school settings
+            $schoolSettingsModel = new \App\Models\SchoolSettingsModel();
+            $data['activeSchoolSettings'] = $schoolSettingsModel->getActiveSettings();
+            
+            // Get programs count
+            $programModel = new \App\Models\ProgramModel();
+            $data['totalPrograms'] = $programModel->where('is_active', 1)->countAllResults();
+            
             // Initialize recentUploads as empty array first
             $data['recentUploads'] = [];
             

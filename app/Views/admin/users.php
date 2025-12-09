@@ -6,6 +6,20 @@
     <title>Manage Users - LMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        dark: '#1F2937',
+                        light: '#F9FAFB',
+                    },
+                }
+            }
+        }
+    </script>
     <style>
         * {
             margin: 0;
@@ -13,45 +27,44 @@
             box-sizing: border-box;
         }
         
-        body {
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            position: fixed;
             font-family: Arial, sans-serif;
             background: #f0f0f0;
         }
         
-        .navbar {
-            background: white;
-            padding: 15px 30px;
-            border-bottom: 2px solid #ccc;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        #sidebar-container {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 256px !important;
+            z-index: 1000 !important;
+            will-change: auto;
+            transform: translateZ(0);
         }
         
-        .logo {
-            font-size: 22px;
-            font-weight: bold;
-            color: #1976d2;
+        .sidebar-item {
+            transition: background-color 0.2s ease;
         }
         
-        .nav-links {
-            display: flex;
-            gap: 20px;
+        .sidebar-item:hover {
+            background-color: rgba(79, 70, 229, 0.1);
         }
         
-        .nav-links a {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-        }
-        
-        .nav-links a:hover {
-            color: #1976d2;
+        .lms-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         
         .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
+            max-width: 100%;
+            margin: 0;
+            padding: 20px;
         }
         
         .page-header {
@@ -302,20 +315,102 @@
         }
     </style>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="logo">Student LMS</div>
-        <div class="nav-links">
-            <a href="<?= base_url('dashboard') ?>">Dashboard</a>
-            <a href="<?= base_url('users') ?>">Manage Users</a>
-            <a href="<?= base_url('courses') ?>">Manage Courses</a>
-            <a href="<?= base_url('logout') ?>">Logout</a>
+<body class="bg-gray-50">
+    <!-- Sidebar Layout -->
+    <div class="flex h-screen overflow-hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%;">
+        <!-- Sidebar -->
+        <div id="sidebar-container" class="hidden md:flex md:flex-shrink-0">
+            <div class="flex flex-col w-full h-full bg-white border-r border-gray-200" style="overflow-y: auto;">
+                <div class="flex items-center justify-center h-16 px-4 lms-header shadow-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-graduation-cap text-2xl mr-3 text-white"></i>
+                        <div>
+                            <h1 class="text-xl font-bold text-white">LearnHub</h1>
+                            <p class="text-xs text-white opacity-90">LMS Platform</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col flex-grow px-4 py-4 overflow-y-auto">
+                    <nav class="flex-1 space-y-1">
+                        <?php 
+                        $currentPage = uri_string();
+                        $isDashboard = ($currentPage == 'dashboard' || $currentPage == 'auth/dashboard');
+                        ?>
+                        
+                        <!-- Dashboard -->
+                        <a href="<?= base_url('dashboard') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $isDashboard ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= $isDashboard ? '' : 'text-gray-500' ?> fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                        
+                        <?php if(session('role') == 'admin'): ?>
+                            <!-- Admin Navigation -->
+                            <div class="mt-4 mb-2">
+                                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Management</p>
+                            </div>
+                            
+                            <a href="<?= base_url('users') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'users' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'users' ? '' : 'text-gray-500' ?> fas fa-users"></i>
+                                Manage Users
+                            </a>
+                            
+                            <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'courses' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'courses' ? '' : 'text-gray-500' ?> fas fa-book"></i>
+                                Manage Courses
+                            </a>
+                            
+                            <div class="mt-4 mb-2">
+                                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Configuration</p>
+                            </div>
+                            
+                            <a href="<?= base_url('school-setup') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'school-setup' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'school-setup' ? '' : 'text-gray-500' ?> fas fa-cog"></i>
+                                School Setup
+                            </a>
+                        <?php endif; ?>
+                        
+                        <hr class="my-4 border-gray-200">
+                        
+                        <div class="mb-2">
+                            <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
+                        </div>
+                        
+                        <a href="<?= base_url('profile') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'profile' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= $currentPage == 'profile' ? '' : 'text-gray-500' ?> fas fa-user"></i>
+                            Profile
+                        </a>
+                        
+                        <a href="<?= base_url('settings') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'settings' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= $currentPage == 'settings' ? '' : 'text-gray-500' ?> fas fa-cog"></i>
+                            Settings
+                        </a>
+                        
+                        <a href="<?= base_url('logout') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50">
+                            <i class="w-5 h-5 mr-3 text-red-500 fas fa-sign-out-alt"></i>
+                            Logout
+                        </a>
+                    </nav>
+                </div>
+                <div class="p-4 border-t border-gray-200">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <img class="w-10 h-10 rounded-full" src="https://ui-avatars.com/api/?name=<?= urlencode(session('name') ?? 'Admin') ?>" alt="<?= esc(session('name') ?? 'Admin') ?>">
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-700"><?= esc(session('name') ?? 'Admin') ?></p>
+                            <p class="text-xs text-gray-500"><?= ucfirst(esc(session('role') ?? 'admin')) ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </nav>
 
-    <div class="container">
-        <div class="page-header">
+        <!-- Main Content Area -->
+        <div class="flex flex-col flex-1 overflow-hidden" style="margin-left: 256px; width: calc(100% - 256px);">
+            <!-- Main Content -->
+            <main class="flex-1 overflow-y-auto bg-gray-50">
+                <div class="container" style="max-width: 100%; margin: 0; padding: 20px;">
+                    <div class="page-header">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h1>Manage Users</h1>
@@ -362,6 +457,7 @@
                         <th>Email</th>
                         <th>Role</th>
                         <th>Created</th>
+                        <th>Updated</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -378,6 +474,7 @@
                                     </span>
                                 </td>
                                 <td><?= !empty($u['created_at']) ? date('M j, Y', strtotime($u['created_at'])) : 'N/A' ?></td>
+                                <td><?= !empty($u['updated_at']) ? date('M j, Y g:i A', strtotime($u['updated_at'])) : 'N/A' ?></td>
                                 <td>
                                     <?php 
                                     $currentUserId = session('userID');
@@ -387,11 +484,11 @@
                                     
                                     <?php if ($u['role'] !== 'admin' || $isAdminOffline): ?>
                                         <div style="display: flex; gap: 8px;">
-                                            <button class="btn btn-edit" onclick="openEditModal(<?= $u['id'] ?>, '<?= esc($u['name']) ?>', '<?= esc($u['role']) ?>', <?= $isAdminOffline ? 'true' : 'false' ?>)">
+                                            <button class="btn btn-edit" data-user-id="<?= $u['id'] ?>" data-user-name="<?= htmlspecialchars($u['name'], ENT_QUOTES, 'UTF-8') ?>" data-user-role="<?= htmlspecialchars($u['role'], ENT_QUOTES, 'UTF-8') ?>" data-is-admin-offline="<?= $isAdminOffline ? 'true' : 'false' ?>" onclick="openEditModalFromButton(this)">
                                                 <i class="fas fa-edit"></i> Edit
                                             </button>
                                             <?php if ($u['role'] !== 'admin' || $isAdminOffline): ?>
-                                                <button class="btn btn-delete" onclick="confirmDelete(<?= $u['id'] ?>, '<?= esc($u['name']) ?>')">
+                                                <button class="btn btn-delete" data-user-id="<?= $u['id'] ?>" data-user-name="<?= htmlspecialchars($u['name'], ENT_QUOTES, 'UTF-8') ?>" onclick="confirmDeleteFromButton(this)">
                                                     <i class="fas fa-trash"></i> Delete
                                                 </button>
                                             <?php endif; ?>
@@ -406,7 +503,7 @@
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 30px; color: #666;">
+                            <td colspan="7" style="text-align: center; padding: 30px; color: #666;">
                                 No users found
                             </td>
                         </tr>
@@ -457,7 +554,7 @@
                                     </td>
                                     <td><?= !empty($du['deleted_at']) ? date('M j, Y g:i A', strtotime($du['deleted_at'])) : 'N/A' ?></td>
                                     <td>
-                                        <button class="btn btn-edit" onclick="confirmRecover(<?= $du['id'] ?>, '<?= esc($du['name']) ?>')" style="background: #28a745; border-color: #1e7e34;">
+                                        <button class="btn btn-edit" data-user-id="<?= $du['id'] ?>" data-user-name="<?= htmlspecialchars($du['name'], ENT_QUOTES, 'UTF-8') ?>" onclick="confirmRecoverFromButton(this)" style="background: #28a745; border-color: #1e7e34;">
                                             <i class="fas fa-undo"></i> Recover Account
                                         </button>
                                     </td>
@@ -532,7 +629,7 @@
                     <select id="editUserRole" name="role" required>
                         <option value="student">Student</option>
                         <option value="teacher">Teacher</option>
-                        <option value="admin" id="editAdminOption" style="display: none;">Admin</option>
+                        <option value="admin">Admin</option>
                     </select>
                 </div>
                 
@@ -640,17 +737,17 @@
             document.getElementById('editUserName').value = userName;
             document.getElementById('editUserPassword').value = ''; // Clear password field
             
-            // Show/hide admin option based on whether editing offline admin
-            const adminOption = document.getElementById('editAdminOption');
-            if (isAdminOffline) {
-                adminOption.style.display = 'block';
-            } else {
-                adminOption.style.display = 'none';
-            }
-            
             // Set the role value
             document.getElementById('editUserRole').value = currentRole;
             document.getElementById('editModal').style.display = 'block';
+        }
+
+        function openEditModalFromButton(button) {
+            const userId = button.getAttribute('data-user-id');
+            const userName = button.getAttribute('data-user-name');
+            const currentRole = button.getAttribute('data-user-role');
+            const isAdminOffline = button.getAttribute('data-is-admin-offline') === 'true';
+            openEditModal(userId, userName, currentRole, isAdminOffline);
         }
 
         function closeEditModal() {
@@ -663,6 +760,12 @@
             document.getElementById('deleteModal').style.display = 'block';
         }
 
+        function confirmDeleteFromButton(button) {
+            const userId = button.getAttribute('data-user-id');
+            const userName = button.getAttribute('data-user-name');
+            confirmDelete(userId, userName);
+        }
+
         function closeDeleteModal() {
             document.getElementById('deleteModal').style.display = 'none';
         }
@@ -671,6 +774,12 @@
             document.getElementById('recoverUserId').value = userId;
             document.getElementById('recoverUserName').textContent = userName;
             document.getElementById('recoverModal').style.display = 'block';
+        }
+
+        function confirmRecoverFromButton(button) {
+            const userId = button.getAttribute('data-user-id');
+            const userName = button.getAttribute('data-user-name');
+            confirmRecover(userId, userName);
         }
 
         function closeRecoverModal() {
@@ -710,6 +819,10 @@
             }
         }
     </script>
+                </div>
+            </main>
+        </div>
+    </div>
 </body>
 </html>
 

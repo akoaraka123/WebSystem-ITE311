@@ -65,6 +65,10 @@ $routes->get('course/(:num)/students', 'Course::getEnrolledStudents/$1');
 $routes->post('course/add-student', 'Course::addStudent');
 $routes->post('course/accept-enrollment', 'Course::acceptEnrollment');
 $routes->post('course/reject-enrollment', 'Course::rejectEnrollment');
+$routes->get('courses/getAllStudents', 'Course::getAllStudents');
+$routes->get('courses/getAllTeachers', 'Course::getAllTeachers');
+$routes->post('courses/adminEnrollStudent', 'Course::adminEnrollStudent');
+$routes->post('courses/assignTeacher', 'Course::assignTeacher');
 
 // ========================================
 // ENROLLMENT
@@ -90,6 +94,15 @@ $routes->post('notifications/mark_read/(:num)', 'Notifications::mark_as_read/$1'
 $routes->post('notifications/mark-read/(:num)', 'Notifications::mark_as_read/$1');
 $routes->get('notifications/resolve/(:num)', 'Notifications::resolve/$1');
 $routes->post('notifications/add', 'Notifications::add');
+
+// ========================================
+// SCHOOL SETUP (Admin Only)
+// ========================================
+$routes->get('school-setup', 'SchoolSetup::index');
+$routes->post('school-setup/saveSettings', 'SchoolSetup::saveSettings');
+$routes->post('school-setup/saveProgram', 'SchoolSetup::saveProgram');
+$routes->post('school-setup/deleteProgram/(:num)', 'SchoolSetup::deleteProgram/$1');
+$routes->get('school-setup/getProgram/(:num)', 'SchoolSetup::getProgram/$1');
 
 // ========================================
 // SEEDER (for testing)

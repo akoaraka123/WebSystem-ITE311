@@ -168,6 +168,43 @@
                                     <p class="mt-1 text-xs text-gray-500">Minimum 10 characters required</p>
                                 </div>
 
+                                <!-- Teacher Assignment (Admin Only) -->
+                                <?php if(session('role') == 'admin' && !empty($teachers)): ?>
+                                <div>
+                                    <label for="teacher_id" class="block text-sm font-medium text-gray-700">Assign Teacher *</label>
+                                    <select id="teacher_id" name="teacher_id" required
+                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                        <option value="">Select a teacher</option>
+                                        <?php foreach($teachers as $teacher): ?>
+                                            <option value="<?= $teacher['id'] ?>" <?= old('teacher_id') == $teacher['id'] ? 'selected' : '' ?>>
+                                                <?= esc($teacher['name']) ?> (<?= esc($teacher['email']) ?>)
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <?php if (isset($validation) && $validation->getError('teacher_id')): ?>
+                                        <p class="mt-1 text-sm text-red-600"><?= $validation->getError('teacher_id') ?></p>
+                                    <?php endif; ?>
+                                    <p class="mt-1 text-xs text-gray-500">Select the teacher who will teach this course</p>
+                                </div>
+                                <?php endif; ?>
+
+                                <!-- Program Assignment -->
+                                <?php if(!empty($programs)): ?>
+                                <div>
+                                    <label for="program_id" class="block text-sm font-medium text-gray-700">Program</label>
+                                    <select id="program_id" name="program_id"
+                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                        <option value="">Select a program (optional)</option>
+                                        <?php foreach($programs as $program): ?>
+                                            <option value="<?= $program['id'] ?>" <?= old('program_id') == $program['id'] ? 'selected' : '' ?>>
+                                                <?= esc($program['code']) ?> - <?= esc($program['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="mt-1 text-xs text-gray-500">Select the program this course belongs to (e.g., BSIT, BSBA)</p>
+                                </div>
+                                <?php endif; ?>
+
                                 <!-- Course Category -->
                                 <div>
                                     <label for="category" class="block text-sm font-medium text-gray-700">Course Category</label>
@@ -223,7 +260,7 @@
 
                             <!-- Submit Buttons -->
                             <div class="mt-8 flex justify-end space-x-3">
-                                <a href="<?= base_url('my-courses') ?>" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                <a href="<?= session('role') == 'admin' ? base_url('courses') : base_url('my-courses') ?>" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                                     Cancel
                                 </a>
                                 <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">

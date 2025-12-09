@@ -285,19 +285,10 @@ class User extends BaseController
             $isEditingOfflineAdmin = true;
         }
 
-        // Validate role based on whether editing admin or not
-        if ($isEditingOfflineAdmin) {
-            // Allow admin role when editing offline admin
-            if (!in_array($newRole, ['student', 'teacher', 'admin'])) {
-                $session->setFlashdata('error', 'Invalid role selected.');
-                return redirect()->to(base_url('users'));
-            }
-        } else {
-            // Regular users can only be student or teacher
-            if (!in_array($newRole, ['student', 'teacher'])) {
-                $session->setFlashdata('error', 'Invalid role selected.');
-                return redirect()->to(base_url('users'));
-            }
+        // Validate role - allow admin role for all users
+        if (!in_array($newRole, ['student', 'teacher', 'admin'])) {
+            $session->setFlashdata('error', 'Invalid role selected.');
+            return redirect()->to(base_url('users'));
         }
 
         // Prepare update data

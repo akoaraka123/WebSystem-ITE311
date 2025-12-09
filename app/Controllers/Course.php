@@ -101,13 +101,26 @@ class Course extends BaseController
     {
         $session = session();
         
-        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
+        if (!$session->get('isLoggedIn') || ($session->get('role') !== 'teacher' && $session->get('role') !== 'admin')) {
             return redirect()->to(base_url('dashboard'));
         }
 
+        // Get all teachers for admin to assign
+        $teachers = [];
+        if ($session->get('role') === 'admin') {
+            $userModel = new \App\Models\UserModel();
+            $teachers = $userModel->where('role', 'teacher')->findAll();
+        }
+
+        // Get all programs
+        $programModel = new \App\Models\ProgramModel();
+        $programs = $programModel->getActivePrograms();
+
         $data = [
             'title' => 'Create Course - LMS',
-            'user' => $session->get()
+            'user' => $session->get(),
+            'teachers' => $teachers,
+            'programs' => $programs
         ];
 
         return view('courses/create', $data);
@@ -116,8 +129,9 @@ class Course extends BaseController
     public function store()
     {
         $session = session();
+        $role = $session->get('role');
         
-        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
+        if (!$session->get('isLoggedIn') || ($role !== 'teacher' && $role !== 'admin')) {
             return redirect()->to(base_url('dashboard'));
         }
 
@@ -126,17 +140,48 @@ class Course extends BaseController
             'description' => 'required|min_length[10]'
         ];
 
+        // Admin must assign a teacher
+        if ($role === 'admin') {
+            $rules['teacher_id'] = 'required|integer';
+        }
+
         if ($this->validate($rules)) {
+            $teacherId = $role === 'admin' 
+                ? (int) $this->request->getPost('teacher_id')
+                : $session->get('userID');
+
+            // Verify teacher exists if admin is assigning
+            if ($role === 'admin') {
+                $userModel = new \App\Models\UserModel();
+                $teacher = $userModel->find($teacherId);
+                if (!$teacher || $teacher['role'] !== 'teacher') {
+                    $session->setFlashdata('error', 'Invalid teacher selected.');
+                    return redirect()->to(base_url('create-course'))->withInput();
+                }
+            }
+
             $data = [
                 'title' => $this->request->getPost('title'),
                 'description' => $this->request->getPost('description'),
-                'teacher_id' => $session->get('userID'),
+                'teacher_id' => $teacherId,
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
+            // Add program_id if provided
+            $programId = $this->request->getPost('program_id');
+            if (!empty($programId)) {
+                $programModel = new \App\Models\ProgramModel();
+                $program = $programModel->find($programId);
+                if ($program) {
+                    $data['program_id'] = (int) $programId;
+                }
+            }
+
             $this->courseModel->insert($data);
             $session->setFlashdata('success', 'Course created successfully!');
-            return redirect()->to(base_url('my-courses'));
+            
+            $redirectTo = $role === 'admin' ? base_url('courses') : base_url('my-courses');
+            return redirect()->to($redirectTo);
         } else {
             $session->setFlashdata('error', 'Please correct the errors below.');
             return redirect()->to(base_url('create-course'))->withInput();
@@ -161,8 +206,17 @@ class Course extends BaseController
         $data = [
             'title' => 'Edit Course - LMS',
             'course' => $course,
-            'user' => $session->get()
+            'user' => $session->get(),
+            'teachers' => [],
+            'programs' => []
         ];
+
+        // For admin users, fetch teachers and programs
+        if ($session->get('role') === 'admin') {
+            $data['teachers'] = $this->getAllTeachers();
+            $programModel = new \App\Models\ProgramModel();
+            $data['programs'] = $programModel->getAllPrograms();
+        }
 
         return view('courses/edit', $data);
     }
@@ -194,9 +248,26 @@ class Course extends BaseController
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 
+            // For admin users, allow updating teacher_id and program_id
+            if ($session->get('role') === 'admin') {
+                $teacherId = $this->request->getPost('teacher_id');
+                if (!empty($teacherId)) {
+                    $data['teacher_id'] = (int) $teacherId;
+                }
+                
+                $programId = $this->request->getPost('program_id');
+                if (!empty($programId)) {
+                    $data['program_id'] = (int) $programId;
+                } else {
+                    $data['program_id'] = null; // Allow clearing program assignment
+                }
+            }
+
             $this->courseModel->update($id, $data);
             $session->setFlashdata('success', 'Course updated successfully!');
-            return redirect()->to(base_url('my-courses'));
+            
+            $redirectTo = $session->get('role') === 'admin' ? base_url('courses') : base_url('my-courses');
+            return redirect()->to($redirectTo);
         } else {
             $session->setFlashdata('error', 'Please correct the errors below.');
             return redirect()->to(base_url('edit-course/' . $id))->withInput();
@@ -805,6 +876,201 @@ class Course extends BaseController
             ],
             'students' => $enrollments,
             'total' => count($enrollments),
+            'csrf_hash' => csrf_hash()
+        ]);
+    }
+
+    /**
+     * Admin: Enroll student to course (direct enrollment, no pending status)
+     */
+    public function adminEnrollStudent()
+    {
+        $session = session();
+        
+        // Security: only admin can directly enroll students
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $courseId = (int) $this->request->getPost('course_id');
+        $studentId = (int) $this->request->getPost('student_id');
+
+        if ($courseId <= 0 || $studentId <= 0) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Invalid course or student ID', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Verify course exists
+        $course = $this->courseModel->find($courseId);
+        if (!$course) {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Course not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Verify student exists and is actually a student
+        $userModel = new \App\Models\UserModel();
+        $student = $userModel->find($studentId);
+        if (!$student || $student['role'] !== 'student') {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Student not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Check if already enrolled
+        if ($this->enrollmentModel->isAlreadyEnrolled($studentId, $courseId)) {
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Student is already enrolled in this course', 
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // Admin can directly enroll (accepted status, no pending)
+        try {
+            $this->enrollmentModel->enrollUser([
+                'user_id' => $studentId,
+                'course_id' => $courseId,
+                'enrollment_date' => date('Y-m-d H:i:s'),
+                'status' => 'accepted'
+            ]);
+
+            // Create notifications
+            $notif = new \App\Models\NotificationModel();
+            $notif->add($studentId, 'You have been enrolled in: ' . ($course['title'] ?? 'a course'));
+            if (!empty($course['teacher_id'])) {
+                $notif->add((int)$course['teacher_id'], 'A student has been enrolled in your course: ' . ($course['title'] ?? ''));
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Student enrolled successfully',
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to enroll student: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
+    }
+
+    /**
+     * Admin: Assign or reassign teacher to course
+     */
+    public function assignTeacher()
+    {
+        $session = session();
+        
+        // Security: only admin can assign teachers
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $courseId = (int) $this->request->getPost('course_id');
+        $teacherId = (int) $this->request->getPost('teacher_id');
+
+        if ($courseId <= 0 || $teacherId <= 0) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Invalid course or teacher ID', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Verify course exists
+        $course = $this->courseModel->find($courseId);
+        if (!$course) {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Course not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Verify teacher exists and is actually a teacher
+        $userModel = new \App\Models\UserModel();
+        $teacher = $userModel->find($teacherId);
+        if (!$teacher || $teacher['role'] !== 'teacher') {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Teacher not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        try {
+            // Update course teacher
+            $this->courseModel->update($courseId, [
+                'teacher_id' => $teacherId,
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+
+            // Notify the new teacher
+            $notif = new \App\Models\NotificationModel();
+            $notif->add($teacherId, 'You have been assigned to teach: ' . ($course['title'] ?? 'a course'));
+
+            // Notify old teacher if different
+            if (!empty($course['teacher_id']) && $course['teacher_id'] != $teacherId) {
+                $notif->add((int)$course['teacher_id'], 'You have been unassigned from: ' . ($course['title'] ?? 'a course'));
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Teacher assigned successfully',
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to assign teacher: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
+    }
+
+    /**
+     * Admin: Get all students for enrollment selection
+     */
+    public function getAllStudents()
+    {
+        $session = session();
+        
+        // Security: only admin can view all students
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $userModel = new \App\Models\UserModel();
+        $students = $userModel->where('role', 'student')
+                            ->select('id, name, email')
+                            ->orderBy('name', 'ASC')
+                            ->findAll();
+
+        return $this->response->setJSON([
+            'success' => true,
+            'students' => $students,
+            'csrf_hash' => csrf_hash()
+        ]);
+    }
+
+    /**
+     * Admin: Get all teachers for assignment selection
+     */
+    public function getAllTeachers()
+    {
+        $session = session();
+        
+        // Security: only admin can view all teachers
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $userModel = new \App\Models\UserModel();
+        $teachers = $userModel->where('role', 'teacher')
+                            ->select('id, name, email')
+                            ->orderBy('name', 'ASC')
+                            ->findAll();
+
+        return $this->response->setJSON([
+            'success' => true,
+            'teachers' => $teachers,
             'csrf_hash' => csrf_hash()
         ]);
     }

@@ -27,35 +27,92 @@
         }
     </script>
     <style>
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            position: fixed;
+            background: #f0f0f0;
+        }
+        
+        #sidebar-container {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 256px !important;
+            z-index: 1000 !important;
+            will-change: auto;
+            transform: translateZ(0);
+        }
+        
+        .sidebar-item {
+            transition: background-color 0.2s ease;
+        }
+        
+        .sidebar-item:hover {
+            background-color: rgba(79, 70, 229, 0.1);
+        }
+        
+        .lms-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
     </style>
 </head>
 <body>
-    <div class="flex h-screen">
+    <div class="flex h-screen overflow-hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%;">
         <!-- Sidebar -->
-        <div class="flex w-64 flex-col bg-white shadow-lg">
-            <div class="flex items-center justify-center h-16 px-4 bg-primary">
-                <h1 class="text-xl font-bold text-white">LMS</h1>
-            </div>
-            <div class="flex flex-col flex-grow px-4 py-4 overflow-y-auto">
-                <nav class="flex-1 space-y-1">
-                    <a href="<?= base_url('dashboard') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                        <i class="w-5 h-5 mr-3 fas fa-tachometer-alt"></i>
-                        Dashboard
-                    </a>
-                    <?php if(session('role') == 'admin'): ?>
-                        <a href="<?= base_url('users') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                            <i class="w-5 h-5 mr-3 text-gray-500 fas fa-users"></i>
-                            Manage Users
+        <div id="sidebar-container" class="hidden md:flex md:flex-shrink-0">
+            <div class="flex flex-col w-full h-full bg-white border-r border-gray-200" style="overflow-y: auto;">
+                <div class="flex items-center justify-center h-16 px-4 lms-header shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="flex items-center">
+                        <i class="fas fa-graduation-cap text-2xl mr-3 text-white"></i>
+                        <div>
+                            <h1 class="text-xl font-bold text-white">LearnHub</h1>
+                            <p class="text-xs text-white opacity-90">LMS Platform</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col flex-grow px-4 py-4 overflow-y-auto">
+                    <nav class="flex-1 space-y-1">
+                        <?php 
+                        $currentPage = uri_string();
+                        $isDashboard = ($currentPage == 'dashboard' || $currentPage == 'auth/dashboard');
+                        ?>
+                        
+                        <!-- Dashboard -->
+                        <a href="<?= base_url('dashboard') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $isDashboard ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= $isDashboard ? '' : 'text-gray-500' ?> fas fa-tachometer-alt"></i>
+                            Dashboard
                         </a>
-                        <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                            <i class="w-5 h-5 mr-3 text-gray-500 fas fa-book"></i>
-                            Manage Courses
-                        </a>
-                    <?php elseif(session('role') == 'teacher'): ?>
+                        
+                        <?php if(session('role') == 'admin'): ?>
+                            <!-- Admin Navigation -->
+                            <div class="mt-4 mb-2">
+                                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Management</p>
+                            </div>
+                            
+                            <a href="<?= base_url('users') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'users' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'users' ? '' : 'text-gray-500' ?> fas fa-users"></i>
+                                Manage Users
+                            </a>
+                            
+                            <a href="<?= base_url('courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'courses' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'courses' ? '' : 'text-gray-500' ?> fas fa-book"></i>
+                                Manage Courses
+                            </a>
+                            
+                            <div class="mt-4 mb-2">
+                                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Configuration</p>
+                            </div>
+                            
+                            <a href="<?= base_url('school-setup') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'school-setup' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'school-setup' ? '' : 'text-gray-500' ?> fas fa-cog"></i>
+                                School Setup
+                            </a>
+                        <?php elseif(session('role') == 'teacher'): ?>
                         <a href="<?= base_url('my-courses') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
                             <i class="w-5 h-5 mr-3 text-gray-500 fas fa-book-reader"></i>
                             My Courses
@@ -73,28 +130,46 @@
                             <i class="w-5 h-5 mr-3 text-gray-500 fas fa-graduation-cap"></i>
                             My Learning
                         </a>
-                    <?php endif; ?>
-                    
-                    <hr class="my-4 border-gray-200">
-                    
-                    <a href="<?= base_url('profile') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                        <i class="w-5 h-5 mr-3 text-gray-500 fas fa-user"></i>
-                        Profile
-                    </a>
-                    <a href="<?= base_url('settings') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-white bg-primary rounded-lg">
-                        <i class="w-5 h-5 mr-3 fas fa-cog"></i>
-                        Settings
-                    </a>
-                    <a href="<?= base_url('logout') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50">
-                        <i class="w-5 h-5 mr-3 text-red-500 fas fa-sign-out-alt"></i>
-                        Logout
-                    </a>
-                </nav>
+                        <?php endif; ?>
+                        
+                        <hr class="my-4 border-gray-200">
+                        
+                        <div class="mb-2">
+                            <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
+                        </div>
+                        
+                        <a href="<?= base_url('profile') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'profile' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= $currentPage == 'profile' ? '' : 'text-gray-500' ?> fas fa-user"></i>
+                            Profile
+                        </a>
+                        
+                        <a href="<?= base_url('settings') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'settings' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
+                            <i class="w-5 h-5 mr-3 <?= $currentPage == 'settings' ? '' : 'text-gray-500' ?> fas fa-cog"></i>
+                            Settings
+                        </a>
+                        
+                        <a href="<?= base_url('logout') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50">
+                            <i class="w-5 h-5 mr-3 text-red-500 fas fa-sign-out-alt"></i>
+                            Logout
+                        </a>
+                    </nav>
+                </div>
+                <div class="p-4 border-t border-gray-200">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <img class="w-10 h-10 rounded-full" src="https://ui-avatars.com/api/?name=<?= urlencode(session('name') ?? 'User') ?>" alt="<?= esc(session('name') ?? 'User') ?>">
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-700"><?= esc(session('name') ?? 'User') ?></p>
+                            <p class="text-xs text-gray-500"><?= ucfirst(esc(session('role') ?? 'user')) ?></p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Main Content -->
-        <div class="flex flex-col flex-1 overflow-hidden">
+        <div class="flex flex-col flex-1 overflow-hidden" style="margin-left: 256px; width: calc(100% - 256px);">
             <!-- Top Navigation -->
             <header class="bg-white shadow-sm">
                 <div class="flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
