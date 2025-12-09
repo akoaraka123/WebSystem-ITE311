@@ -264,17 +264,36 @@ public function dashboard()
             // Teacher: show only courses assigned to them
             $myCourses = $courseModel->where('teacher_id', $userID)->findAll();
             $enrollments = [];
+            $enrollmentStats = []; // For detailed stats (accepted, pending)
             $materials = [];
 
             foreach ($myCourses as $course) {
-                // Get enrollment count for each course
-                $enrollments[$course['id']] = $enrollmentModel->where('course_id', $course['id'])->countAllResults();
+                $courseId = $course['id'];
+                
+                // Get total enrollment count (for backward compatibility)
+                $enrollments[$courseId] = $enrollmentModel->where('course_id', $courseId)->countAllResults();
+                
+                // Get detailed enrollment statistics
+                $enrollmentStats[$courseId] = [
+                    'accepted' => $enrollmentModel->where('course_id', $courseId)
+                                                 ->groupStart()
+                                                     ->where('status', 'accepted')
+                                                     ->orWhere('status IS NULL')
+                                                 ->groupEnd()
+                                                 ->countAllResults(),
+                    'pending' => $enrollmentModel->where('course_id', $courseId)
+                                                ->where('status', 'pending')
+                                                ->countAllResults(),
+                    'total' => $enrollments[$courseId]
+                ];
+                
                 // Load materials for each course
-                $materials[$course['id']] = $materialModel->getMaterialsByCourse($course['id']);
+                $materials[$courseId] = $materialModel->getMaterialsByCourse($courseId);
             }
 
             $data['myCourses'] = $myCourses;
             $data['enrollments'] = $enrollments;
+            $data['enrollmentStats'] = $enrollmentStats; // Add detailed stats
             $data['materials'] = $materials;
             break;
 
@@ -285,7 +304,14 @@ public function dashboard()
             $enrolledIDs = array_column($data['enrolled'], 'course_id');
             log_message('debug', 'Enrolled courses count: ' . count($data['enrolled']));
 
-            // Available courses: not yet enrolled
+            // Get pending enrollment requests
+            $data['pending_enrollments'] = $enrollmentModel->getPendingEnrollments($userID);
+            $pendingIDs = array_column($data['pending_enrollments'], 'course_id');
+            
+            // Combine enrolled and pending IDs to exclude from available courses
+            $allEnrolledIDs = array_merge($enrolledIDs, $pendingIDs);
+
+            // Available courses: not yet enrolled or pending
             $data['available'] = [];
             try {
                 // First, let's get all courses to see if any exist
@@ -296,9 +322,9 @@ public function dashboard()
                 $testQuery = $courseModel->findAll();
                 log_message('debug', 'Simple findAll result: ' . json_encode($testQuery));
                 
-                if (!empty($enrolledIDs)) {
+                if (!empty($allEnrolledIDs)) {
                     $data['available'] = $courseModel->select('id, title, description')
-                                                ->whereNotIn('id', $enrolledIDs)
+                                                ->whereNotIn('id', $allEnrolledIDs)
                                                 ->findAll();
                 } else {
                     $data['available'] = $allCourses;

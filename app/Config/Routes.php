@@ -54,6 +54,12 @@ $routes->get('course/(:num)', 'Course::view/$1');
 $routes->post('course/delete/(:num)', 'Course::delete/$1');
 $routes->get('courses/search', 'Course::search');
 $routes->post('courses/search', 'Course::search');
+$routes->get('course/(:num)/students/available', 'Course::getAvailableStudents/$1');
+$routes->get('course/(:num)/enrollments', 'Course::getEnrollmentDetails/$1');
+$routes->get('course/(:num)/students', 'Course::getEnrolledStudents/$1');
+$routes->post('course/add-student', 'Course::addStudent');
+$routes->post('course/accept-enrollment', 'Course::acceptEnrollment');
+$routes->post('course/reject-enrollment', 'Course::rejectEnrollment');
 
 // ========================================
 // ENROLLMENT

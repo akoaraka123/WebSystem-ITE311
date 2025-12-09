@@ -382,6 +382,58 @@
                             </div>
                         </div>
 
+                        <!-- Pending Enrollment Requests -->
+                        <?php if (!empty($pending_enrollments ?? [])): ?>
+                        <div class="mb-8">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xl font-semibold text-gray-800">Pending Enrollment Requests</h3>
+                                <span class="px-3 py-1 text-sm font-medium text-yellow-800 bg-yellow-100 rounded-full">
+                                    <span id="pendingCount"><?= count($pending_enrollments) ?></span> Pending
+                                </span>
+                            </div>
+                            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="pendingEnrollmentsContainer">
+                                <?php foreach ($pending_enrollments as $pending): ?>
+                                    <div class="overflow-hidden bg-white rounded-lg shadow border-2 border-yellow-200">
+                                        <div class="p-6">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <h3 class="text-lg font-semibold text-gray-900">
+                                                    <?= esc($pending['title'] ?? 'Untitled Course') ?>
+                                                </h3>
+                                                <span class="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded">
+                                                    Pending
+                                                </span>
+                                            </div>
+                                            
+                                            <?php if (!empty($pending['description'])): ?>
+                                                <p class="mt-2 text-sm text-gray-600">
+                                                    <?= esc($pending['description']) ?>
+                                                </p>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($pending['teacher_name'])): ?>
+                                                <p class="mt-2 text-xs text-gray-500">
+                                                    <i class="mr-1 fas fa-chalkboard-teacher"></i>
+                                                    Teacher: <?= esc($pending['teacher_name']) ?>
+                                                </p>
+                                            <?php endif; ?>
+                                            
+                                            <div class="flex gap-2 mt-4">
+                                                <button onclick="acceptEnrollment(<?= $pending['id'] ?>)" 
+                                                        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
+                                                    <i class="mr-1 fas fa-check"></i> Accept
+                                                </button>
+                                                <button onclick="rejectEnrollment(<?= $pending['id'] ?>)" 
+                                                        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
+                                                    <i class="mr-1 fas fa-times"></i> Reject
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <div class="mb-8">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-xl font-semibold text-gray-800">My Enrolled Courses</h3>
@@ -425,6 +477,15 @@
                                                         <?= esc($enrollment['description']) ?>
                                                     </p>
                                                 <?php endif; ?>
+
+                                                <!-- View Enrolled Students Button -->
+                                                <div class="mt-4 mb-4">
+                                                    <button type="button" 
+                                                            onclick="openEnrolledStudentsModal(<?= esc($enrollment['course_id']) ?>, '<?= esc($enrollment['title'], 'attr') ?>')"
+                                                            class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                        <i class="mr-2 fas fa-users"></i> View Enrolled Students
+                                                    </button>
+                                                </div>
 
                                                 <div class="mt-4 course-materials">
                                                     <h4 class="mb-2 text-sm font-medium text-gray-700">Course Materials</h4>
@@ -583,6 +644,56 @@
                 </div>
             </div>
 
+            <!-- Enrollment Statistics Summary -->
+            <?php 
+                $totalAccepted = 0;
+                $totalPending = 0;
+                $totalCourses = count($myCourses ?? []);
+                if (isset($enrollmentStats) && is_array($enrollmentStats)) {
+                    foreach ($enrollmentStats as $stats) {
+                        $totalAccepted += $stats['accepted'] ?? 0;
+                        $totalPending += $stats['pending'] ?? 0;
+                    }
+                }
+            ?>
+            <div class="grid gap-4 mb-8 md:grid-cols-3">
+                <div class="p-6 bg-white rounded-lg shadow stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Courses</p>
+                            <p class="mt-2 text-3xl font-bold text-gray-900"><?= $totalCourses ?></p>
+                        </div>
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <i class="text-2xl text-blue-600 fas fa-book"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 bg-white rounded-lg shadow stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Accepted Enrollments</p>
+                            <p class="mt-2 text-3xl font-bold text-green-600"><?= $totalAccepted ?></p>
+                            <p class="mt-1 text-xs text-gray-500">Students enrolled</p>
+                        </div>
+                        <div class="p-3 bg-green-100 rounded-full">
+                            <i class="text-2xl text-green-600 fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 bg-white rounded-lg shadow stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Pending Requests</p>
+                            <p class="mt-2 text-3xl font-bold text-yellow-600"><?= $totalPending ?></p>
+                            <p class="mt-1 text-xs text-gray-500">Awaiting acceptance</p>
+                        </div>
+                        <div class="p-3 bg-yellow-100 rounded-full">
+                            <i class="text-2xl text-yellow-600 fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">My Courses</h2>
@@ -603,9 +714,31 @@
                                     <div class="flex items-center justify-between mb-4">
                                         <h3 class="text-lg font-semibold text-gray-900"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
                                         <div class="flex items-center gap-2">
-                                            <span class="px-3 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
-                                                <?= isset($enrollments) && is_array($enrollments) ? ($enrollments[$course['id']] ?? 0) : 0 ?> Students
-                                            </span>
+                                            <!-- Enrollment Statistics -->
+                                            <div class="flex items-center gap-2">
+                                                <?php 
+                                                    $stats = isset($enrollmentStats) && is_array($enrollmentStats) ? ($enrollmentStats[$course['id']] ?? ['accepted' => 0, 'pending' => 0, 'total' => 0]) : ['accepted' => 0, 'pending' => 0, 'total' => 0];
+                                                    $acceptedCount = $stats['accepted'] ?? 0;
+                                                    $pendingCount = $stats['pending'] ?? 0;
+                                                ?>
+                                                <div class="flex flex-col gap-1">
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded" title="Accepted Enrollments">
+                                                            <i class="mr-1 fas fa-check-circle"></i><?= $acceptedCount ?> Accepted
+                                                        </span>
+                                                        <?php if ($pendingCount > 0): ?>
+                                                        <span class="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded" title="Pending Enrollments">
+                                                            <i class="mr-1 fas fa-clock"></i><?= $pendingCount ?> Pending
+                                                        </span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <?php if ($acceptedCount > 0 || $pendingCount > 0): ?>
+                                                    <div class="text-xs text-center text-gray-600 font-medium">
+                                                        Total: <?= $acceptedCount + $pendingCount ?> Students
+                                                    </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
                                             <form action="<?= base_url('course/delete/' . $course['id']) ?>" method="POST" style="display: inline;">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" 
@@ -656,12 +789,17 @@
                                         </button>
                                     </form>
 
-                                    <!-- Add Student Button -->
-                                    <div class="mb-4">
+                                    <!-- Action Buttons -->
+                                    <div class="mb-4 space-y-2">
                                         <button type="button" 
                                                 onclick="openAddStudentModal(<?= esc($course['id']) ?>, '<?= esc($course['title'], 'attr') ?>')"
                                                 class="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                                             <i class="mr-2 fas fa-user-plus"></i> Add Student
+                                        </button>
+                                        <button type="button" 
+                                                onclick="openEnrollmentDetailsModal(<?= esc($course['id']) ?>, '<?= esc($course['title'], 'attr') ?>')"
+                                                class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            <i class="mr-2 fas fa-users"></i> View Enrollments
                                         </button>
                                     </div>
 
@@ -1495,7 +1633,7 @@ $(document).ready(function() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Student added successfully!');
+                        alert('Enrollment request sent to student!');
                         // Reload the page to update student count
                         location.reload();
                     } else {
@@ -1508,8 +1646,424 @@ $(document).ready(function() {
                 });
         }
 
+        function acceptEnrollment(enrollmentId) {
+            if (!confirm('Are you sure you want to accept this enrollment request?')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('enrollment_id', enrollmentId);
+            formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+            fetch('<?= base_url('course/accept-enrollment') ?>', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Enrollment accepted successfully!');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to accept enrollment');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        }
+
+        function rejectEnrollment(enrollmentId) {
+            if (!confirm('Are you sure you want to reject this enrollment request?')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('enrollment_id', enrollmentId);
+            formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+            fetch('<?= base_url('course/reject-enrollment') ?>', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Enrollment request rejected.');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to reject enrollment');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        }
+
+        // Enrollment Details Modal Functions
+        function openEnrollmentDetailsModal(courseId, courseTitle) {
+            document.getElementById('enrollmentDetailsModal').classList.remove('hidden');
+            document.getElementById('enrollmentCourseTitle').textContent = courseTitle;
+            
+            // Show loading
+            document.getElementById('enrollmentLoading').classList.remove('hidden');
+            document.getElementById('enrollmentContent').classList.add('hidden');
+            document.getElementById('enrollmentError').classList.add('hidden');
+            
+            // Fetch enrollment details
+            fetch('<?= base_url('course/') ?>' + courseId + '/enrollments')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('enrollmentLoading').classList.add('hidden');
+                    
+                    if (data.success) {
+                        renderEnrollmentDetails(data);
+                        document.getElementById('enrollmentContent').classList.remove('hidden');
+                    } else {
+                        document.getElementById('enrollmentError').classList.remove('hidden');
+                        document.getElementById('enrollmentError').textContent = data.message || 'Failed to load enrollment details';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('enrollmentLoading').classList.add('hidden');
+                    document.getElementById('enrollmentError').classList.remove('hidden');
+                    document.getElementById('enrollmentError').textContent = 'Failed to load enrollment details. Please try again.';
+                });
+        }
+
+        function renderEnrollmentDetails(data) {
+            const summary = data.summary;
+            const enrollments = data.enrollments;
+            
+            // Update summary
+            document.getElementById('enrollmentSummary').innerHTML = `
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div class="text-center p-3 bg-green-50 rounded">
+                        <div class="text-2xl font-bold text-green-600">${summary.accepted}</div>
+                        <div class="text-xs text-gray-600">Accepted</div>
+                    </div>
+                    <div class="text-center p-3 bg-yellow-50 rounded">
+                        <div class="text-2xl font-bold text-yellow-600">${summary.pending}</div>
+                        <div class="text-xs text-gray-600">Pending</div>
+                    </div>
+                    <div class="text-center p-3 bg-red-50 rounded">
+                        <div class="text-2xl font-bold text-red-600">${summary.rejected}</div>
+                        <div class="text-xs text-gray-600">Rejected</div>
+                    </div>
+                </div>
+            `;
+            
+            // Render accepted students
+            const acceptedContainer = document.getElementById('acceptedStudentsList');
+            if (enrollments.accepted.length > 0) {
+                acceptedContainer.innerHTML = enrollments.accepted.map(enrollment => `
+                    <div class="flex items-center justify-between p-3 bg-green-50 rounded-md mb-2">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">${enrollment.student_name}</p>
+                            <p class="text-xs text-gray-500">${enrollment.student_email}</p>
+                            <p class="text-xs text-gray-400 mt-1">
+                                <i class="far fa-clock mr-1"></i>
+                                ${new Date(enrollment.enrollment_date).toLocaleString()}
+                            </p>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium text-green-800 bg-green-200 rounded">
+                            <i class="fas fa-check-circle mr-1"></i>Accepted
+                        </span>
+                    </div>
+                `).join('');
+            } else {
+                acceptedContainer.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No accepted enrollments yet.</p>';
+            }
+            
+            // Render pending students
+            const pendingContainer = document.getElementById('pendingStudentsList');
+            if (enrollments.pending.length > 0) {
+                pendingContainer.innerHTML = enrollments.pending.map(enrollment => `
+                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-md mb-2">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">${enrollment.student_name}</p>
+                            <p class="text-xs text-gray-500">${enrollment.student_email}</p>
+                            <p class="text-xs text-gray-400 mt-1">
+                                <i class="far fa-clock mr-1"></i>
+                                ${new Date(enrollment.enrollment_date).toLocaleString()}
+                            </p>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
+                            <i class="fas fa-clock mr-1"></i>Pending
+                        </span>
+                    </div>
+                `).join('');
+            } else {
+                pendingContainer.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No pending enrollments.</p>';
+            }
+            
+            // Render rejected students
+            const rejectedContainer = document.getElementById('rejectedStudentsList');
+            if (enrollments.rejected.length > 0) {
+                rejectedContainer.innerHTML = enrollments.rejected.map(enrollment => `
+                    <div class="flex items-center justify-between p-3 bg-red-50 rounded-md mb-2">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">${enrollment.student_name}</p>
+                            <p class="text-xs text-gray-500">${enrollment.student_email}</p>
+                            <p class="text-xs text-gray-400 mt-1">
+                                <i class="far fa-clock mr-1"></i>
+                                ${new Date(enrollment.enrollment_date).toLocaleString()}
+                            </p>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium text-red-800 bg-red-200 rounded">
+                            <i class="fas fa-times-circle mr-1"></i>Rejected
+                        </span>
+                    </div>
+                `).join('');
+            } else {
+                rejectedContainer.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No rejected enrollments.</p>';
+            }
+        }
+
+        function closeEnrollmentDetailsModal() {
+            document.getElementById('enrollmentDetailsModal').classList.add('hidden');
+            document.getElementById('enrollmentContent').classList.add('hidden');
+            document.getElementById('enrollmentError').classList.add('hidden');
+        }
+
         // Modal backdrop already handles closing via onclick attribute
     </script>
+
+    <!-- Enrollment Details Modal -->
+    <div id="enrollmentDetailsModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="enrollment-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true" onclick="closeEnrollmentDetailsModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4" id="enrollment-modal-title">
+                                Enrollment Details
+                            </h3>
+                            <p class="text-sm text-gray-500 mb-4" id="enrollmentCourseTitle"></p>
+                            
+                            <!-- Loading State -->
+                            <div id="enrollmentLoading" class="text-center py-8">
+                                <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+                                <p class="text-sm text-gray-500 mt-2">Loading enrollment details...</p>
+                            </div>
+                            
+                            <!-- Error State -->
+                            <div id="enrollmentError" class="hidden text-center py-4 text-red-600"></div>
+                            
+                            <!-- Content -->
+                            <div id="enrollmentContent" class="hidden">
+                                <!-- Summary -->
+                                <div id="enrollmentSummary" class="mb-6"></div>
+                                
+                                <!-- Tabs -->
+                                <div class="border-b border-gray-200 mb-4">
+                                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                                        <button onclick="showEnrollmentTab('accepted')" 
+                                                class="enrollment-tab active border-b-2 border-green-500 py-2 px-1 text-sm font-medium text-green-600" 
+                                                data-tab="accepted">
+                                            Accepted
+                                        </button>
+                                        <button onclick="showEnrollmentTab('pending')" 
+                                                class="enrollment-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-yellow-600 hover:border-yellow-300" 
+                                                data-tab="pending">
+                                            Pending
+                                        </button>
+                                        <button onclick="showEnrollmentTab('rejected')" 
+                                                class="enrollment-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-red-600 hover:border-red-300" 
+                                                data-tab="rejected">
+                                            Rejected
+                                        </button>
+                                    </nav>
+                                </div>
+                                
+                                <!-- Tab Content -->
+                                <div class="max-h-96 overflow-y-auto">
+                                    <div id="acceptedTab" class="enrollment-tab-content">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-3">Accepted Students</h4>
+                                        <div id="acceptedStudentsList"></div>
+                                    </div>
+                                    <div id="pendingTab" class="enrollment-tab-content hidden">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-3">Pending Requests</h4>
+                                        <div id="pendingStudentsList"></div>
+                                    </div>
+                                    <div id="rejectedTab" class="enrollment-tab-content hidden">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-3">Rejected Requests</h4>
+                                        <div id="rejectedStudentsList"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeEnrollmentDetailsModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching for enrollment details
+        function showEnrollmentTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.enrollment-tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.enrollment-tab').forEach(tab => {
+                tab.classList.remove('active', 'border-green-500', 'text-green-600', 'border-yellow-500', 'text-yellow-600', 'border-red-500', 'text-red-600');
+                tab.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            
+            // Add active class to selected tab with appropriate color
+            const activeTab = document.querySelector(`.enrollment-tab[data-tab="${tabName}"]`);
+            if (activeTab) {
+                activeTab.classList.remove('border-transparent', 'text-gray-500');
+                if (tabName === 'accepted') {
+                    activeTab.classList.add('active', 'border-green-500', 'text-green-600');
+                } else if (tabName === 'pending') {
+                    activeTab.classList.add('active', 'border-yellow-500', 'text-yellow-600');
+                } else if (tabName === 'rejected') {
+                    activeTab.classList.add('active', 'border-red-500', 'text-red-600');
+                }
+            }
+        }
+
+        // Enrolled Students Modal Functions (for students)
+        function openEnrolledStudentsModal(courseId, courseTitle) {
+            document.getElementById('enrolledStudentsModal').classList.remove('hidden');
+            document.getElementById('enrolledStudentsCourseTitle').textContent = courseTitle;
+            
+            // Show loading
+            document.getElementById('enrolledStudentsLoading').classList.remove('hidden');
+            document.getElementById('enrolledStudentsContent').classList.add('hidden');
+            document.getElementById('enrolledStudentsError').classList.add('hidden');
+            
+            // Fetch enrolled students
+            fetch('<?= base_url('course/') ?>' + courseId + '/students')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('enrolledStudentsLoading').classList.add('hidden');
+                    
+                    if (data.success) {
+                        renderEnrolledStudents(data);
+                        document.getElementById('enrolledStudentsContent').classList.remove('hidden');
+                    } else {
+                        document.getElementById('enrolledStudentsError').classList.remove('hidden');
+                        document.getElementById('enrolledStudentsError').textContent = data.message || 'Failed to load enrolled students';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('enrolledStudentsLoading').classList.add('hidden');
+                    document.getElementById('enrolledStudentsError').classList.remove('hidden');
+                    document.getElementById('enrolledStudentsError').textContent = 'Failed to load enrolled students. Please try again.';
+                });
+        }
+
+        function renderEnrolledStudents(data) {
+            const students = data.students;
+            const total = data.total;
+            
+            // Update summary
+            document.getElementById('enrolledStudentsSummary').innerHTML = `
+                <div class="text-center p-4 bg-blue-50 rounded-lg mb-4">
+                    <div class="text-2xl font-bold text-blue-600">${total}</div>
+                    <div class="text-sm text-gray-600">Total Enrolled Students</div>
+                </div>
+            `;
+            
+            // Render students list
+            const studentsContainer = document.getElementById('enrolledStudentsList');
+            if (students.length > 0) {
+                studentsContainer.innerHTML = students.map((student, index) => `
+                    <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 border border-gray-200">
+                        <div class="flex items-center flex-1">
+                            <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <span class="text-blue-600 font-semibold">${index + 1}</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900">${student.student_name}</p>
+                                <p class="text-xs text-gray-500">${student.student_email}</p>
+                                <p class="text-xs text-gray-400 mt-1">
+                                    <i class="far fa-calendar mr-1"></i>
+                                    Enrolled: ${new Date(student.enrollment_date).toLocaleDateString()}
+                                </p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                            <i class="fas fa-check-circle mr-1"></i>Enrolled
+                        </span>
+                    </div>
+                `).join('');
+            } else {
+                studentsContainer.innerHTML = '<p class="text-sm text-gray-500 text-center py-8">No enrolled students found.</p>';
+            }
+        }
+
+        function closeEnrolledStudentsModal() {
+            document.getElementById('enrolledStudentsModal').classList.add('hidden');
+            document.getElementById('enrolledStudentsContent').classList.add('hidden');
+            document.getElementById('enrolledStudentsError').classList.add('hidden');
+        }
+    </script>
+
+    <!-- Enrolled Students Modal (for students) -->
+    <div id="enrolledStudentsModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="enrolled-students-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true" onclick="closeEnrolledStudentsModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4" id="enrolled-students-modal-title">
+                                Enrolled Students
+                            </h3>
+                            <p class="text-sm text-gray-500 mb-4" id="enrolledStudentsCourseTitle"></p>
+                            
+                            <!-- Loading State -->
+                            <div id="enrolledStudentsLoading" class="text-center py-8">
+                                <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+                                <p class="text-sm text-gray-500 mt-2">Loading enrolled students...</p>
+                            </div>
+                            
+                            <!-- Error State -->
+                            <div id="enrolledStudentsError" class="hidden text-center py-4 text-red-600"></div>
+                            
+                            <!-- Content -->
+                            <div id="enrolledStudentsContent" class="hidden">
+                                <!-- Summary -->
+                                <div id="enrolledStudentsSummary" class="mb-4"></div>
+                                
+                                <!-- Students List -->
+                                <div class="max-h-96 overflow-y-auto">
+                                    <h4 class="text-sm font-medium text-gray-700 mb-3">Classmates</h4>
+                                    <div id="enrolledStudentsList"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeEnrolledStudentsModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

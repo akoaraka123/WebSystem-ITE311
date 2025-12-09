@@ -47,6 +47,8 @@ use PhpCsFixer\Tokenizer\Analyzer\NamespacesAnalyzer;
  *
  * @final
  *
+ * @TODO 4.0: mark as final
+ *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise.
  */
 class Tokens extends \SplFixedArray
@@ -567,7 +569,7 @@ class Tokens extends \SplFixedArray
             $elements[$kind] = [];
         }
 
-        $possibleKinds = array_filter($possibleKinds, fn ($kind): bool => $this->isTokenKindFound($kind));
+        $possibleKinds = array_values(array_filter($possibleKinds, fn ($kind): bool => $this->isTokenKindFound($kind)));
 
         if (\count($possibleKinds) > 0) {
             for ($i = $start; $i < $end; ++$i) {
