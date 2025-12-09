@@ -169,6 +169,155 @@ public function login()
         return redirect()->to(base_url('login'));
     }
 
+    // 4) FORGOT PASSWORD
+    public function forgotPassword()
+    {
+        $session = \Config\Services::session();
+        
+        // Redirect if already logged in
+        if ($session->get('isLoggedIn')) {
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        if ($this->request->getMethod() === 'POST') {
+            $rules = [
+                'email' => 'required|valid_email'
+            ];
+
+            if (!$this->validate($rules)) {
+                $session->setFlashdata('error', 'Please enter a valid email address.');
+                return redirect()->back()->withInput();
+            }
+
+            $email = $this->request->getPost('email');
+            $userModel = new \App\Models\UserModel();
+            $user = $userModel->where('email', $email)->first();
+
+            // Always show success message for security (don't reveal if email exists)
+            if ($user) {
+                // Generate reset token
+                $resetToken = bin2hex(random_bytes(32));
+                $resetTokenExpires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+                // Save token to database
+                $userModel->update($user['id'], [
+                    'reset_token' => $resetToken,
+                    'reset_token_expires' => $resetTokenExpires
+                ]);
+
+                // Send reset email
+                $emailService = \Config\Services::email();
+                $resetLink = base_url('reset-password/' . $resetToken);
+                
+                $emailService->setFrom('noreply@lms.com', 'LMS System');
+                $emailService->setTo($email);
+                $emailService->setSubject('Password Reset Request');
+                $emailService->setMessage('Hello ' . $user['name'] . ',
+
+You requested to reset your password. Click the link below to reset your password:
+
+' . $resetLink . '
+
+This link will expire in 1 hour.
+
+If you did not request this password reset, please ignore this email.
+
+Best regards,
+LMS Team');
+
+                // Try to send email (don't fail if email sending fails)
+                try {
+                    $emailService->send();
+                } catch (\Exception $e) {
+                    log_message('error', 'Failed to send password reset email: ' . $e->getMessage());
+                }
+            }
+
+            $session->setFlashdata('success', 'If an account with that email exists, a password reset link has been sent.');
+            return redirect()->to(base_url('forgot-password'));
+        }
+
+        return view('auth/forgot_password');
+    }
+
+    // 5) RESET PASSWORD
+    public function resetPassword($token = null)
+    {
+        $session = \Config\Services::session();
+        
+        // Redirect if already logged in
+        if ($session->get('isLoggedIn')) {
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        // Get token from URL or POST
+        if (!$token) {
+            $token = $this->request->getPost('token');
+        }
+
+        if (!$token) {
+            $session->setFlashdata('error', 'Invalid reset token.');
+            return redirect()->to(base_url('forgot-password'));
+        }
+
+        $userModel = new \App\Models\UserModel();
+        $user = $userModel->where('reset_token', $token)->first();
+
+        // Check if token exists and is not expired
+        if (!$user) {
+            $session->setFlashdata('error', 'Invalid or expired reset token.');
+            return redirect()->to(base_url('forgot-password'));
+        }
+
+        if (empty($user['reset_token_expires']) || strtotime($user['reset_token_expires']) < time()) {
+            $session->setFlashdata('error', 'Reset token has expired. Please request a new one.');
+            // Clear expired token
+            $userModel->update($user['id'], [
+                'reset_token' => null,
+                'reset_token_expires' => null
+            ]);
+            return redirect()->to(base_url('forgot-password'));
+        }
+
+        // Handle password reset form submission
+        if ($this->request->getMethod() === 'POST') {
+            $rules = [
+                'password' => 'required|min_length[8]|regex_match[/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/]',
+                'password_confirm' => 'required|matches[password]'
+            ];
+
+            $messages = [
+                'password' => [
+                    'min_length' => 'Password must be at least 8 characters long.',
+                    'regex_match' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).'
+                ],
+                'password_confirm' => [
+                    'matches' => 'Password confirmation does not match.'
+                ]
+            ];
+
+            if (!$this->validate($rules, $messages)) {
+                $session->setFlashdata('errors', $this->validator->getErrors());
+                return redirect()->back()->withInput();
+            }
+
+            // Update password and clear reset token
+            $newPassword = $this->request->getPost('password');
+            $userModel->update($user['id'], [
+                'password' => $newPassword, // UserModel will hash it automatically
+                'reset_token' => null,
+                'reset_token_expires' => null
+            ]);
+
+            $session->setFlashdata('success', 'Your password has been reset successfully. Please login with your new password.');
+            return redirect()->to(base_url('login'));
+        }
+
+        // Show reset password form
+        $data = ['token' => $token];
+        return view('auth/reset_password', $data);
+    }
+
 // ================================
 // DASHBOARD 
 // ================================

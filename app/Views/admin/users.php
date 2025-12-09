@@ -321,9 +321,19 @@
                     <h1>Manage Users</h1>
                     <p>View and manage all registered users in the system</p>
                 </div>
-                <button class="btn btn-edit" onclick="openAddModal()" style="margin-top: 0;">
-                    <i class="fas fa-plus"></i> Add New User
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-edit" onclick="toggleDeletedAccounts()" style="background: #ffc107; border-color: #ff9800; color: #856404;">
+                        <i class="fas fa-trash-restore"></i> Recovery Account
+                        <?php if (!empty($deletedUsers)): ?>
+                            <span style="background: #d32f2f; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 5px;">
+                                <?= count($deletedUsers) ?>
+                            </span>
+                        <?php endif; ?>
+                    </button>
+                    <button class="btn btn-edit" onclick="openAddModal()" style="margin-top: 0;">
+                        <i class="fas fa-plus"></i> Add New User
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -403,6 +413,101 @@
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Deleted Accounts Section -->
+        <div id="deletedAccountsSection" style="margin-top: 30px; display: none;">
+            <?php if (!empty($deletedUsers)): ?>
+                <div class="page-header" style="background: #fff3cd; border-color: #ffc107;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h1 style="color: #856404;">
+                                <i class="fas fa-trash-restore"></i> Deleted Accounts
+                            </h1>
+                            <p style="color: #856404;">Recover deleted accounts here</p>
+                        </div>
+                        <button class="btn btn-cancel" onclick="toggleDeletedAccounts()" style="background: #6c757d; border-color: #5a6268;">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                </div>
+
+                <div class="users-table" style="border-color: #ffc107;">
+                    <table>
+                        <thead style="background: #ffc107; color: #856404;">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Deleted On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($deletedUsers as $du): ?>
+                                <tr style="background: #fff9e6;">
+                                    <td><?= esc($du['id']) ?></td>
+                                    <td><?= esc($du['name']) ?></td>
+                                    <td><?= esc($du['email']) ?></td>
+                                    <td>
+                                        <span class="badge badge-<?= esc($du['role']) ?>">
+                                            <?= strtoupper(esc($du['role'])) ?>
+                                        </span>
+                                    </td>
+                                    <td><?= !empty($du['deleted_at']) ? date('M j, Y g:i A', strtotime($du['deleted_at'])) : 'N/A' ?></td>
+                                    <td>
+                                        <button class="btn btn-edit" onclick="confirmRecover(<?= $du['id'] ?>, '<?= esc($du['name']) ?>')" style="background: #28a745; border-color: #1e7e34;">
+                                            <i class="fas fa-undo"></i> Recover Account
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="users-table" style="border-color: #ffc107; padding: 40px; text-align: center;">
+                    <p style="color: #856404; font-size: 16px;">
+                        <i class="fas fa-check-circle" style="font-size: 48px; color: #28a745; margin-bottom: 15px; display: block;"></i>
+                        No deleted accounts to recover.
+                    </p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Recover Account Confirmation Modal -->
+    <div id="recoverModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeRecoverModal()">&times;</span>
+                <h2>Recover Account</h2>
+            </div>
+            <div style="padding: 20px 0;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <i class="fas fa-undo" style="font-size: 48px; color: #28a745; margin-bottom: 15px;"></i>
+                    <p style="font-size: 16px; color: #333; margin-bottom: 10px;">
+                        <strong>Are you sure you want to recover this account?</strong>
+                    </p>
+                    <p style="font-size: 14px; color: #666; margin-bottom: 5px;">
+                        User: <strong id="recoverUserName"></strong>
+                    </p>
+                    <p style="font-size: 13px; color: #28a745; font-weight: bold;">
+                        ✅ This will restore the account and allow the user to login again.
+                    </p>
+                </div>
+                <form id="recoverUserForm" method="POST" action="<?= base_url('users/recover') ?>">
+                    <?= csrf_field() ?>
+                    <input type="hidden" id="recoverUserId" name="user_id">
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-cancel" onclick="closeRecoverModal()">Cancel</button>
+                        <button type="submit" class="btn btn-save" style="background: #28a745; border-color: #1e7e34;">
+                            <i class="fas fa-undo"></i> Yes, Recover Account
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -502,8 +607,8 @@
                     <p style="font-size: 14px; color: #666; margin-bottom: 5px;">
                         User: <strong id="deleteUserName"></strong>
                     </p>
-                    <p style="font-size: 13px; color: #d32f2f; font-weight: bold;">
-                        ⚠️ This action cannot be undone!
+                    <p style="font-size: 13px; color: #666; font-weight: bold;">
+                        ℹ️ Account can be recovered from the Deleted Accounts section below.
                     </p>
                 </div>
                 <form id="deleteUserForm" method="POST" action="<?= base_url('users/delete') ?>">
@@ -562,11 +667,35 @@
             document.getElementById('deleteModal').style.display = 'none';
         }
 
+        function confirmRecover(userId, userName) {
+            document.getElementById('recoverUserId').value = userId;
+            document.getElementById('recoverUserName').textContent = userName;
+            document.getElementById('recoverModal').style.display = 'block';
+        }
+
+        function closeRecoverModal() {
+            document.getElementById('recoverModal').style.display = 'none';
+        }
+
+        function toggleDeletedAccounts() {
+            const section = document.getElementById('deletedAccountsSection');
+            if (section) {
+                if (section.style.display === 'none') {
+                    section.style.display = 'block';
+                    // Scroll to the section
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    section.style.display = 'none';
+                }
+            }
+        }
+
         // Close modals when clicking outside
         window.onclick = function(event) {
             const editModal = document.getElementById('editModal');
             const addModal = document.getElementById('addModal');
             const deleteModal = document.getElementById('deleteModal');
+            const recoverModal = document.getElementById('recoverModal');
             if (event.target == editModal) {
                 closeEditModal();
             }
@@ -575,6 +704,9 @@
             }
             if (event.target == deleteModal) {
                 closeDeleteModal();
+            }
+            if (event.target == recoverModal) {
+                closeRecoverModal();
             }
         }
     </script>

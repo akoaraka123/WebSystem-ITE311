@@ -23,6 +23,7 @@ class User extends BaseController
             return redirect()->to(base_url('dashboard'));
         }
 
+        // Get active users (not deleted)
         $users = $this->userModel->findAll();
         $currentUserId = $session->get('userID');
         
@@ -31,9 +32,13 @@ class User extends BaseController
             $user['is_online'] = $this->isUserOnline($user['id'], $currentUserId);
         }
 
+        // Get deleted users for recovery
+        $deletedUsers = $this->userModel->onlyDeleted()->findAll();
+
         $data = [
             'title' => 'Manage Users - LMS',
             'users' => $users,
+            'deletedUsers' => $deletedUsers,
             'user' => $session->get()
         ];
 
@@ -358,10 +363,50 @@ class User extends BaseController
             // Admin is offline, allow deletion
         }
 
-        // Delete the user
+        // Delete the user (soft delete)
         $this->userModel->delete($userId);
         
-        $session->setFlashdata('success', 'User deleted successfully!');
+        $session->setFlashdata('success', 'User deleted successfully! Account can be recovered from the deleted accounts section.');
+        return redirect()->to(base_url('users'));
+    }
+
+    public function recoverAccount()
+    {
+        $session = session();
+        
+        // Check if user is logged in and is admin
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            $session->setFlashdata('error', 'Unauthorized access.');
+            return redirect()->to(base_url('dashboard'));
+        }
+
+        $userId = (int) $this->request->getPost('user_id');
+
+        if (!$userId) {
+            $session->setFlashdata('error', 'Invalid user ID.');
+            return redirect()->to(base_url('users'));
+        }
+
+        // Get the deleted user
+        $user = $this->userModel->withDeleted()->find($userId);
+        
+        if (!$user) {
+            $session->setFlashdata('error', 'User not found.');
+            return redirect()->to(base_url('users'));
+        }
+
+        // Check if user is actually deleted
+        if (empty($user['deleted_at'])) {
+            $session->setFlashdata('error', 'This account is not deleted.');
+            return redirect()->to(base_url('users'));
+        }
+
+        // Restore the user (remove deleted_at)
+        $this->userModel->withDeleted()->update($userId, [
+            'deleted_at' => null
+        ]);
+        
+        $session->setFlashdata('success', 'Account recovered successfully! User: ' . $user['name']);
         return redirect()->to(base_url('users'));
     }
 }

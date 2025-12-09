@@ -22,6 +22,10 @@ $routes->post('register', 'Auth::register');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::login', ['filter' => 'ratelimit']);
 $routes->get('logout', 'Auth::logout');
+$routes->get('forgot-password', 'Auth::forgotPassword');
+$routes->post('forgot-password', 'Auth::forgotPassword');
+$routes->get('reset-password/(:segment)', 'Auth::resetPassword/$1');
+$routes->post('reset-password', 'Auth::resetPassword');
 
 // ========================================
 // DASHBOARD
@@ -36,6 +40,7 @@ $routes->get('users', 'User::index');
 $routes->post('users/create', 'User::create');
 $routes->post('users/update', 'User::update');
 $routes->post('users/delete', 'User::delete');
+$routes->post('users/recover', 'User::recoverAccount');
 $routes->get('profile', 'User::profile');
 $routes->post('profile', 'User::updateProfile');
 $routes->get('settings', 'User::settings');
