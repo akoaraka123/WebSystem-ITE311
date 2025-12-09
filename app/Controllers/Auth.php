@@ -39,22 +39,17 @@ class Auth extends BaseController
             }
             
             // If validation passes, proceed with registration
-            {
-                $db->table('users')->insert([
-                    'name'       => $this->request->getPost('name'),
-                    'email'      => $this->request->getPost('email'),
-                    'password'   => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
-                    'role'       => $this->request->getPost('role') ?: 'user', // use role from form or default
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s')
-                ]);
+            $db->table('users')->insert([
+                'name'       => $this->request->getPost('name'),
+                'email'      => $this->request->getPost('email'),
+                'password'   => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
+                'role'       => $this->request->getPost('role') ?: 'user', // use role from form or default
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
 
-                $session->setFlashdata('success', 'Registration successful! Please login.');
-                return redirect()->to(base_url('login'));
-            }
-
-            $session->setFlashdata('errors', $validation->getErrors());
-            return redirect()->back()->withInput();
+            $session->setFlashdata('success', 'Registration successful! Please login.');
+            return redirect()->to(base_url('login'));
         }
 
         return view('auth/register');

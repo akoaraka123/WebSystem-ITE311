@@ -7,6 +7,7 @@ use CodeIgniter\HTTP\CLIRequest;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
+use CodeIgniter\HTTP\Exceptions\RedirectException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -54,5 +55,49 @@ abstract class BaseController extends Controller
         // Preload any models, libraries, etc, here.
 
         // E.g.: $this->session = service('session');
+        
+        // Check if logged-in user still exists in database (not soft-deleted)
+        $this->checkUserExists();
+    }
+
+    /**
+     * Check if the logged-in user still exists in the database
+     * If user is soft-deleted, automatically log them out
+     */
+    protected function checkUserExists()
+    {
+        $session = \Config\Services::session();
+        
+        // Only check if user is logged in
+        if (!$session->get('isLoggedIn')) {
+            return;
+        }
+
+        $userID = $session->get('userID');
+        
+        // If no userID in session, something is wrong
+        if (!$userID) {
+            $session->destroy();
+            return;
+        }
+
+        // Check if user still exists in database (not soft-deleted)
+        $userModel = new \App\Models\UserModel();
+        
+        // find() with soft deletes enabled will return null if deleted
+        $user = $userModel->find($userID);
+        
+        // If user doesn't exist or is soft-deleted, log them out
+        if (!$user) {
+            $session->setFlashdata('error', 'Your account has been removed. You have been logged out.');
+            $session->destroy();
+            
+            // Redirect to login if not already on login page
+            $currentUri = uri_string();
+            if ($currentUri !== 'login' && strpos($currentUri, 'login') === false) {
+                // Throw RedirectException which CodeIgniter will handle properly
+                throw new RedirectException(redirect()->to(base_url('login')));
+            }
+        }
     }
 }
