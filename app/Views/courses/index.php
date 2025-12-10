@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <script>
         tailwind.config = {
             theme: {
@@ -122,6 +124,30 @@
 
         body.student-shell .bg-primary {
             background: #1976d2 !important;
+        }
+
+        /* Select2 in Modal Fixes */
+        .select2-container {
+            z-index: 9999 !important;
+        }
+        
+        .select2-dropdown {
+            z-index: 9999 !important;
+        }
+        
+        .select2-search__field {
+            width: 100% !important;
+            padding: 8px !important;
+        }
+        
+        .select2-results__option {
+            padding: 8px 12px !important;
+            cursor: pointer !important;
+        }
+        
+        .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: white !important;
         }
     </style>
 </head>
@@ -470,6 +496,7 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(function () {
             const searchEndpoint = '<?= base_url('courses/search') ?>';
@@ -647,24 +674,59 @@
             $('#assignTeacherCourseId').val(courseId);
             $('#assignTeacherCourseTitle').text(courseTitle);
             
+            // Reset the select
+            const select = $('#assignTeacherSelect');
+            select.empty();
+            select.append('<option value="">Loading teachers...</option>');
+            
+            // Destroy existing Select2 instance if it exists
+            if (select.hasClass('select2-hidden-accessible')) {
+                select.select2('destroy');
+            }
+            
+            // Show modal first
+            $('#assignTeacherModal').modal('show');
+            
             // Load teachers via AJAX
             $.get('<?= base_url('courses/getAllTeachers') ?>', function(response) {
                 if (response.success) {
-                    const select = $('#assignTeacherSelect');
                     select.empty();
                     select.append('<option value="">Select a teacher</option>');
                     response.teachers.forEach(function(teacher) {
                         const selected = teacher.id == currentTeacherId ? 'selected' : '';
                         select.append(`<option value="${teacher.id}" ${selected}>${teacher.name} (${teacher.email})</option>`);
                     });
+                    
+                    // Initialize Select2 with search functionality
+                    select.select2({
+                        theme: 'bootstrap-5',
+                        placeholder: 'Search for a teacher...',
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $('#assignTeacherModal'),
+                        minimumResultsForSearch: 0, // Always show search box
+                        language: {
+                            noResults: function() {
+                                return "No teachers found";
+                            },
+                            searching: function() {
+                                return "Searching...";
+                            }
+                        }
+                    });
+                    
+                    // Ensure search field is focusable and clickable
+                    select.on('select2:open', function() {
+                        setTimeout(function() {
+                            $('.select2-search__field').focus();
+                        }, 100);
+                    });
                 } else {
-                    $('#assignTeacherSelect').html('<option value="">Error loading teachers</option>');
+                    select.html('<option value="">Error loading teachers</option>');
                 }
             }).fail(function() {
-                $('#assignTeacherSelect').html('<option value="">Error loading teachers. Please refresh the page.</option>');
+                select.html('<option value="">Error loading teachers. Please refresh the page.</option>');
             });
-
-            $('#assignTeacherModal').modal('show');
         }
 
         // Submit Assign Teacher
@@ -711,6 +773,14 @@
             select.empty();
             select.append('<option value="">Loading students...</option>');
             
+            // Destroy existing Select2 instance if it exists
+            if (select.hasClass('select2-hidden-accessible')) {
+                select.select2('destroy');
+            }
+            
+            // Show modal first
+            $('#enrollStudentModal').modal('show');
+            
             // Load students
             $.ajax({
                 url: '<?= base_url('courses/getAllStudents') ?>',
@@ -723,6 +793,32 @@
                         response.students.forEach(function(student) {
                             select.append(`<option value="${student.id}">${student.name} (${student.email})</option>`);
                         });
+                        
+                        // Initialize Select2 with search functionality after modal is shown
+                        // Use dropdownParent to ensure dropdown appears above modal
+                        select.select2({
+                            theme: 'bootstrap-5',
+                            placeholder: 'Search for a student...',
+                            allowClear: true,
+                            width: '100%',
+                            dropdownParent: $('#enrollStudentModal'),
+                            minimumResultsForSearch: 0, // Always show search box
+                            language: {
+                                noResults: function() {
+                                    return "No students found";
+                                },
+                                searching: function() {
+                                    return "Searching...";
+                                }
+                            }
+                        });
+                        
+                        // Ensure search field is focusable and clickable
+                        select.on('select2:open', function() {
+                            setTimeout(function() {
+                                $('.select2-search__field').focus();
+                            }, 100);
+                        });
                     } else {
                         select.html('<option value="">No students available</option>');
                     }
@@ -732,9 +828,22 @@
                     console.error('Error loading students:', xhr);
                 }
             });
-
-            $('#enrollStudentModal').modal('show');
         }
+
+        // Clean up Select2 when modals are closed
+        $('#enrollStudentModal').on('hidden.bs.modal', function () {
+            const select = $('#enrollStudentSelect');
+            if (select.hasClass('select2-hidden-accessible')) {
+                select.select2('destroy');
+            }
+        });
+        
+        $('#assignTeacherModal').on('hidden.bs.modal', function () {
+            const select = $('#assignTeacherSelect');
+            if (select.hasClass('select2-hidden-accessible')) {
+                select.select2('destroy');
+            }
+        });
 
         // Submit Enroll Student
         function submitEnrollStudent() {
