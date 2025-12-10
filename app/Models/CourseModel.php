@@ -14,23 +14,32 @@ class CourseModel extends Model
     protected $updatedField = 'updated_at';
 
     // Get courses with academic information
-    public function getCoursesWithAcademicInfo()
+    public function getCoursesWithAcademicInfo($courseIds = null)
     {
-        return $this->select('courses.*, 
+        $query = $this->select('courses.*, 
                             academic_years.display_name as acad_year_name,
                             semesters.name as semester_name,
                             terms.term_name,
                             courses.schedule_time,
+                            courses.schedule_time_start,
+                            courses.schedule_time_end,
                             courses.schedule_date,
                             courses.course_number,
+                            courses.duration,
                             programs.code as program_code,
                             programs.name as program_name,
                             programs.id as program_id')
                     ->join('academic_years', 'academic_years.id = courses.acad_year_id', 'left')
                     ->join('semesters', 'semesters.id = courses.semester_id', 'left')
                     ->join('terms', 'terms.id = courses.term_id', 'left')
-                    ->join('programs', 'programs.id = courses.program_id', 'left')
-                    ->orderBy('programs.code', 'ASC')
+                    ->join('programs', 'programs.id = courses.program_id', 'left');
+        
+        // Filter by course IDs if provided (for students - only enrolled courses)
+        if (!empty($courseIds) && is_array($courseIds)) {
+            $query->whereIn('courses.id', $courseIds);
+        }
+        
+        return $query->orderBy('programs.code', 'ASC')
                     ->orderBy('courses.title', 'ASC')
                     ->findAll();
     }

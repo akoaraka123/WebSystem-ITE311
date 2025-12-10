@@ -19,6 +19,8 @@ class EnrollmentModel extends Model
                             courses.title, 
                             courses.description, 
                             courses.course_number,
+                            courses.program_id,
+                            courses.semester_id,
                             courses.schedule_time_start,
                             courses.schedule_time_end,
                             courses.schedule_time,
@@ -29,11 +31,14 @@ class EnrollmentModel extends Model
                             enrollments.teacher_approved,
                             academic_years.display_name as acad_year_name,
                             semesters.name as semester_name,
-                            terms.term_name')
+                            terms.term_name,
+                            programs.code as program_code,
+                            programs.name as program_name')
                     ->join('courses', 'courses.id = enrollments.course_id')
                     ->join('academic_years', 'academic_years.id = courses.acad_year_id', 'left')
                     ->join('semesters', 'semesters.id = courses.semester_id', 'left')
                     ->join('terms', 'terms.id = courses.term_id', 'left')
+                    ->join('programs', 'programs.id = courses.program_id', 'left')
                     ->where('enrollments.user_id', $userID)
                     ->where('enrollments.teacher_approved', 1)
                     ->where('enrollments.status', 'accepted')

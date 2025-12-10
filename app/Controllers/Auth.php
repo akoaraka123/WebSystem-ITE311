@@ -507,37 +507,9 @@ public function dashboard()
 
             // Get pending enrollment requests
             $data['pending_enrollments'] = $enrollmentModel->getPendingEnrollments($userID);
-            $pendingIDs = array_column($data['pending_enrollments'], 'course_id');
             
-            // Combine enrolled and pending IDs to exclude from available courses
-            $allEnrolledIDs = array_merge($enrolledIDs, $pendingIDs);
-
-            // Available courses: not yet enrolled or pending
+            // Students should only see enrolled courses, not available courses
             $data['available'] = [];
-            try {
-                // First, let's get all courses to see if any exist
-                $allCourses = $courseModel->select('id, title, description')->findAll();
-                log_message('debug', 'All courses in database: ' . json_encode($allCourses));
-                
-                // Test: let's try a simple query without joins
-                $testQuery = $courseModel->findAll();
-                log_message('debug', 'Simple findAll result: ' . json_encode($testQuery));
-                
-                if (!empty($allEnrolledIDs)) {
-                    $data['available'] = $courseModel->select('id, title, description')
-                                                ->whereNotIn('id', $allEnrolledIDs)
-                                                ->findAll();
-                } else {
-                    $data['available'] = $allCourses;
-                }
-                // Debug: log the available courses
-                log_message('debug', 'Available courses: ' . json_encode($data['available']));
-                log_message('debug', 'Enrolled IDs: ' . json_encode($enrolledIDs));
-            } catch (\Exception $e) {
-                // If there's an error, keep available as empty array
-                log_message('error', 'Error fetching available courses: ' . $e->getMessage());
-                $data['available'] = [];
-            }
 
             // Materials for each enrolled course
             $data['materials'] = [];

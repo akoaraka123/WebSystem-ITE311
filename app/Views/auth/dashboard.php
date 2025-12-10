@@ -417,8 +417,22 @@
 
                     <!-- STUDENT DASHBOARD -->
                     <?php if ($user['role'] === 'student'): ?>
-                        <!-- Filter Section -->
+                        <!-- Search and Filter Section -->
                         <div class="mb-6 bg-white rounded-lg shadow p-4">
+                            <div class="mb-4">
+                                <label class="block mb-2 text-sm font-medium text-gray-700">Search Courses</label>
+                                <div class="relative">
+                                    <input type="text" 
+                                           id="searchCourseInput" 
+                                           placeholder="Search by course name, description, or code..." 
+                                           class="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                           oninput="setTimeout(function(){if(typeof window.filterCourses === 'function') window.filterCourses();}, 10);"
+                                           onkeyup="if(typeof window.filterCourses === 'function') window.filterCourses();"
+                                           onpaste="setTimeout(function(){if(typeof window.filterCourses === 'function') window.filterCourses();}, 10);"
+                                           autocomplete="off">
+                                    <i class="absolute left-3 top-3 text-gray-400 fas fa-search"></i>
+                                </div>
+                            </div>
                             <div class="flex flex-wrap items-center gap-4">
                                 <div class="flex-1 min-w-[200px]">
                                     <label class="block mb-2 text-sm font-medium text-gray-700">School Year</label>
@@ -552,7 +566,8 @@
                                     <?php foreach ($enrolled as $enrollment): ?>
                                         <div class="overflow-hidden bg-white rounded-lg shadow course-card course-item" 
                                              data-school-year="<?= esc($enrollment['acad_year_name'] ?? '') ?>"
-                                             data-semester="<?= esc($enrollment['semester_name'] ?? '') ?>">
+                                             data-semester="<?= esc($enrollment['semester_name'] ?? '') ?>"
+                                             data-course-code="<?= esc($enrollment['course_number'] ?? '') ?>">
                                             <div class="p-6">
                                                 <div class="flex items-center justify-between mb-3">
                                                     <h3 class="text-lg font-semibold text-gray-900 course-title">
@@ -593,14 +608,6 @@
                                                             <i class="fas fa-calendar-week mr-2 text-gray-500 w-3"></i>
                                                             <span class="font-medium">Semester:</span>
                                                             <span class="ml-2"><?= esc($enrollment['semester_name']) ?></span>
-                                                        </div>
-                                                        <?php endif; ?>
-
-                                                        <?php if (!empty($enrollment['term_name'])): ?>
-                                                        <div class="flex items-center text-xs text-gray-700">
-                                                            <i class="fas fa-bookmark mr-2 text-gray-500 w-3"></i>
-                                                            <span class="font-medium">Term:</span>
-                                                            <span class="ml-2"><?= esc($enrollment['term_name']) ?></span>
                                                         </div>
                                                         <?php endif; ?>
 
@@ -678,34 +685,116 @@
                                                 </div>
 
                                                 <div class="mt-4 course-materials">
-                                                    <h4 class="mb-2 text-sm font-medium text-gray-700">Course Materials</h4>
-                                                    <?php if (!empty($materials[$enrollment['course_id']])): ?>
-                                                        <ul class="space-y-2">
-                                                            <?php foreach ($materials[$enrollment['course_id']] as $material): ?>
-                                                                <li class="flex items-center justify-between p-3 text-sm bg-gray-50 rounded-md material-item">
-                                                                    <div class="flex-1">
-                                                                        <div class="flex items-center mb-1">
-                                                                            <i class="mr-3 text-blue-500 fas fa-file-alt"></i>
-                                                                            <span class="font-medium"><?= esc($material['file_name'] ?? 'Untitled File') ?></span>
-                                                                        </div>
-                                                                        <div class="text-xs text-gray-500 ml-7">
-                                                                            <i class="far fa-clock mr-1"></i>
-                                                                            <?= date('F j, Y - h:i:s A', strtotime($material['created_at'])) ?>
-                                                                        </div>
+                                                    <h4 class="mb-3 text-sm font-semibold text-gray-800">Modules</h4>
+                                                    
+                                                    <?php
+                                                    // Get course materials
+                                                    $courseMaterials = $materials[$enrollment['course_id']] ?? [];
+                                                    
+                                                    // Get terms for this course's semester
+                                                    $termModel = new \App\Models\TermModel();
+                                                    $courseSemesterId = $enrollment['semester_id'] ?? null;
+                                                    
+                                                    // Get terms from database if semester_id is available
+                                                    if ($courseSemesterId) {
+                                                        $terms = $termModel->getTermsBySemester($courseSemesterId);
+                                                    }
+                                                    
+                                                    // If no terms found or no semester_id, use default terms
+                                                    if (empty($terms)) {
+                                                        $terms = [
+                                                            ['id' => 1, 'term_name' => 'Prelim', 'term_order' => 1],
+                                                            ['id' => 2, 'term_name' => 'Midterm', 'term_order' => 2],
+                                                            ['id' => 3, 'term_name' => 'Finals', 'term_order' => 3]
+                                                        ];
+                                                    }
+                                                    ?>
+                                                    
+                                                    <div class="space-y-3">
+                                                        <?php 
+                                                        // Separate materials with and without term_id
+                                                        $materialsWithTerm = [];
+                                                        $materialsWithoutTerm = [];
+                                                        
+                                                        foreach ($courseMaterials as $material) {
+                                                            $materialTermId = $material['term_id'] ?? null;
+                                                            // Check if term_id is null, empty, or 0
+                                                            if (empty($materialTermId) || $materialTermId === '0' || $materialTermId === 0) {
+                                                                $materialsWithoutTerm[] = $material;
+                                                            } else {
+                                                                $materialsWithTerm[(int)$materialTermId][] = $material;
+                                                            }
+                                                        }
+                                                        ?>
+                                                        
+                                                        <?php foreach ($terms as $index => $term): ?>
+                                                            <?php
+                                                            $termId = 'term-' . $enrollment['course_id'] . '-' . ($term['id'] ?? $term['term_order']);
+                                                            $termName = strtoupper($term['term_name']);
+                                                            $termDbId = isset($term['id']) ? (int)$term['id'] : null;
+                                                            
+                                                            // Get materials for this term
+                                                            $termMaterials = [];
+                                                            if ($termDbId !== null) {
+                                                                $termMaterials = $materialsWithTerm[$termDbId] ?? [];
+                                                            }
+                                                            
+                                                            // Also include materials without term_id in the first term (PRELIM) as fallback
+                                                            if ($index === 0 && !empty($materialsWithoutTerm)) {
+                                                                $termMaterials = array_merge($termMaterials, $materialsWithoutTerm);
+                                                            }
+                                                            ?>
+                                                            
+                                                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                                                <!-- Term Header (Expandable) -->
+                                                                <button type="button" 
+                                                                        onclick="toggleTermModule('<?= $termId ?>')"
+                                                                        class="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors border-b border-gray-200">
+                                                                    <div class="flex items-center">
+                                                                        <i class="fas fa-chevron-down mr-3 text-gray-500 term-arrow-<?= $termId ?>" id="arrow-<?= $termId ?>"></i>
+                                                                        <span class="font-semibold text-gray-800"><?= esc($termName) ?></span>
                                                                     </div>
-                                                                    <a href="<?= base_url('materials/download/'.($material['id'] ?? '')) ?>" 
-                                                                       class="p-2 text-blue-600 rounded-full hover:bg-blue-50 transition-colors duration-200"
-                                                                       title="Download">
-                                                                        <i class="w-4 h-4 fas fa-download"></i>
-                                                                    </a>
-                                                                </li>
-                                                            <?php endforeach; ?>
-                                                        </ul>
-                                                    <?php else: ?>
-                                                        <p class="py-4 text-sm text-center text-gray-500 bg-gray-50 rounded-md">
-                                                            <i class="mr-2 far fa-folder-open"></i> No materials available yet
-                                                        </p>
-                                                    <?php endif; ?>
+                                                                    <span class="text-xs text-gray-500">
+                                                                        <?= count($termMaterials) ?> item<?= count($termMaterials) != 1 ? 's' : '' ?>
+                                                                    </span>
+                                                                </button>
+                                                                
+                                                                <!-- Term Content (Collapsible) -->
+                                                                <div id="content-<?= $termId ?>" class="hidden bg-white">
+                                                                    <div class="p-4 space-y-2">
+                                                                        <?php if (!empty($termMaterials)): ?>
+                                                                            <?php foreach ($termMaterials as $material): ?>
+                                                                                <div class="flex items-center justify-between p-3 text-sm bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+                                                                                    <div class="flex items-center flex-1">
+                                                                                        <i class="mr-3 text-blue-500 fas fa-file-pdf"></i>
+                                                                                        <div class="flex-1">
+                                                                                            <a href="<?= base_url('materials/download/'.($material['id'] ?? '')) ?>" 
+                                                                                               class="font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                                                                                                <?= esc($material['file_name'] ?? 'Untitled File') ?>
+                                                                                            </a>
+                                                                                            <div class="text-xs text-gray-500 mt-1">
+                                                                                                <i class="far fa-clock mr-1"></i>
+                                                                                                <?= date('M j, Y', strtotime($material['created_at'])) ?>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <a href="<?= base_url('materials/download/'.($material['id'] ?? '')) ?>" 
+                                                                                       class="ml-3 p-2 text-blue-600 rounded-full hover:bg-blue-50 transition-colors"
+                                                                                       title="Download">
+                                                                                        <i class="w-4 h-4 fas fa-download"></i>
+                                                                                    </a>
+                                                                                </div>
+                                                                            <?php endforeach; ?>
+                                                                        <?php else: ?>
+                                                                            <p class="py-4 text-sm text-center text-gray-500">
+                                                                                <i class="mr-2 far fa-folder-open"></i> No materials available yet
+                                                                            </p>
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1025,14 +1114,6 @@
                                                 </div>
                                             <?php endif; ?>
                                             
-                                            <?php if (!empty($course['term_name'])): ?>
-                                                <div class="flex items-center text-gray-700">
-                                                    <i class="mr-2 w-4 text-gray-500 fas fa-bookmark"></i>
-                                                    <span class="font-medium">Term:</span>
-                                                    <span class="ml-1"><?= esc($course['term_name']) ?></span>
-                                                </div>
-                                            <?php endif; ?>
-                                            
                                             <?php if (!empty($course['schedule_time_start']) && !empty($course['schedule_time_end'])): ?>
                                                 <div class="flex items-center text-gray-700">
                                                     <i class="mr-2 w-4 text-gray-500 fas fa-clock"></i>
@@ -1115,6 +1196,29 @@
                                                        file:text-sm file:font-medium
                                                        file:bg-blue-50 file:text-blue-700
                                                        hover:file:bg-blue-100">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="block mb-1 text-sm font-medium text-gray-700">Term</label>
+                                            <select name="term_id" id="term_id_<?= esc($course['id']) ?>" required
+                                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                                <option value="">Select Term</option>
+                                                <?php
+                                                // Get terms for this course's semester
+                                                $termModel = new \App\Models\TermModel();
+                                                $courseSemesterId = $course['semester_id'] ?? null;
+                                                if ($courseSemesterId) {
+                                                    $terms = $termModel->getTermsBySemester($courseSemesterId);
+                                                    foreach ($terms as $term) {
+                                                        echo '<option value="' . esc($term['id']) . '">' . esc(strtoupper($term['term_name'])) . '</option>';
+                                                    }
+                                                } else {
+                                                    // Fallback: show standard terms if semester_id is not available
+                                                    echo '<option value="">PRELIM</option>';
+                                                    echo '<option value="">MIDTERM</option>';
+                                                    echo '<option value="">FINAL</option>';
+                                                }
+                                                ?>
+                                            </select>
                                         </div>
                                         <div class="uploadMessage text-xs text-center"></div>
                                         <button type="submit" 
@@ -1523,6 +1627,7 @@ $(document).ready(function() {
         var form = $(this);
         var courseId = form.data('course-id');
         var fileInput = form.find('input[type="file"]');
+        var termSelect = form.find('select[name="term_id"]');
         var submitBtn = form.find('button[type="submit"]');
         var messageDiv = form.find('.uploadMessage');
         
@@ -1532,6 +1637,16 @@ $(document).ready(function() {
                 messageDiv.text('Please select a file to upload').css('color', 'red');
             } else {
                 alert('Please select a file to upload');
+            }
+            return;
+        }
+        
+        // Check if term is selected
+        if (!termSelect.val()) {
+            if (messageDiv.length) {
+                messageDiv.text('Please select a term (PRELIM, MIDTERM, or FINAL)').css('color', 'red');
+            } else {
+                alert('Please select a term (PRELIM, MIDTERM, or FINAL)');
             }
             return;
         }
@@ -1869,38 +1984,100 @@ $(document).ready(function() {
     });
 
     // Filter functions for Student Dashboard
-    function filterCourses() {
-        const schoolYear = document.getElementById('filterSchoolYear')?.value || '';
-        const semester = document.getElementById('filterSemester')?.value || '';
-        const courses = document.querySelectorAll('.course-item');
-        let visibleCount = 0;
-
-        courses.forEach(course => {
-            const courseSchoolYear = course.getAttribute('data-school-year') || '';
-            const courseSemester = course.getAttribute('data-semester') || '';
+    window.filterCourses = function() {
+        try {
+            const schoolYearEl = document.getElementById('filterSchoolYear');
+            const semesterEl = document.getElementById('filterSemester');
+            const searchInputEl = document.getElementById('searchCourseInput');
             
-            const matchSchoolYear = !schoolYear || courseSchoolYear === schoolYear;
-            const matchSemester = !semester || courseSemester === semester;
-            
-            if (matchSchoolYear && matchSemester) {
-                course.style.display = '';
-                visibleCount++;
-            } else {
-                course.style.display = 'none';
+            if (!searchInputEl) {
+                console.error('Search input element not found');
+                return;
             }
-        });
+            
+            const schoolYear = schoolYearEl ? schoolYearEl.value : '';
+            const semester = semesterEl ? semesterEl.value : '';
+            const searchTerm = searchInputEl.value ? searchInputEl.value.toLowerCase().trim() : '';
+            const courses = document.querySelectorAll('.course-item');
+            let visibleCount = 0;
 
-        // Update count
-        const countElement = document.getElementById('enrolledCount');
-        if (countElement) {
-            countElement.textContent = visibleCount;
+            if (courses.length === 0) {
+                return;
+            }
+
+            courses.forEach(course => {
+                const courseSchoolYear = course.getAttribute('data-school-year') || '';
+                const courseSemester = course.getAttribute('data-semester') || '';
+                const courseCode = course.getAttribute('data-course-code') || '';
+                
+                // Get course text content for search
+                const courseTitleEl = course.querySelector('.course-title');
+                const courseTitle = courseTitleEl ? courseTitleEl.textContent.toLowerCase().trim() : '';
+                
+                // Get description - try multiple selectors
+                let courseDescription = '';
+                const descElement = course.querySelector('p.text-sm.text-gray-600') || 
+                                  course.querySelector('p.mt-2.text-sm.text-gray-600') ||
+                                  course.querySelector('.card-text');
+                if (descElement) {
+                    courseDescription = descElement.textContent.toLowerCase().trim();
+                }
+                
+                // Get all text from the course card (includes course code, academic info, etc.)
+                // Remove extra whitespace and normalize
+                const fullText = course.textContent.toLowerCase().replace(/\s+/g, ' ').trim();
+                
+                // Combine searchable text - include title, description, code
+                const searchableText = (courseTitle + ' ' + courseDescription + ' ' + courseCode).toLowerCase().replace(/\s+/g, ' ').trim();
+                
+                const matchSchoolYear = !schoolYear || courseSchoolYear === schoolYear;
+                const matchSemester = !semester || courseSemester === semester;
+                
+                // Search in both specific fields and full text
+                const matchSearch = !searchTerm || 
+                                  searchableText.includes(searchTerm) || 
+                                  fullText.includes(searchTerm) ||
+                                  courseTitle.includes(searchTerm) ||
+                                  courseCode.toLowerCase().includes(searchTerm);
+                
+                if (matchSchoolYear && matchSemester && matchSearch) {
+                    // Show course
+                    course.style.display = '';
+                    course.style.visibility = 'visible';
+                    course.style.opacity = '1';
+                    course.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    // Hide course
+                    course.style.display = 'none';
+                    course.style.visibility = 'hidden';
+                    course.style.opacity = '0';
+                    course.classList.add('hidden');
+                }
+            });
+
+            // Update count
+            const countElement = document.getElementById('enrolledCount');
+            if (countElement) {
+                countElement.textContent = visibleCount;
+            }
+        } catch (error) {
+            console.error('Error in filterCourses:', error);
         }
     }
 
-    function clearFilters() {
-        document.getElementById('filterSchoolYear').value = '';
-        document.getElementById('filterSemester').value = '';
-        filterCourses();
+    window.clearFilters = function() {
+        const filterSchoolYear = document.getElementById('filterSchoolYear');
+        const filterSemester = document.getElementById('filterSemester');
+        const searchInput = document.getElementById('searchCourseInput');
+        
+        if (filterSchoolYear) filterSchoolYear.value = '';
+        if (filterSemester) filterSemester.value = '';
+        if (searchInput) searchInput.value = '';
+        
+        if (typeof filterCourses === 'function') {
+            filterCourses();
+        }
     }
 
     // Filter functions for Teacher Dashboard
@@ -1931,17 +2108,45 @@ $(document).ready(function() {
     }
 
     // Add event listeners for filters
-    document.addEventListener('DOMContentLoaded', function() {
+    function initializeFilters() {
         const filterSchoolYear = document.getElementById('filterSchoolYear');
         const filterSemester = document.getElementById('filterSemester');
+        const searchCourseInput = document.getElementById('searchCourseInput');
         const filterSchoolYearTeacher = document.getElementById('filterSchoolYearTeacher');
         const filterSemesterTeacher = document.getElementById('filterSemesterTeacher');
 
+        console.log('Initializing filters...', {
+            filterSchoolYear: !!filterSchoolYear,
+            filterSemester: !!filterSemester,
+            searchCourseInput: !!searchCourseInput
+        });
+
         if (filterSchoolYear) {
-            filterSchoolYear.addEventListener('change', filterCourses);
+            filterSchoolYear.addEventListener('change', function() {
+                console.log('School year changed');
+                if (typeof filterCourses === 'function') filterCourses();
+            });
         }
         if (filterSemester) {
-            filterSemester.addEventListener('change', filterCourses);
+            filterSemester.addEventListener('change', function() {
+                console.log('Semester changed');
+                if (typeof filterCourses === 'function') filterCourses();
+            });
+        }
+        if (searchCourseInput) {
+            searchCourseInput.addEventListener('input', function(e) {
+                console.log('Search input:', e.target.value);
+                if (typeof filterCourses === 'function') filterCourses();
+            });
+            searchCourseInput.addEventListener('keyup', function(e) {
+                console.log('Search keyup:', e.target.value);
+                if (typeof filterCourses === 'function') filterCourses();
+            });
+            searchCourseInput.addEventListener('paste', function() {
+                setTimeout(function() {
+                    if (typeof filterCourses === 'function') filterCourses();
+                }, 10);
+            });
         }
         if (filterSchoolYearTeacher) {
             filterSchoolYearTeacher.addEventListener('change', filterCoursesTeacher);
@@ -1949,9 +2154,69 @@ $(document).ready(function() {
         if (filterSemesterTeacher) {
             filterSemesterTeacher.addEventListener('change', filterCoursesTeacher);
         }
+    }
+
+    // Initialize filters - use jQuery ready since we're in jQuery context
+    $(document).ready(function() {
+        // Wait a bit to ensure all elements are rendered
+        setTimeout(function() {
+            initializeFilters();
+        }, 100);
     });
 
 });
+    </script>
+    
+    <!-- Separate script for search functionality to ensure it works -->
+    <script>
+    // Ensure search works even if jQuery ready hasn't fired yet
+    (function() {
+        function setupSearch() {
+            const searchInput = document.getElementById('searchCourseInput');
+            if (searchInput && !searchInput.dataset.listenerAttached) {
+                searchInput.dataset.listenerAttached = 'true';
+                
+                // Remove any existing listeners by cloning
+                const newInput = searchInput.cloneNode(true);
+                searchInput.parentNode.replaceChild(newInput, searchInput);
+                
+                // Add fresh event listeners
+                newInput.addEventListener('input', function(e) {
+                    // Don't prevent default - allow normal input
+                    if (typeof window.filterCourses === 'function') {
+                        setTimeout(function() {
+                            window.filterCourses();
+                        }, 50);
+                    }
+                });
+                
+                newInput.addEventListener('keyup', function(e) {
+                    // Don't prevent default - allow normal typing
+                    if (typeof window.filterCourses === 'function') {
+                        window.filterCourses();
+                    }
+                });
+                
+                console.log('Search input listeners attached');
+            }
+        }
+        
+        // Try multiple times to ensure it works
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setupSearch();
+                setTimeout(setupSearch, 500);
+            });
+        } else {
+            setupSearch();
+            setTimeout(setupSearch, 500);
+        }
+        
+        // Also try when window loads
+        window.addEventListener('load', function() {
+            setTimeout(setupSearch, 200);
+        });
+    })();
     </script>
 
     <!-- Add Student Modal -->
@@ -2480,6 +2745,28 @@ $(document).ready(function() {
     </div>
 
     <script>
+        // Toggle term module (PRELIM, MIDTERM, FINAL)
+        function toggleTermModule(termId) {
+            const content = document.getElementById('content-' + termId);
+            const arrow = document.getElementById('arrow-' + termId);
+            
+            if (content) {
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    if (arrow) {
+                        arrow.classList.remove('fa-chevron-down');
+                        arrow.classList.add('fa-chevron-up');
+                    }
+                } else {
+                    content.classList.add('hidden');
+                    if (arrow) {
+                        arrow.classList.remove('fa-chevron-up');
+                        arrow.classList.add('fa-chevron-down');
+                    }
+                }
+            }
+        }
+        
         // Tab switching for enrollment details
         function showEnrollmentTab(tabName) {
             // Hide all tab contents

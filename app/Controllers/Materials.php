@@ -48,8 +48,13 @@ class Materials extends Controller
 
             try {
                 if ($file->move($uploadPath, $newName)) {
+                    // Get term_id from request
+                    $term_id = $this->request->getPost('term_id');
+                    $term_id = !empty($term_id) ? (int)$term_id : null;
+                    
                     $materialModel->insertMaterial([
                         'course_id' => $course_id,
+                        'term_id' => $term_id,
                         'file_name' => $originalName,
                         'file_path' => 'uploads/materials/' . $newName,
                         'created_at'=> date('Y-m-d H:i:s'),
@@ -142,8 +147,13 @@ class Materials extends Controller
             if ($file->move($uploadPath, $newName)) {
                 log_message('info', 'File moved successfully');
                 
+                // Get term_id from request
+                $term_id = $this->request->getPost('term_id');
+                $term_id = !empty($term_id) ? (int)$term_id : null;
+                
                 $insertID = $materialModel->insertMaterial([
                     'course_id' => $course_id,
+                    'term_id' => $term_id,
                     'file_name' => $originalName,
                     'file_path' => 'uploads/materials/' . $newName,
                     'created_at' => date('Y-m-d H:i:s'),

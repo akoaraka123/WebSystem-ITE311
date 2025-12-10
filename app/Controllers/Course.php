@@ -34,10 +34,17 @@ class Course extends BaseController
             // Admin sees all courses
             $courses = $this->courseModel->getCoursesWithAcademicInfo();
         } elseif ($role === 'student') {
-            // Student sees available courses (not enrolled)
+            // Student sees only enrolled courses
             $enrolled = $this->enrollmentModel->getEnrolledCourses($session->get('userID'));
             $enrolledIds = array_column($enrolled, 'course_id');
-            $courses = $this->courseModel->getAvailableCourses($enrolledIds);
+            
+            if (!empty($enrolledIds)) {
+                // Get only enrolled courses with full academic info
+                $courses = $this->courseModel->getCoursesWithAcademicInfo($enrolledIds);
+            } else {
+                // No enrolled courses
+                $courses = [];
+            }
         } else {
             // Teachers see their own courses
             $courses = $this->courseModel->getTeacherCourses($session->get('userID'));
