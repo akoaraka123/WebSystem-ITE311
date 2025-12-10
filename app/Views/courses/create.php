@@ -148,12 +148,16 @@
                                 <div>
                                     <label for="title" class="block text-sm font-medium text-gray-700">Course Title *</label>
                                     <input type="text" id="title" name="title" required
-                                           value="<?= old('title') ?>"
+                                           value="<?= old('title') ?>" 
                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                                           placeholder="e.g., Introduction to Web Development">
+                                           placeholder="e.g., Introduction to Web Development"
+                                           onkeypress="return validateAlphanumericSpace(event)"
+                                           oninput="validateInput(this)">
                                     <?php if (isset($validation) && $validation->getError('title')): ?>
                                         <p class="mt-1 text-sm text-red-600"><?= $validation->getError('title') ?></p>
                                     <?php endif; ?>
+                                    <p class="mt-1 text-xs text-gray-500">Only letters, numbers, and spaces are allowed. Special characters are not permitted.</p>
+                                    <p id="title_error" class="mt-1 text-sm text-red-600 hidden"></p>
                                 </div>
 
                                 <!-- Course Description -->
@@ -161,30 +165,37 @@
                                     <label for="description" class="block text-sm font-medium text-gray-700">Course Description *</label>
                                     <textarea id="description" name="description" rows="6" required
                                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                                              placeholder="Provide a detailed description of your course..."><?= old('description') ?></textarea>
+                                              placeholder="Provide a detailed description of your course..."
+                                              onkeypress="return validateAlphanumericSpace(event)"
+                                              oninput="validateInput(this)"><?= old('description') ?></textarea>
                                     <?php if (isset($validation) && $validation->getError('description')): ?>
                                         <p class="mt-1 text-sm text-red-600"><?= $validation->getError('description') ?></p>
                                     <?php endif; ?>
-                                    <p class="mt-1 text-xs text-gray-500">Minimum 10 characters required</p>
+                                    <p class="mt-1 text-xs text-gray-500">Minimum 10 characters required. Only letters, numbers, and spaces are allowed.</p>
+                                    <p id="description_error" class="mt-1 text-sm text-red-600 hidden"></p>
                                 </div>
 
                                 <!-- Teacher Assignment (Admin Only) -->
                                 <?php if(session('role') == 'admin' && !empty($teachers)): ?>
                                 <div>
-                                    <label for="teacher_id" class="block text-sm font-medium text-gray-700">Assign Teacher *</label>
-                                    <select id="teacher_id" name="teacher_id" required
-                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
-                                        <option value="">Select a teacher</option>
-                                        <?php foreach($teachers as $teacher): ?>
-                                            <option value="<?= $teacher['id'] ?>" <?= old('teacher_id') == $teacher['id'] ? 'selected' : '' ?>>
-                                                <?= esc($teacher['name']) ?> (<?= esc($teacher['email']) ?>)
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <label for="teacher_search" class="block text-sm font-medium text-gray-700">Assign Teacher *</label>
+                                    <div class="relative">
+                                        <input type="text" id="teacher_search" placeholder="Search teacher by name or email..." 
+                                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                                               autocomplete="off">
+                                        <input type="hidden" id="teacher_id" name="teacher_id" value="<?= old('teacher_id', '') ?>" required>
+                                        <div id="teacher_results" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                            <!-- Results will be populated here -->
+                                        </div>
+                                    </div>
+                                    <div id="selected_teacher" class="mt-2 p-2 bg-gray-50 rounded-md text-sm text-gray-700 hidden">
+                                        <span class="font-medium">Selected: </span><span id="selected_teacher_name"></span>
+                                        <button type="button" id="clear_teacher" class="ml-2 text-red-600 hover:text-red-800 text-xs">Clear</button>
+                                    </div>
                                     <?php if (isset($validation) && $validation->getError('teacher_id')): ?>
                                         <p class="mt-1 text-sm text-red-600"><?= $validation->getError('teacher_id') ?></p>
                                     <?php endif; ?>
-                                    <p class="mt-1 text-xs text-gray-500">Select the teacher who will teach this course</p>
+                                    <p class="mt-1 text-xs text-gray-500">Type to search for a teacher</p>
                                 </div>
                                 <?php endif; ?>
 
@@ -205,37 +216,121 @@
                                 </div>
                                 <?php endif; ?>
 
-                                <!-- Course Category -->
+                                <!-- Academic Year -->
                                 <div>
-                                    <label for="category" class="block text-sm font-medium text-gray-700">Course Category</label>
-                                    <select id="category" name="category" 
+                                    <label for="acad_year_id" class="block text-sm font-medium text-gray-700">Academic Year (Taon ng Akademiko) *</label>
+                                    <select id="acad_year_id" name="acad_year_id" required
                                             class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
-                                        <option value="">Select a category</option>
-                                        <option value="programming">Programming</option>
-                                        <option value="design">Design</option>
-                                        <option value="business">Business</option>
-                                        <option value="marketing">Marketing</option>
-                                        <option value="data-science">Data Science</option>
-                                        <option value="other">Other</option>
+                                        <option value="">Select Academic Year</option>
+                                        <?php if(isset($academicYears) && !empty($academicYears)): ?>
+                                            <?php foreach($academicYears as $acadYear): ?>
+                                                <option value="<?= $acadYear['id'] ?>" <?= old('acad_year_id') == $acadYear['id'] ? 'selected' : '' ?>>
+                                                    <?= esc($acadYear['display_name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </select>
+                                    <?php if (isset($validation) && $validation->getError('acad_year_id')): ?>
+                                        <p class="mt-1 text-sm text-red-600"><?= $validation->getError('acad_year_id') ?></p>
+                                    <?php endif; ?>
                                 </div>
 
-                                <!-- Course Level -->
+                                <!-- Semester -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Course Level</label>
-                                    <div class="mt-2 space-y-2">
-                                        <label class="flex items-center">
-                                            <input type="radio" name="level" value="beginner" checked class="text-primary focus:ring-primary">
-                                            <span class="ml-2 text-sm text-gray-700">Beginner</span>
-                                        </label>
-                                        <label class="flex items-center">
-                                            <input type="radio" name="level" value="intermediate" class="text-primary focus:ring-primary">
-                                            <span class="ml-2 text-sm text-gray-700">Intermediate</span>
-                                        </label>
-                                        <label class="flex items-center">
-                                            <input type="radio" name="level" value="advanced" class="text-primary focus:ring-primary">
-                                            <span class="ml-2 text-sm text-gray-700">Advanced</span>
-                                        </label>
+                                    <label for="semester_id" class="block text-sm font-medium text-gray-700">Semester (Semestre) *</label>
+                                    <select id="semester_id" name="semester_id" required
+                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                        <option value="">Select Academic Year first</option>
+                                        <?php if(isset($semesters) && !empty($semesters)): ?>
+                                            <?php foreach($semesters as $semester): ?>
+                                                <option value="<?= $semester['id'] ?>" <?= old('semester_id') == $semester['id'] ? 'selected' : '' ?>>
+                                                    <?= esc($semester['name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </select>
+                                    <?php if (isset($validation) && $validation->getError('semester_id')): ?>
+                                        <p class="mt-1 text-sm text-red-600"><?= $validation->getError('semester_id') ?></p>
+                                    <?php endif; ?>
+                                    <p class="mt-1 text-xs text-gray-500">Please select Academic Year first</p>
+                                </div>
+
+                                <!-- Term -->
+                                <div>
+                                    <label for="term_id" class="block text-sm font-medium text-gray-700">Term (Termino/Yugto) *</label>
+                                    <select id="term_id" name="term_id" required
+                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                        <option value="">Select Semester first to load terms</option>
+                                        <?php if(isset($terms) && !empty($terms)): ?>
+                                            <?php foreach($terms as $term): ?>
+                                                <option value="<?= $term['id'] ?>" <?= old('term_id') == $term['id'] ? 'selected' : '' ?>>
+                                                    <?= esc($term['term_name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </select>
+                                    <?php if (isset($validation) && $validation->getError('term_id')): ?>
+                                        <p class="mt-1 text-sm text-red-600"><?= $validation->getError('term_id') ?></p>
+                                    <?php endif; ?>
+                                    <p class="mt-1 text-xs text-gray-500">Please select Academic Year and Semester first</p>
+                                </div>
+
+                                <!-- Course Number (CN) -->
+                                <div>
+                                    <label for="course_number" class="block text-sm font-medium text-gray-700">Course Number / Section Code (CN) *</label>
+                                    <input type="text" id="course_number" name="course_number" required
+                                           value="<?= old('course_number') ?>"
+                                           placeholder="e.g., IT101 A"
+                                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                                           onkeypress="return validateAlphanumericSpace(event)"
+                                           oninput="validateInput(this)">
+                                    <?php if (isset($validation) && $validation->getError('course_number')): ?>
+                                        <p class="mt-1 text-sm text-red-600"><?= $validation->getError('course_number') ?></p>
+                                    <?php endif; ?>
+                                    <p class="mt-1 text-xs text-gray-500">Unique code for subject or section (e.g., IT101 A). Only letters, numbers, and spaces allowed.</p>
+                                    <p id="course_number_error" class="mt-1 text-sm text-red-600 hidden"></p>
+                                </div>
+
+                                <!-- Schedule -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label for="schedule_time_start" class="block text-sm font-medium text-gray-700">Start Time *</label>
+                                        <input type="time" id="schedule_time_start" name="schedule_time_start" required
+                                               value="<?= old('schedule_time_start') ?>"
+                                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                        <?php if (isset($validation) && $validation->getError('schedule_time_start')): ?>
+                                            <p class="mt-1 text-sm text-red-600"><?= $validation->getError('schedule_time_start') ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div>
+                                        <label for="schedule_time_end" class="block text-sm font-medium text-gray-700">End Time *</label>
+                                        <input type="time" id="schedule_time_end" name="schedule_time_end" required
+                                               value="<?= old('schedule_time_end') ?>"
+                                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                        <?php if (isset($validation) && $validation->getError('schedule_time_end')): ?>
+                                            <p class="mt-1 text-sm text-red-600"><?= $validation->getError('schedule_time_end') ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div>
+                                        <label for="duration" class="block text-sm font-medium text-gray-700">Class Duration (Auto)</label>
+                                        <input type="text" id="duration" name="duration" readonly
+                                               value="<?= old('duration', '2') ?>"
+                                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-primary focus:border-primary">
+                                        <?php if (isset($validation) && $validation->getError('duration')): ?>
+                                            <p class="mt-1 text-sm text-red-600"><?= $validation->getError('duration') ?></p>
+                                        <?php endif; ?>
+                                        <p class="mt-1 text-xs text-gray-500">Automatically calculated from time range</p>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
+                                    <div>
+                                        <label for="schedule_date" class="block text-sm font-medium text-gray-700">Schedule Date *</label>
+                                        <input type="date" id="schedule_date" name="schedule_date" required
+                                               value="<?= old('schedule_date') ?>"
+                                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                        <?php if (isset($validation) && $validation->getError('schedule_date')): ?>
+                                            <p class="mt-1 text-sm text-red-600"><?= $validation->getError('schedule_date') ?></p>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
 
@@ -298,5 +393,354 @@
             </main>
         </div>
     </div>
+
+    <script>
+        // Dynamic loading of semesters and terms
+        document.addEventListener('DOMContentLoaded', function() {
+            const acadYearSelect = document.getElementById('acad_year_id');
+            const semesterSelect = document.getElementById('semester_id');
+            const termSelect = document.getElementById('term_id');
+
+            // Get CSRF token from form
+            function getCSRFToken() {
+                const csrfInput = document.querySelector('input[name="<?= csrf_token() ?>"]');
+                return csrfInput ? csrfInput.value : '<?= csrf_hash() ?>';
+            }
+
+            // Load semesters when academic year changes
+            if (acadYearSelect) {
+                acadYearSelect.addEventListener('change', function() {
+                    const acadYearId = this.value;
+                    
+                    // Reset semester and term
+                    semesterSelect.innerHTML = '<option value="">Loading semesters...</option>';
+                    semesterSelect.disabled = true;
+                    termSelect.innerHTML = '<option value="">Select Semester first to load terms</option>';
+                    termSelect.disabled = true;
+                    
+                    if (acadYearId) {
+                        const formData = new URLSearchParams();
+                        formData.append('acad_year_id', acadYearId);
+                        formData.append('<?= csrf_token() ?>', getCSRFToken());
+                        
+                        fetch('<?= base_url('course/get-semesters-by-academic-year') ?>', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData.toString()
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Semesters response:', data);
+                            
+                            // Update CSRF token if provided
+                            if (data.csrf_hash) {
+                                const csrfInput = document.querySelector('input[name="<?= csrf_token() ?>"]');
+                                if (csrfInput) {
+                                    csrfInput.value = data.csrf_hash;
+                                }
+                            }
+                            
+                            semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+                            semesterSelect.disabled = false;
+                            
+                            if (data.success && data.semesters && data.semesters.length > 0) {
+                                console.log('Found semesters:', data.semesters.length);
+                                data.semesters.forEach(semester => {
+                                    const option = document.createElement('option');
+                                    option.value = semester.id;
+                                    option.textContent = semester.name;
+                                    semesterSelect.appendChild(option);
+                                });
+                            } else {
+                                semesterSelect.innerHTML = '<option value="">No semesters available</option>';
+                                console.log('No semesters found for academic year:', acadYearId, 'Response:', data);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading semesters:', error);
+                            semesterSelect.innerHTML = '<option value="">Error loading semesters</option>';
+                            semesterSelect.disabled = false;
+                        });
+                    } else {
+                        semesterSelect.innerHTML = '<option value="">Select Academic Year first</option>';
+                        semesterSelect.disabled = false;
+                        termSelect.disabled = false;
+                    }
+                });
+            }
+
+            // Load terms when semester changes
+            if (semesterSelect) {
+                semesterSelect.addEventListener('change', function() {
+                    const semesterId = this.value;
+                    
+                    // Reset term
+                    termSelect.innerHTML = '<option value="">Loading terms...</option>';
+                    termSelect.disabled = true;
+                    
+                    if (semesterId) {
+                        const formData = new URLSearchParams();
+                        formData.append('semester_id', semesterId);
+                        formData.append('<?= csrf_token() ?>', getCSRFToken());
+                        
+                        fetch('<?= base_url('course/get-terms-by-semester') ?>', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData.toString()
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Terms response:', data);
+                            
+                            // Update CSRF token if provided
+                            if (data.csrf_hash) {
+                                const csrfInput = document.querySelector('input[name="<?= csrf_token() ?>"]');
+                                if (csrfInput) {
+                                    csrfInput.value = data.csrf_hash;
+                                }
+                            }
+                            
+                            termSelect.innerHTML = '<option value="">Select Term</option>';
+                            termSelect.disabled = false;
+                            
+                            if (data.success && data.terms && data.terms.length > 0) {
+                                console.log('Found terms:', data.terms.length);
+                                data.terms.forEach(term => {
+                                    const option = document.createElement('option');
+                                    option.value = term.id;
+                                    option.textContent = term.term_name;
+                                    termSelect.appendChild(option);
+                                });
+                            } else {
+                                termSelect.innerHTML = '<option value="">No terms available</option>';
+                                console.log('No terms found for semester:', semesterId, 'Response:', data);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading terms:', error);
+                            termSelect.innerHTML = '<option value="">Error loading terms</option>';
+                            termSelect.disabled = false;
+                        });
+                    } else {
+                        termSelect.innerHTML = '<option value="">Select Semester first to load terms</option>';
+                        termSelect.disabled = false;
+                    }
+                });
+            }
+            
+
+            // Teacher search functionality
+            const teacherSearch = document.getElementById('teacher_search');
+            const teacherIdInput = document.getElementById('teacher_id');
+            const teacherResults = document.getElementById('teacher_results');
+            const selectedTeacherDiv = document.getElementById('selected_teacher');
+            const selectedTeacherName = document.getElementById('selected_teacher_name');
+            const clearTeacherBtn = document.getElementById('clear_teacher');
+            
+            // Store teachers data
+            const teachers = <?= json_encode(array_map(function($t) {
+                return [
+                    'id' => (int)$t['id'],
+                    'name' => $t['name'],
+                    'email' => $t['email']
+                ];
+            }, $teachers)) ?>;
+            
+            // Set initial value if old input exists
+            <?php if(old('teacher_id')): ?>
+                const initialTeacher = teachers.find(t => t.id == <?= old('teacher_id') ?>);
+                if (initialTeacher) {
+                    teacherSearch.value = initialTeacher.name + ' (' + initialTeacher.email + ')';
+                    teacherIdInput.value = initialTeacher.id;
+                    selectedTeacherName.textContent = initialTeacher.name + ' (' + initialTeacher.email + ')';
+                    selectedTeacherDiv.classList.remove('hidden');
+                }
+            <?php endif; ?>
+            
+            if (teacherSearch && teacherIdInput && teacherResults) {
+                // Show/hide results dropdown
+                function showResults() {
+                    teacherResults.classList.remove('hidden');
+                }
+                
+                function hideResults() {
+                    setTimeout(() => {
+                        teacherResults.classList.add('hidden');
+                    }, 200);
+                }
+                
+                // Filter and display results
+                function filterTeachers(searchTerm) {
+                    const term = searchTerm.toLowerCase().trim();
+                    teacherResults.innerHTML = '';
+                    
+                    if (term === '') {
+                        teacherResults.classList.add('hidden');
+                        return;
+                    }
+                    
+                    const filtered = teachers.filter(teacher => 
+                        teacher.name.toLowerCase().includes(term) || 
+                        teacher.email.toLowerCase().includes(term)
+                    );
+                    
+                    if (filtered.length === 0) {
+                        teacherResults.innerHTML = '<div class="p-3 text-gray-500 text-sm">No teachers found</div>';
+                        showResults();
+                        return;
+                    }
+                    
+                    filtered.forEach(teacher => {
+                        const div = document.createElement('div');
+                        div.className = 'p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0';
+                        div.innerHTML = `<div class="font-medium">${teacher.name}</div><div class="text-xs text-gray-500">${teacher.email}</div>`;
+                        div.addEventListener('click', function() {
+                            teacherSearch.value = teacher.name + ' (' + teacher.email + ')';
+                            teacherIdInput.value = teacher.id;
+                            selectedTeacherName.textContent = teacher.name + ' (' + teacher.email + ')';
+                            selectedTeacherDiv.classList.remove('hidden');
+                            hideResults();
+                        });
+                        teacherResults.appendChild(div);
+                    });
+                    
+                    showResults();
+                }
+                
+                // Search input event
+                teacherSearch.addEventListener('input', function() {
+                    filterTeachers(this.value);
+                });
+                
+                // Focus events
+                teacherSearch.addEventListener('focus', function() {
+                    if (this.value.trim() !== '') {
+                        filterTeachers(this.value);
+                    }
+                });
+                
+                // Hide results when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!teacherSearch.contains(e.target) && !teacherResults.contains(e.target)) {
+                        hideResults();
+                    }
+                });
+                
+                // Clear teacher selection
+                if (clearTeacherBtn) {
+                    clearTeacherBtn.addEventListener('click', function() {
+                        teacherSearch.value = '';
+                        teacherIdInput.value = '';
+                        selectedTeacherDiv.classList.add('hidden');
+                        hideResults();
+                    });
+                }
+            }
+
+            // Auto-calculate duration from time range
+            const startTimeInput = document.getElementById('schedule_time_start');
+            const endTimeInput = document.getElementById('schedule_time_end');
+            const durationInput = document.getElementById('duration');
+            
+            function calculateDuration() {
+                if (startTimeInput && endTimeInput && durationInput) {
+                    const startTime = startTimeInput.value;
+                    const endTime = endTimeInput.value;
+                    
+                    if (startTime && endTime) {
+                        // Parse time strings (HH:MM format)
+                        const [startHours, startMinutes] = startTime.split(':').map(Number);
+                        const [endHours, endMinutes] = endTime.split(':').map(Number);
+                        
+                        // Convert to minutes for easier calculation
+                        const startTotalMinutes = startHours * 60 + startMinutes;
+                        const endTotalMinutes = endHours * 60 + endMinutes;
+                        
+                        // Calculate difference in minutes
+                        let diffMinutes = endTotalMinutes - startTotalMinutes;
+                        
+                        // Handle case where end time is next day (e.g., 11 PM to 1 AM)
+                        if (diffMinutes < 0) {
+                            diffMinutes += 24 * 60; // Add 24 hours
+                        }
+                        
+                        // Calculate hours and minutes
+                        const hours = Math.floor(diffMinutes / 60);
+                        const minutes = diffMinutes % 60;
+                        
+                        // Format duration display (e.g., "4 hours (240 minutes)" or "3 hours 3 minutes (183 minutes)")
+                        let durationText = '';
+                        let durationValue = hours; // For form submission, use hours (round up if there are minutes)
+                        
+                        if (hours > 0 && minutes > 0) {
+                            durationText = `${hours} hour${hours > 1 ? 's' : ''} ${minutes} minute${minutes > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            // Round up to next hour if there are minutes (for form validation)
+                            durationValue = hours + 1;
+                        } else if (hours > 0) {
+                            durationText = `${hours} hour${hours > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            durationValue = hours;
+                        } else {
+                            durationText = `${minutes} minute${minutes > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            durationValue = 1; // Minimum 1 hour
+                        }
+                        
+                        // Limit to 8 hours maximum
+                        if (durationValue > 8) {
+                            durationValue = 8;
+                            durationText = `8 hours (480 minutes)`;
+                        } else if (durationValue < 1) {
+                            durationValue = 1;
+                            durationText = `1 hour (60 minutes)`;
+                        }
+                        
+                        // Set the display value (for form submission - rounded up hours)
+                        durationInput.value = durationValue;
+                        
+                        // Update the helper text to show exact duration with minutes
+                        const helperText = durationInput.parentElement.querySelector('.text-xs.text-gray-500');
+                        if (helperText) {
+                            // Show exact duration in helper text
+                            let exactDurationText = '';
+                            if (hours > 0 && minutes > 0) {
+                                exactDurationText = `${hours} hour${hours > 1 ? 's' : ''} ${minutes} minute${minutes > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            } else if (hours > 0) {
+                                exactDurationText = `${hours} hour${hours > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            } else {
+                                exactDurationText = `${minutes} minute${minutes > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            }
+                            helperText.textContent = `Automatically calculated: ${exactDurationText}`;
+                        }
+                    }
+                }
+            }
+            
+            // Calculate duration when times change
+            if (startTimeInput) {
+                startTimeInput.addEventListener('change', calculateDuration);
+                startTimeInput.addEventListener('input', calculateDuration);
+            }
+            
+            if (endTimeInput) {
+                endTimeInput.addEventListener('change', calculateDuration);
+                endTimeInput.addEventListener('input', calculateDuration);
+            }
+        });
+    </script>
 </body>
 </html>

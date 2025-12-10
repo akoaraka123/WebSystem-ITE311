@@ -4,17 +4,26 @@ namespace App\Controllers;
 
 use App\Models\SchoolSettingsModel;
 use App\Models\ProgramModel;
+use App\Models\AcademicYearModel;
+use App\Models\SemesterModel;
+use App\Models\TermModel;
 use App\Controllers\BaseController;
 
 class SchoolSetup extends BaseController
 {
     protected $schoolSettingsModel;
     protected $programModel;
+    protected $academicYearModel;
+    protected $semesterModel;
+    protected $termModel;
 
     public function __construct()
     {
         $this->schoolSettingsModel = new SchoolSettingsModel();
         $this->programModel = new ProgramModel();
+        $this->academicYearModel = new AcademicYearModel();
+        $this->semesterModel = new SemesterModel();
+        $this->termModel = new TermModel();
     }
 
     /**
@@ -30,12 +39,22 @@ class SchoolSetup extends BaseController
             return redirect()->to(base_url('dashboard'));
         }
 
+        // Get semesters with academic year info
+        $semesters = $this->semesterModel->select('semesters.*, academic_years.display_name as acad_year_name')
+                                         ->join('academic_years', 'academic_years.id = semesters.acad_year_id')
+                                         ->where('semesters.is_active', 1)
+                                         ->orderBy('academic_years.year_start', 'DESC')
+                                         ->orderBy('semesters.semester_number', 'ASC')
+                                         ->findAll();
+
         $data = [
             'title' => 'School Setup - LMS',
             'user' => $session->get(),
             'activeSettings' => $this->schoolSettingsModel->getActiveSettings(),
             'allSettings' => $this->schoolSettingsModel->getAllSettings(),
-            'programs' => $this->programModel->getAllPrograms()
+            'programs' => $this->programModel->getAllPrograms(),
+            'academicYears' => $this->academicYearModel->getAllAcademicYears(),
+            'semesters' => $semesters
         ];
 
         return view('admin/school_setup', $data);
@@ -263,6 +282,56 @@ class SchoolSetup extends BaseController
         return $this->response->setJSON([
             'success' => true,
             'program' => $program,
+            'csrf_hash' => csrf_hash()
+        ]);
+    }
+
+    /**
+     * Get academic year details (for editing)
+     */
+    public function getAcademicYear($id)
+    {
+        $session = session();
+        
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $acadYear = $this->academicYearModel->find($id);
+        if (!$acadYear) {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Academic year not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'academicYear' => $acadYear,
+            'csrf_hash' => csrf_hash()
+        ]);
+    }
+
+    /**
+     * Get semester details (for editing)
+     */
+    public function getSemester($id)
+    {
+        $session = session();
+        
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $semester = $this->semesterModel->find($id);
+        if (!$semester) {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Semester not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'semester' => $semester,
             'csrf_hash' => csrf_hash()
         ]);
     }

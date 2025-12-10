@@ -436,13 +436,12 @@ public function dashboard()
                 // Get detailed enrollment statistics
                 $enrollmentStats[$courseId] = [
                     'accepted' => $enrollmentModel->where('course_id', $courseId)
-                                                 ->groupStart()
-                                                     ->where('status', 'accepted')
-                                                     ->orWhere('status IS NULL')
-                                                 ->groupEnd()
+                                                 ->where('status', 'accepted')
+                                                 ->where('teacher_approved', 1)
                                                  ->countAllResults(),
                     'pending' => $enrollmentModel->where('course_id', $courseId)
                                                 ->where('status', 'pending')
+                                                ->where('teacher_approved', 0)
                                                 ->countAllResults(),
                     'total' => $enrollments[$courseId]
                 ];
@@ -450,6 +449,9 @@ public function dashboard()
                 // Load materials for each course
                 $materials[$courseId] = $materialModel->getMaterialsByCourse($courseId);
             }
+
+            // Get all pending enrollment requests for this teacher
+            $data['pending_enrollments'] = $enrollmentModel->getPendingEnrollmentsForTeacher($userID);
 
             $data['myCourses'] = $myCourses;
             $data['enrollments'] = $enrollments;

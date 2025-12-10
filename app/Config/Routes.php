@@ -68,7 +68,15 @@ $routes->post('course/reject-enrollment', 'Course::rejectEnrollment');
 $routes->get('courses/getAllStudents', 'Course::getAllStudents');
 $routes->get('courses/getAllTeachers', 'Course::getAllTeachers');
 $routes->post('courses/adminEnrollStudent', 'Course::adminEnrollStudent');
+$routes->post('course/admin-remove-student', 'Course::adminRemoveStudent');
 $routes->post('courses/assignTeacher', 'Course::assignTeacher');
+$routes->post('course/get-semesters-by-academic-year', 'Course::getSemestersByAcademicYear');
+$routes->post('course/get-terms-by-semester', 'Course::getTermsBySemester');
+$routes->post('course/teacher-approve-enrollment', 'Course::teacherApproveEnrollment');
+$routes->post('course/teacher-reject-enrollment', 'Course::teacherRejectEnrollment');
+$routes->post('course/admin-approve-enrollment', 'Course::adminApproveEnrollment');
+$routes->post('course/admin-reject-enrollment', 'Course::adminRejectEnrollment');
+$routes->get('course/pending-admin-approvals', 'Course::getPendingAdminApprovals');
 
 // ========================================
 // ENROLLMENT
@@ -103,6 +111,13 @@ $routes->post('school-setup/saveSettings', 'SchoolSetup::saveSettings');
 $routes->post('school-setup/saveProgram', 'SchoolSetup::saveProgram');
 $routes->post('school-setup/deleteProgram/(:num)', 'SchoolSetup::deleteProgram/$1');
 $routes->get('school-setup/getProgram/(:num)', 'SchoolSetup::getProgram/$1');
+$routes->post('school-setup/saveAcademicYear', 'SchoolSetup::saveAcademicYear');
+$routes->post('school-setup/saveSemester', 'SchoolSetup::saveSemester');
+$routes->post('school-setup/saveTerm', 'SchoolSetup::saveTerm');
+$routes->post('school-setup/get-semesters-by-academic-year', 'SchoolSetup::getSemestersByAcademicYear');
+$routes->post('school-setup/get-terms-by-semester', 'SchoolSetup::getTermsBySemester');
+$routes->get('school-setup/getAcademicYear/(:num)', 'SchoolSetup::getAcademicYear/$1');
+$routes->get('school-setup/getSemester/(:num)', 'SchoolSetup::getSemester/$1');
 
 // ========================================
 // SEEDER (for testing)

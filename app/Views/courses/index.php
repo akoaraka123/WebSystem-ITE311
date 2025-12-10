@@ -279,10 +279,25 @@
                         </div>
                     <?php endif; ?>
 
-                    <!-- Courses List -->
-                    <div id="coursesContainer" class="row g-4">
-                        <?php if (!empty($courses)): ?>
-                            <?php foreach ($courses as $course): ?>
+                    <!-- Courses List Grouped by Program -->
+                    <div id="coursesContainer">
+                        <?php if (!empty($groupedCourses)): ?>
+                            <?php foreach ($groupedCourses as $programKey => $programData): ?>
+                                <!-- Program Section Header -->
+                                <div class="program-section" style="margin-bottom: 30px;">
+                                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 3px solid #333;">
+                                        <h2 style="color: white; margin: 0; font-size: 24px; font-weight: bold; display: flex; align-items: center;">
+                                            <i class="fas fa-graduation-cap" style="margin-right: 12px; font-size: 28px;"></i>
+                                            <?= esc($programData['program_name']) ?>
+                                            <span style="margin-left: auto; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 14px;">
+                                                <?= count($programData['courses']) ?> <?= count($programData['courses']) == 1 ? 'Course' : 'Courses' ?>
+                                            </span>
+                                        </h2>
+                                    </div>
+                                    
+                                    <!-- Courses in this Program -->
+                                    <div class="row g-4">
+                                        <?php foreach ($programData['courses'] as $course): ?>
                                 <div class="col-md-4 mb-4" data-course-item>
                                     <div class="card course-card h-100 shadow-sm">
                                         <div class="card-body d-flex flex-column">
@@ -291,6 +306,88 @@
                                                 <span class="badge bg-success">Active</span>
                                             </div>
                                             <p class="card-text flex-grow-1"><?= esc($course['description'] ?? 'No description provided.') ?></p>
+                                            
+                                            <?php if (!empty($course['course_number'])): ?>
+                                            <div class="text-muted small mb-2">
+                                                <i class="fas fa-hashtag me-2"></i>
+                                                <span><strong>Course Code:</strong> <?= esc($course['course_number']) ?></span>
+                                            </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['acad_year_name'])): ?>
+                                            <div class="text-muted small mb-2">
+                                                <i class="fas fa-calendar-alt me-2"></i>
+                                                <span><strong>Academic Year:</strong> <?= esc($course['acad_year_name']) ?></span>
+                                            </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['semester_name'])): ?>
+                                            <div class="text-muted small mb-2">
+                                                <i class="fas fa-calendar-week me-2"></i>
+                                                <span><strong>Semester:</strong> <?= esc($course['semester_name']) ?></span>
+                                            </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['term_name'])): ?>
+                                            <div class="text-muted small mb-2">
+                                                <i class="fas fa-bookmark me-2"></i>
+                                                <span><strong>Term:</strong> <?= esc($course['term_name']) ?></span>
+                                            </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['schedule_time_start']) || !empty($course['schedule_time']) || !empty($course['schedule_date']) || !empty($course['duration'])): ?>
+                                            <div class="text-muted small mb-3">
+                                                <i class="fas fa-clock me-2"></i>
+                                                <span>
+                                                    <?php 
+                                                    $startTime = $course['schedule_time_start'] ?? $course['schedule_time'] ?? '';
+                                                    $endTime = $course['schedule_time_end'] ?? '';
+                                                    if ($startTime): 
+                                                    ?>
+                                                        <strong>Time:</strong> 
+                                                        <?php 
+                                                        // Format time for display (convert 24h to 12h)
+                                                        $startFormatted = date('g:i A', strtotime($startTime));
+                                                        if ($endTime) {
+                                                            $endFormatted = date('g:i A', strtotime($endTime));
+                                                            echo esc($startFormatted) . ' - ' . esc($endFormatted);
+                                                        } else {
+                                                            echo esc($startFormatted);
+                                                        }
+                                                        ?>
+                                                    <?php endif; ?>
+                                                    <?php 
+                                                    // Calculate exact duration from start and end times
+                                                    if ($startTime && $endTime): 
+                                                        $startTimestamp = strtotime($startTime);
+                                                        $endTimestamp = strtotime($endTime);
+                                                        $diffMinutes = round(($endTimestamp - $startTimestamp) / 60);
+                                                        $hours = floor($diffMinutes / 60);
+                                                        $minutes = $diffMinutes % 60;
+                                                        
+                                                        if ($startTime): ?> | <?php endif; ?>
+                                                        <strong>Duration:</strong> 
+                                                        <?php 
+                                                        if ($hours > 0 && $minutes > 0) {
+                                                            echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '') . ' ' . esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
+                                                        } else if ($hours > 0) {
+                                                            echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '');
+                                                        } else {
+                                                            echo esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
+                                                        }
+                                                        ?>
+                                                    <?php elseif (!empty($course['duration'])): ?>
+                                                        <?php if ($startTime): ?> | <?php endif; ?>
+                                                        <strong>Duration:</strong> <?= esc($course['duration']) ?> <?= $course['duration'] == 1 ? 'Hour' : 'Hours' ?>
+                                                    <?php endif; ?>
+                                                    <?php if (!empty($course['schedule_date'])): ?>
+                                                        <?php if ($startTime || !empty($course['duration'])): ?> | <?php endif; ?>
+                                                        <strong>Date:</strong> <?= date('M d, Y', strtotime($course['schedule_date'])) ?>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </div>
+                                            <?php endif; ?>
+                                            
                                             <div class="text-muted small mb-3">
                                                 <i class="fas fa-user-tie me-2"></i>
                                                 <span>Teacher ID: <?= esc($course['teacher_id'] ?? 'N/A') ?></span>
@@ -308,12 +405,18 @@
                                                         <button type="button" class="btn btn-outline-info" onclick="openAssignTeacherModal(<?= $course['id'] ?>, <?= htmlspecialchars(json_encode($course['title']), ENT_QUOTES, 'UTF-8') ?>, <?= $course['teacher_id'] ?? 0 ?>)">
                                                             <i class="fas fa-user-tie me-1"></i> Assign Teacher
                                                         </button>
+                                                        <button type="button" class="btn btn-outline-info" onclick="openViewStudentsModal(<?= $course['id'] ?>, <?= htmlspecialchars(json_encode($course['title']), ENT_QUOTES, 'UTF-8') ?>)">
+                                                            <i class="fas fa-users me-1"></i> View Students
+                                                        </button>
                                                         <button type="button" class="btn btn-outline-success" onclick="openEnrollStudentModal(<?= $course['id'] ?>, <?= htmlspecialchars(json_encode($course['title']), ENT_QUOTES, 'UTF-8') ?>)">
                                                             <i class="fas fa-user-plus me-1"></i> Enroll Student
                                                         </button>
                                                         <a href="<?= base_url('edit-course/' . $course['id']) ?>" class="btn btn-outline-secondary">
                                                             <i class="fas fa-edit me-1"></i> Edit
                                                         </a>
+                                                        <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteCourse(<?= $course['id'] ?>, '<?= htmlspecialchars(addslashes($course['title']), ENT_QUOTES, 'UTF-8') ?>')">
+                                                            <i class="fas fa-trash me-1"></i> Delete
+                                                        </button>
                                                     </div>
                                                 <?php elseif(session('role') == 'student'): ?>
                                                     <a href="<?= base_url('course/' . $course['id']) ?>" class="btn btn-primary w-100">
@@ -331,6 +434,9 @@
                                                 <?php endif; ?>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -471,6 +577,34 @@
         </div>
     </div>
 
+    <!-- View Students Modal -->
+    <div class="modal fade" id="viewStudentsModal" tabindex="-1" aria-labelledby="viewStudentsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewStudentsModalLabel">Enrolled Students</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3"><strong>Course:</strong> <span id="viewStudentsCourseTitle"></span></p>
+                    <div id="viewStudentsLoading" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading students...</p>
+                    </div>
+                    <div id="viewStudentsContent" style="display: none;">
+                        <div id="viewStudentsList"></div>
+                    </div>
+                    <div id="viewStudentsError" class="alert alert-danger" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Enroll Student Modal -->
     <div class="modal fade" id="enrollStudentModal" tabindex="-1" aria-labelledby="enrollStudentModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -572,18 +706,31 @@
             $('#enrollStudentCourseId').val(courseId);
             $('#enrollStudentCourseTitle').text(courseTitle);
             
+            // Reset the select
+            const select = $('#enrollStudentSelect');
+            select.empty();
+            select.append('<option value="">Loading students...</option>');
+            
             // Load students
-            $.get('<?= base_url('courses/getAllStudents') ?>', function(response) {
-                if (response.success) {
-                    const select = $('#enrollStudentSelect');
-                    select.empty();
-                    select.append('<option value="">Select a student</option>');
-                    response.students.forEach(function(student) {
-                        select.append(`<option value="${student.id}">${student.name} (${student.email})</option>`);
-                    });
+            $.ajax({
+                url: '<?= base_url('courses/getAllStudents') ?>',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success && response.students) {
+                        select.empty();
+                        select.append('<option value="">Select a student</option>');
+                        response.students.forEach(function(student) {
+                            select.append(`<option value="${student.id}">${student.name} (${student.email})</option>`);
+                        });
+                    } else {
+                        select.html('<option value="">No students available</option>');
+                    }
+                },
+                error: function(xhr) {
+                    select.html('<option value="">Error loading students. Please try again.</option>');
+                    console.error('Error loading students:', xhr);
                 }
-            }).fail(function() {
-                $('#enrollStudentSelect').html('<option value="">Error loading students</option>');
             });
 
             $('#enrollStudentModal').modal('show');
@@ -591,34 +738,73 @@
 
         // Submit Enroll Student
         function submitEnrollStudent() {
+            const courseId = $('#enrollStudentCourseId').val();
+            const studentId = $('#enrollStudentSelect').val();
+            
+            if (!courseId || !studentId) {
+                alert('Please select a student.');
+                return;
+            }
+            
+            // Get CSRF token from the form
+            const csrfTokenName = '<?= csrf_token() ?>';
+            const csrfTokenValue = $('#enrollStudentForm input[name="' + csrfTokenName + '"]').val();
+            
             const formData = {
-                course_id: $('#enrollStudentCourseId').val(),
-                student_id: $('#enrollStudentSelect').val()
+                course_id: courseId,
+                student_id: studentId
             };
             
             // Add CSRF token
-            formData['<?= csrf_token() ?>'] = '<?= csrf_hash() ?>';
+            formData[csrfTokenName] = csrfTokenValue;
 
             $.ajax({
                 url: '<?= base_url('courses/adminEnrollStudent') ?>',
                 type: 'POST',
                 data: formData,
                 dataType: 'json',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 success: function(response) {
+                    // Update CSRF token if provided
+                    if (response.csrf_hash) {
+                        $('#enrollStudentForm input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                    }
+                    
                     if (response.success) {
                         alert('Student enrolled successfully!');
                         $('#enrollStudentModal').modal('hide');
                         location.reload();
                     } else {
-                        alert('Error: ' + response.message);
+                        alert('Error: ' + (response.message || 'Failed to enroll student'));
                     }
                 },
                 error: function(xhr) {
                     let errorMsg = 'An error occurred. Please try again.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                    
+                    // Handle CSRF token error
+                    if (xhr.status === 403 || xhr.status === 400) {
+                        errorMsg = 'Session expired. Please refresh the page and try again.';
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        try {
+                            const errorData = JSON.parse(xhr.responseText);
+                            if (errorData.message) {
+                                errorMsg = errorData.message;
+                            }
+                        } catch (e) {
+                            // If not JSON, use default message
+                        }
                     }
+                    
                     alert(errorMsg);
+                    
+                    // Update CSRF token if provided
+                    if (xhr.responseJSON && xhr.responseJSON.csrf_hash) {
+                        $('#enrollStudentForm input[name="' + csrfTokenName + '"]').val(xhr.responseJSON.csrf_hash);
+                    }
                 }
             });
         }
@@ -670,6 +856,235 @@
                 e.preventDefault();
             }, { passive: false });
         })();
+        
+        // Open View Students Modal
+        function openViewStudentsModal(courseId, courseTitle) {
+            $('#viewStudentsCourseTitle').text(courseTitle);
+            $('#viewStudentsModal').data('course-id', courseId);
+            $('#viewStudentsLoading').show();
+            $('#viewStudentsContent').hide();
+            $('#viewStudentsError').hide();
+            
+            // Fetch enrolled students
+            $.ajax({
+                url: '<?= base_url('course/') ?>' + courseId + '/enrollments',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    $('#viewStudentsLoading').hide();
+                    
+                    if (response.success && response.enrollments) {
+                        renderViewStudentsList(response.enrollments, courseId);
+                        $('#viewStudentsContent').show();
+                    } else {
+                        $('#viewStudentsError').text(response.message || 'Failed to load students').show();
+                    }
+                },
+                error: function(xhr) {
+                    $('#viewStudentsLoading').hide();
+                    let errorMsg = 'Failed to load students. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    $('#viewStudentsError').text(errorMsg).show();
+                }
+            });
+            
+            $('#viewStudentsModal').modal('show');
+        }
+        
+        // Render students list
+        function renderViewStudentsList(enrollments, courseId) {
+            const accepted = enrollments.accepted || [];
+            const pending = enrollments.pending || [];
+            const rejected = enrollments.rejected || [];
+            
+            let html = '<div class="mb-3">';
+            html += '<h6 class="mb-2">Summary:</h6>';
+            html += '<div class="d-flex gap-2 mb-3">';
+            html += '<span class="badge bg-success">Accepted: ' + (enrollments.summary?.accepted || accepted.length) + '</span>';
+            html += '<span class="badge bg-warning">Pending: ' + (enrollments.summary?.pending || pending.length) + '</span>';
+            html += '<span class="badge bg-danger">Rejected: ' + (enrollments.summary?.rejected || rejected.length) + '</span>';
+            html += '</div>';
+            html += '</div>';
+            
+            // Accepted Students
+            if (accepted.length > 0) {
+                html += '<div class="mb-4">';
+                html += '<h6 class="text-success mb-3"><i class="fas fa-check-circle me-2"></i>Accepted Students (' + accepted.length + ')</h6>';
+                html += '<div class="list-group">';
+                accepted.forEach(function(student) {
+                    html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+                    html += '<div>';
+                    html += '<strong>' + escapeHtml(student.student_name || 'Unknown') + '</strong><br>';
+                    html += '<small class="text-muted">' + escapeHtml(student.student_email || '') + '</small><br>';
+                    html += '<small class="text-muted">Enrolled: ' + formatDate(student.enrollment_date) + '</small>';
+                    html += '</div>';
+                    html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmRemoveStudent(' + student.user_id + ', ' + courseId + ', \'' + escapeHtml(student.student_name || 'Student') + '\', \'' + escapeHtml($('#viewStudentsCourseTitle').text()) + '\')">';
+                    html += '<i class="fas fa-user-minus me-1"></i> Remove';
+                    html += '</button>';
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            // Pending Students
+            if (pending.length > 0) {
+                html += '<div class="mb-4">';
+                html += '<h6 class="text-warning mb-3"><i class="fas fa-clock me-2"></i>Pending Requests (' + pending.length + ')</h6>';
+                html += '<div class="list-group">';
+                pending.forEach(function(student) {
+                    html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+                    html += '<div>';
+                    html += '<strong>' + escapeHtml(student.student_name || 'Unknown') + '</strong><br>';
+                    html += '<small class="text-muted">' + escapeHtml(student.student_email || '') + '</small><br>';
+                    html += '<small class="text-muted">Requested: ' + formatDate(student.enrollment_date) + '</small>';
+                    html += '</div>';
+                    html += '<span class="badge bg-warning">Pending</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            // Rejected Students
+            if (rejected.length > 0) {
+                html += '<div class="mb-4">';
+                html += '<h6 class="text-danger mb-3"><i class="fas fa-times-circle me-2"></i>Rejected Requests (' + rejected.length + ')</h6>';
+                html += '<div class="list-group">';
+                rejected.forEach(function(student) {
+                    html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+                    html += '<div>';
+                    html += '<strong>' + escapeHtml(student.student_name || 'Unknown') + '</strong><br>';
+                    html += '<small class="text-muted">' + escapeHtml(student.student_email || '') + '</small>';
+                    html += '</div>';
+                    html += '<span class="badge bg-danger">Rejected</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            if (accepted.length === 0 && pending.length === 0 && rejected.length === 0) {
+                html += '<div class="text-center py-4 text-muted">';
+                html += '<i class="fas fa-users fa-3x mb-3 text-muted"></i>';
+                html += '<p>No students enrolled in this course yet.</p>';
+                html += '</div>';
+            }
+            
+            $('#viewStudentsList').html(html);
+        }
+        
+        // Remove student confirmation
+        function confirmRemoveStudent(studentId, courseId, studentName, courseTitle) {
+            if (!confirm('⚠️ WARNING: Are you sure you want to remove this student from the course?\n\nStudent: ' + studentName + '\nCourse: ' + courseTitle + '\n\nThis action will permanently remove the student from this course.\n\nClick OK to confirm removal, or Cancel to abort.')) {
+                return;
+            }
+            
+            // Double confirmation for safety
+            if (!confirm('⚠️ FINAL CONFIRMATION\n\nAre you absolutely sure you want to remove "' + studentName + '" from "' + courseTitle + '"?\n\nThis is your last chance to cancel.')) {
+                return;
+            }
+            
+            // Get CSRF token
+            const csrfTokenName = '<?= csrf_token() ?>';
+            const csrfTokenValue = $('input[name="' + csrfTokenName + '"]').val() || $('meta[name="csrf-token"]').attr('content');
+            
+            const formData = {
+                student_id: studentId,
+                course_id: courseId
+            };
+            formData[csrfTokenName] = csrfTokenValue;
+            
+            $.ajax({
+                url: '<?= base_url('course/admin-remove-student') ?>',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    // Update CSRF token if provided
+                    if (response.csrf_hash) {
+                        $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                    }
+                    
+                    if (response.success) {
+                        alert('Student removed successfully!');
+                        // Reload the students list
+                        const courseId = $('#viewStudentsModal').data('course-id');
+                        const courseTitle = $('#viewStudentsCourseTitle').text();
+                        openViewStudentsModal(courseId, courseTitle);
+                    } else {
+                        alert('Error: ' + (response.message || 'Failed to remove student'));
+                    }
+                },
+                error: function(xhr) {
+                    let errorMsg = 'An error occurred. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    alert(errorMsg);
+                    
+                    // Update CSRF token if provided
+                    if (xhr.responseJSON && xhr.responseJSON.csrf_hash) {
+                        $('input[name="' + csrfTokenName + '"]').val(xhr.responseJSON.csrf_hash);
+                    }
+                }
+            });
+        }
+        
+        // Helper functions
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text ? text.replace(/[&<>"']/g, function(m) { return map[m]; }) : '';
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+        
+        // Store course ID when opening modal
+        $('#viewStudentsModal').on('show.bs.modal', function() {
+            // This will be set by openViewStudentsModal
+        });
+        
+        // Delete course confirmation function
+        function confirmDeleteCourse(courseId, courseTitle) {
+            if (!confirm('⚠️ WARNING: Are you sure you want to delete this course?\n\nCourse: ' + courseTitle + '\n\nThis action will permanently delete:\n- The course\n- All enrollments\n- All course materials\n\nThis action CANNOT be undone!\n\nClick OK to confirm deletion, or Cancel to abort.')) {
+                return;
+            }
+            
+            // Double confirmation for safety
+            if (!confirm('⚠️ FINAL CONFIRMATION\n\nAre you absolutely sure you want to delete "' + courseTitle + '"?\n\nThis is your last chance to cancel.')) {
+                return;
+            }
+            
+            // Create a form to submit the delete request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '<?= base_url('course/delete/') ?>' + courseId;
+            
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '<?= csrf_token() ?>';
+            csrfInput.value = '<?= csrf_hash() ?>';
+            form.appendChild(csrfInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
     </script>
 </body>
 </html>

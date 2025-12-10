@@ -81,7 +81,126 @@
                     <p class="text-gray-500 italic mb-8">This course does not have a description yet.</p>
                 <?php endif; ?>
 
-                <div class="grid md:grid-cols-2 gap-6">
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <?php if (!empty($course['course_number'])): ?>
+                    <div class="bg-indigo-50 rounded-xl p-5 info-card">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                <i class="fas fa-hashtag"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-xs uppercase text-indigo-400 font-semibold">Course Code</p>
+                                <p class="text-lg font-semibold text-gray-800"><?= esc($course['course_number']) ?></p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600">Unique identifier for this course section.</p>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($course['acad_year_name'])): ?>
+                    <div class="bg-green-50 rounded-xl p-5 info-card">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-xs uppercase text-green-400 font-semibold">Academic Year</p>
+                                <p class="text-lg font-semibold text-gray-800"><?= esc($course['acad_year_name']) ?></p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600">The academic year for this course.</p>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($course['semester_name'])): ?>
+                    <div class="bg-yellow-50 rounded-xl p-5 info-card">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                                <i class="fas fa-calendar-week"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-xs uppercase text-yellow-400 font-semibold">Semester</p>
+                                <p class="text-lg font-semibold text-gray-800"><?= esc($course['semester_name']) ?></p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600">The semester period for this course.</p>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($course['term_name'])): ?>
+                    <div class="bg-pink-50 rounded-xl p-5 info-card">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
+                                <i class="fas fa-bookmark"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-xs uppercase text-pink-400 font-semibold">Term</p>
+                                <p class="text-lg font-semibold text-gray-800"><?= esc($course['term_name']) ?></p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600">The grading term for this course.</p>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php 
+                    $startTime = $course['schedule_time_start'] ?? $course['schedule_time'] ?? '';
+                    $endTime = $course['schedule_time_end'] ?? '';
+                    if ($startTime || !empty($course['schedule_date']) || !empty($course['duration'])): 
+                    ?>
+                    <div class="bg-teal-50 rounded-xl p-5 info-card">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-xs uppercase text-teal-400 font-semibold">Schedule</p>
+                                <p class="text-lg font-semibold text-gray-800">
+                                    <?php if ($startTime): ?>
+                                        <?php 
+                                        $startFormatted = date('g:i A', strtotime($startTime));
+                                        if ($endTime) {
+                                            $endFormatted = date('g:i A', strtotime($endTime));
+                                            echo esc($startFormatted) . ' - ' . esc($endFormatted);
+                                        } else {
+                                            echo esc($startFormatted);
+                                        }
+                                        ?>
+                                    <?php endif; ?>
+                                    <?php 
+                                    // Calculate exact duration from start and end times
+                                    if ($startTime && $endTime): 
+                                        $startTimestamp = strtotime($startTime);
+                                        $endTimestamp = strtotime($endTime);
+                                        $diffMinutes = round(($endTimestamp - $startTimestamp) / 60);
+                                        $hours = floor($diffMinutes / 60);
+                                        $minutes = $diffMinutes % 60;
+                                        ?>
+                                        <?php if ($startTime): ?><br><?php endif; ?>
+                                        <strong>Duration:</strong> 
+                                        <?php 
+                                        if ($hours > 0 && $minutes > 0) {
+                                            echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '') . ' ' . esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
+                                        } else if ($hours > 0) {
+                                            echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '');
+                                        } else {
+                                            echo esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
+                                        }
+                                        ?>
+                                    <?php elseif (!empty($course['duration'])): ?>
+                                        <?php if ($startTime): ?><br><?php endif; ?>
+                                        <strong>Duration:</strong> <?= esc($course['duration']) ?> <?= $course['duration'] == 1 ? 'Hour' : 'Hours' ?>
+                                    <?php endif; ?>
+                                    <?php if (!empty($course['schedule_date'])): ?>
+                                        <?php if ($startTime || !empty($course['duration'])): ?><br><?php endif; ?>
+                                        <?= date('M d, Y', strtotime($course['schedule_date'])) ?>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600">Class schedule, duration, and date.</p>
+                    </div>
+                    <?php endif; ?>
+
                     <div class="bg-blue-50 rounded-xl p-5 info-card">
                         <div class="flex items-center mb-3">
                             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
@@ -120,7 +239,15 @@
                 <div class="text-sm text-gray-500">
                     Last updated: <?= esc(!empty($course['updated_at']) ? date('M j, Y g:i A', strtotime($course['updated_at'])) : 'No updates yet') ?>
                 </div>
-                <div>
+                <div class="flex gap-2">
+                    <?php if(session('role') == 'admin'): ?>
+                        <a href="<?= base_url('edit-course/' . $course['id']) ?>" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md shadow hover:bg-gray-700">
+                            <i class="fas fa-edit mr-2"></i>Edit Course
+                        </a>
+                        <button type="button" onclick="confirmDeleteCourse(<?= $course['id'] ?>, '<?= htmlspecialchars(addslashes($course['title']), ENT_QUOTES, 'UTF-8') ?>')" class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md shadow hover:bg-red-700">
+                            <i class="fas fa-trash mr-2"></i>Delete Course
+                        </button>
+                    <?php endif; ?>
                     <a href="<?= base_url('courses') ?>" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow hover:bg-blue-700">
                         <i class="fas fa-book-open mr-2"></i>Browse other courses
                     </a>
@@ -180,6 +307,35 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        // Delete course confirmation function
+        function confirmDeleteCourse(courseId, courseTitle) {
+            if (!confirm('⚠️ WARNING: Are you sure you want to delete this course?\n\nCourse: ' + courseTitle + '\n\nThis action will permanently delete:\n- The course\n- All enrollments\n- All course materials\n\nThis action CANNOT be undone!\n\nClick OK to confirm deletion, or Cancel to abort.')) {
+                return;
+            }
+            
+            // Double confirmation for safety
+            if (!confirm('⚠️ FINAL CONFIRMATION\n\nAre you absolutely sure you want to delete "' + courseTitle + '"?\n\nThis is your last chance to cancel.')) {
+                return;
+            }
+            
+            // Create a form to submit the delete request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '<?= base_url('course/delete/') ?>' + courseId;
+            
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '<?= csrf_token() ?>';
+            csrfInput.value = '<?= csrf_hash() ?>';
+            form.appendChild(csrfInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
 </body>
 </html>
 

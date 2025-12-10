@@ -183,6 +183,110 @@
                                             <p class="text-gray-600 text-sm mb-4"><?= esc($course['description']) ?></p>
                                         <?php endif; ?>
 
+                                        <!-- Academic Information Section -->
+                                        <div class="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                                            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                                <i class="fas fa-info-circle mr-2 text-primary"></i>
+                                                Course Information
+                                            </h4>
+                                            
+                                            <div class="space-y-2">
+                                                <?php if (!empty($course['course_number'])): ?>
+                                                <div class="flex items-center text-sm text-gray-700">
+                                                    <i class="fas fa-hashtag mr-2 text-gray-500 w-4"></i>
+                                                    <span class="font-medium">Course Code:</span>
+                                                    <span class="ml-2"><?= esc($course['course_number']) ?></span>
+                                                </div>
+                                                <?php endif; ?>
+
+                                                <?php if (!empty($course['acad_year_name'])): ?>
+                                                <div class="flex items-center text-sm text-gray-700">
+                                                    <i class="fas fa-calendar-alt mr-2 text-gray-500 w-4"></i>
+                                                    <span class="font-medium">Academic Year:</span>
+                                                    <span class="ml-2"><?= esc($course['acad_year_name']) ?></span>
+                                                </div>
+                                                <?php endif; ?>
+
+                                                <?php if (!empty($course['semester_name'])): ?>
+                                                <div class="flex items-center text-sm text-gray-700">
+                                                    <i class="fas fa-calendar-week mr-2 text-gray-500 w-4"></i>
+                                                    <span class="font-medium">Semester:</span>
+                                                    <span class="ml-2"><?= esc($course['semester_name']) ?></span>
+                                                </div>
+                                                <?php endif; ?>
+
+                                                <?php if (!empty($course['term_name'])): ?>
+                                                <div class="flex items-center text-sm text-gray-700">
+                                                    <i class="fas fa-bookmark mr-2 text-gray-500 w-4"></i>
+                                                    <span class="font-medium">Term:</span>
+                                                    <span class="ml-2"><?= esc($course['term_name']) ?></span>
+                                                </div>
+                                                <?php endif; ?>
+
+                                                <?php 
+                                                $startTime = $course['schedule_time_start'] ?? $course['schedule_time'] ?? '';
+                                                $endTime = $course['schedule_time_end'] ?? '';
+                                                if ($startTime || !empty($course['schedule_date'])): 
+                                                ?>
+                                                <div class="flex items-center text-sm text-gray-700">
+                                                    <i class="fas fa-clock mr-2 text-gray-500 w-4"></i>
+                                                    <span class="font-medium">Schedule:</span>
+                                                    <span class="ml-2">
+                                                        <?php if ($startTime): ?>
+                                                            <?php 
+                                                            $startFormatted = date('g:i A', strtotime($startTime));
+                                                            if ($endTime) {
+                                                                $endFormatted = date('g:i A', strtotime($endTime));
+                                                                echo esc($startFormatted) . ' - ' . esc($endFormatted);
+                                                            } else {
+                                                                echo esc($startFormatted);
+                                                            }
+                                                            ?>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($course['schedule_date'])): ?>
+                                                            <?php if ($startTime): ?>, <?php endif; ?>
+                                                            <?= date('M d, Y', strtotime($course['schedule_date'])) ?>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </div>
+                                                <?php endif; ?>
+
+                                                <?php 
+                                                // Calculate exact duration from start and end times
+                                                $startTime = $course['schedule_time_start'] ?? $course['schedule_time'] ?? '';
+                                                $endTime = $course['schedule_time_end'] ?? '';
+                                                if ($startTime && $endTime): 
+                                                    $startTimestamp = strtotime($startTime);
+                                                    $endTimestamp = strtotime($endTime);
+                                                    $diffMinutes = round(($endTimestamp - $startTimestamp) / 60);
+                                                    $hours = floor($diffMinutes / 60);
+                                                    $minutes = $diffMinutes % 60;
+                                                ?>
+                                                <div class="flex items-center text-sm text-gray-700">
+                                                    <i class="fas fa-hourglass-half mr-2 text-gray-500 w-4"></i>
+                                                    <span class="font-medium">Duration:</span>
+                                                    <span class="ml-2">
+                                                        <?php 
+                                                        if ($hours > 0 && $minutes > 0) {
+                                                            echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '') . ' ' . esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
+                                                        } else if ($hours > 0) {
+                                                            echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '');
+                                                        } else {
+                                                            echo esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
+                                                        }
+                                                        ?>
+                                                    </span>
+                                                </div>
+                                                <?php elseif (!empty($course['duration'])): ?>
+                                                <div class="flex items-center text-sm text-gray-700">
+                                                    <i class="fas fa-hourglass-half mr-2 text-gray-500 w-4"></i>
+                                                    <span class="font-medium">Duration:</span>
+                                                    <span class="ml-2"><?= esc($course['duration']) ?> <?= $course['duration'] == 1 ? 'Hour' : 'Hours' ?></span>
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+
                                         <div class="flex items-center text-sm text-gray-500 mb-4">
                                             <i class="fas fa-calendar mr-2"></i>
                                             <span>

@@ -197,35 +197,45 @@
                                 <label for="title" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Course Title *</label>
                                 <input type="text" id="title" name="title" required
                                        value="<?= esc($course['title'] ?? old('title')) ?>"
-                                       style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
+                                       style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;"
+                                       onkeypress="return validateAlphanumericSpace(event)"
+                                       oninput="validateInput(this)">
                                 <?php if (isset($validation) && $validation->getError('title')): ?>
                                     <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('title') ?></p>
                                 <?php endif; ?>
+                                <p style="margin-top: 5px; font-size: 12px; color: #666;">Only letters, numbers, and spaces are allowed. Special characters are not permitted.</p>
+                                <p id="title_error" style="margin-top: 5px; font-size: 12px; color: #d32f2f; display: none;"></p>
                             </div>
 
                             <div class="form-group" style="margin-bottom: 18px;">
                                 <label for="description" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Course Description *</label>
                                 <textarea id="description" name="description" rows="6" required
-                                          style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;"><?= esc($course['description'] ?? old('description')) ?></textarea>
+                                          style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;"
+                                          onkeypress="return validateAlphanumericSpace(event)"
+                                          oninput="validateInput(this)"><?= esc($course['description'] ?? old('description')) ?></textarea>
                                 <?php if (isset($validation) && $validation->getError('description')): ?>
                                     <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('description') ?></p>
                                 <?php endif; ?>
-                                <p style="margin-top: 5px; font-size: 12px; color: #666;">Minimum 10 characters required</p>
+                                <p style="margin-top: 5px; font-size: 12px; color: #666;">Minimum 10 characters required. Only letters, numbers, and spaces are allowed.</p>
+                                <p id="description_error" style="margin-top: 5px; font-size: 12px; color: #d32f2f; display: none;"></p>
                             </div>
 
                             <!-- Teacher Assignment (Admin Only) -->
                             <?php if(session('role') == 'admin' && isset($teachers) && !empty($teachers)): ?>
-                            <div class="form-group" style="margin-bottom: 18px;">
-                                <label for="teacher_id" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Assign Teacher</label>
-                                <select id="teacher_id" name="teacher_id"
-                                        style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
-                                    <option value="">Select a teacher</option>
-                                    <?php foreach($teachers as $teacher): ?>
-                                        <option value="<?= $teacher['id'] ?>" <?= (isset($course['teacher_id']) && $course['teacher_id'] == $teacher['id']) ? 'selected' : '' ?>>
-                                            <?= esc($teacher['name']) ?> (<?= esc($teacher['email']) ?>)
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                            <div class="form-group" style="margin-bottom: 18px; position: relative;">
+                                <label for="teacher_search" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Assign Teacher</label>
+                                <input type="text" id="teacher_search" placeholder="Search teacher by name or email..." 
+                                       style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;"
+                                       autocomplete="off">
+                                <input type="hidden" id="teacher_id" name="teacher_id" value="<?= isset($course['teacher_id']) ? $course['teacher_id'] : '' ?>">
+                                <div id="teacher_results" style="display: none; position: absolute; z-index: 1000; width: 100%; margin-top: 4px; background: white; border: 2px solid #999; border-radius: 3px; max-height: 240px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                    <!-- Results will be populated here -->
+                                </div>
+                                <div id="selected_teacher" style="margin-top: 8px; padding: 8px; background: #f0f0f0; border-radius: 3px; font-size: 13px; color: #333; <?= (isset($course['teacher_id']) && $course['teacher_id']) ? '' : 'display: none;' ?>">
+                                    <span style="font-weight: 600;">Selected: </span><span id="selected_teacher_name"></span>
+                                    <button type="button" id="clear_teacher" style="margin-left: 8px; color: #dc2626; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear</button>
+                                </div>
+                                <p style="margin-top: 6px; font-size: 12px; color: #666;">Type to search for a teacher</p>
                             </div>
                             <?php endif; ?>
 
@@ -245,6 +255,123 @@
                             </div>
                             <?php endif; ?>
 
+                            <!-- Academic Year -->
+                            <div class="form-group" style="margin-bottom: 18px;">
+                                <label for="acad_year_id" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Academic Year (Taon ng Akademiko) *</label>
+                                <select id="acad_year_id" name="acad_year_id" required
+                                        style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
+                                    <option value="">Select Academic Year</option>
+                                    <?php if(isset($academicYears) && !empty($academicYears)): ?>
+                                        <?php foreach($academicYears as $acadYear): ?>
+                                            <option value="<?= $acadYear['id'] ?>" <?= (isset($course['acad_year_id']) && $course['acad_year_id'] == $acadYear['id']) ? 'selected' : '' ?>>
+                                                <?= esc($acadYear['display_name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <?php if (isset($validation) && $validation->getError('acad_year_id')): ?>
+                                    <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('acad_year_id') ?></p>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Semester -->
+                            <div class="form-group" style="margin-bottom: 18px;">
+                                <label for="semester_id" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Semester (Semestre) *</label>
+                                <select id="semester_id" name="semester_id" required
+                                        style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
+                                    <option value="">Select Semester</option>
+                                    <?php if(isset($semesters) && !empty($semesters)): ?>
+                                        <?php foreach($semesters as $semester): ?>
+                                            <option value="<?= $semester['id'] ?>" <?= (isset($course['semester_id']) && $course['semester_id'] == $semester['id']) ? 'selected' : '' ?>>
+                                                <?= esc($semester['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <?php if (isset($validation) && $validation->getError('semester_id')): ?>
+                                    <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('semester_id') ?></p>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Term -->
+                            <div class="form-group" style="margin-bottom: 18px;">
+                                <label for="term_id" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Term (Termino/Yugto) *</label>
+                                <select id="term_id" name="term_id" required
+                                        style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
+                                    <option value="">Select Term</option>
+                                    <?php if(isset($terms) && !empty($terms)): ?>
+                                        <?php foreach($terms as $term): ?>
+                                            <option value="<?= $term['id'] ?>" <?= (isset($course['term_id']) && $course['term_id'] == $term['id']) ? 'selected' : '' ?>>
+                                                <?= esc($term['term_name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <?php if (isset($validation) && $validation->getError('term_id')): ?>
+                                    <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('term_id') ?></p>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Course Number (CN) -->
+                            <div class="form-group" style="margin-bottom: 18px;">
+                                <label for="course_number" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Course Number / Section Code (CN) *</label>
+                                <input type="text" id="course_number" name="course_number" required
+                                       value="<?= esc($course['course_number'] ?? old('course_number')) ?>"
+                                       placeholder="e.g., IT101 A"
+                                       style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;"
+                                       onkeypress="return validateAlphanumericSpace(event)"
+                                       oninput="validateInput(this)">
+                                <p style="margin-top: 5px; font-size: 12px; color: #666;">Only letters, numbers, and spaces are allowed.</p>
+                                <p id="course_number_error" style="margin-top: 5px; font-size: 12px; color: #d32f2f; display: none;"></p>
+                                <?php if (isset($validation) && $validation->getError('course_number')): ?>
+                                    <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('course_number') ?></p>
+                                <?php endif; ?>
+                                <p style="margin-top: 5px; font-size: 12px; color: #666;">Unique code for subject or section (e.g., IT101-A)</p>
+                            </div>
+
+                            <!-- Schedule -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 18px;">
+                                <div class="form-group">
+                                    <label for="schedule_time_start" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Start Time *</label>
+                                    <input type="time" id="schedule_time_start" name="schedule_time_start" required
+                                           value="<?= esc($course['schedule_time_start'] ?? $course['schedule_time'] ?? old('schedule_time_start')) ?>"
+                                           style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
+                                    <?php if (isset($validation) && $validation->getError('schedule_time_start')): ?>
+                                        <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('schedule_time_start') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="form-group">
+                                    <label for="schedule_time_end" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">End Time *</label>
+                                    <input type="time" id="schedule_time_end" name="schedule_time_end" required
+                                           value="<?= esc($course['schedule_time_end'] ?? old('schedule_time_end')) ?>"
+                                           style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
+                                    <?php if (isset($validation) && $validation->getError('schedule_time_end')): ?>
+                                        <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('schedule_time_end') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="form-group">
+                                    <label for="duration" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Class Duration (Auto)</label>
+                                    <input type="text" id="duration" name="duration" readonly
+                                           value="<?= esc($course['duration'] ?? old('duration', '2')) ?>"
+                                           style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px; background: #f0f0f0;">
+                                    <?php if (isset($validation) && $validation->getError('duration')): ?>
+                                        <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('duration') ?></p>
+                                    <?php endif; ?>
+                                    <p style="margin-top: 5px; font-size: 12px; color: #666;">Automatically calculated from time range</p>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 18px;">
+                                <div class="form-group">
+                                    <label for="schedule_date" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Schedule Date *</label>
+                                    <input type="date" id="schedule_date" name="schedule_date" required
+                                           value="<?= esc($course['schedule_date'] ?? old('schedule_date')) ?>"
+                                           style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
+                                    <?php if (isset($validation) && $validation->getError('schedule_date')): ?>
+                                        <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('schedule_date') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
                             <!-- Submit Buttons -->
                             <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: flex-end;">
                                 <a href="<?= session('role') == 'admin' ? base_url('courses') : base_url('my-courses') ?>" class="btn" style="background: #ccc; color: #333; border-color: #999; padding: 8px 15px; border: 2px solid; border-radius: 3px; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block;">
@@ -260,6 +387,343 @@
             </main>
         </div>
     </div>
+
+    <script>
+        // Dynamic loading of semesters and terms
+        document.addEventListener('DOMContentLoaded', function() {
+            const acadYearSelect = document.getElementById('acad_year_id');
+            const semesterSelect = document.getElementById('semester_id');
+            const termSelect = document.getElementById('term_id');
+
+            // Load semesters when academic year changes
+            if (acadYearSelect) {
+                acadYearSelect.addEventListener('change', function() {
+                    const acadYearId = this.value;
+                    
+                    // Reset semester and term
+                    semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+                    termSelect.innerHTML = '<option value="">Select Term</option>';
+                    
+                    if (acadYearId) {
+                        fetch('<?= base_url('course/get-semesters-by-academic-year') ?>', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: 'acad_year_id=' + acadYearId + '&<?= csrf_token() ?>=<?= csrf_hash() ?>'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.semesters) {
+                                data.semesters.forEach(semester => {
+                                    const option = document.createElement('option');
+                                    option.value = semester.id;
+                                    option.textContent = semester.name;
+                                    semesterSelect.appendChild(option);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading semesters:', error);
+                        });
+                    }
+                });
+            }
+
+            // Load terms when semester changes
+            if (semesterSelect) {
+                semesterSelect.addEventListener('change', function() {
+                    const semesterId = this.value;
+                    
+                    // Reset term
+                    termSelect.innerHTML = '<option value="">Select Term</option>';
+                    
+                    if (semesterId) {
+                        fetch('<?= base_url('course/get-terms-by-semester') ?>', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: 'semester_id=' + semesterId + '&<?= csrf_token() ?>=<?= csrf_hash() ?>'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.terms) {
+                                data.terms.forEach(term => {
+                                    const option = document.createElement('option');
+                                    option.value = term.id;
+                                    option.textContent = term.term_name;
+                                    termSelect.appendChild(option);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading terms:', error);
+                        });
+                    }
+                });
+            }
+
+            // Teacher search functionality
+            const teacherSearch = document.getElementById('teacher_search');
+            const teacherIdInput = document.getElementById('teacher_id');
+            const teacherResults = document.getElementById('teacher_results');
+            const selectedTeacherDiv = document.getElementById('selected_teacher');
+            const selectedTeacherName = document.getElementById('selected_teacher_name');
+            const clearTeacherBtn = document.getElementById('clear_teacher');
+            
+            // Store teachers data
+            const teachers = <?= json_encode(array_map(function($t) {
+                return [
+                    'id' => (int)$t['id'],
+                    'name' => $t['name'],
+                    'email' => $t['email']
+                ];
+            }, $teachers)) ?>;
+            
+            // Set initial value if teacher is already assigned
+            <?php if(isset($course['teacher_id']) && $course['teacher_id']): ?>
+                const initialTeacher = teachers.find(t => t.id == <?= $course['teacher_id'] ?>);
+                if (initialTeacher) {
+                    teacherSearch.value = initialTeacher.name + ' (' + initialTeacher.email + ')';
+                    teacherIdInput.value = initialTeacher.id;
+                    selectedTeacherName.textContent = initialTeacher.name + ' (' + initialTeacher.email + ')';
+                    selectedTeacherDiv.style.display = '';
+                }
+            <?php endif; ?>
+            
+            if (teacherSearch && teacherIdInput && teacherResults) {
+                // Show/hide results dropdown
+                function showResults() {
+                    teacherResults.style.display = 'block';
+                }
+                
+                function hideResults() {
+                    setTimeout(() => {
+                        teacherResults.style.display = 'none';
+                    }, 200);
+                }
+                
+                // Filter and display results
+                function filterTeachers(searchTerm) {
+                    const term = searchTerm.toLowerCase().trim();
+                    teacherResults.innerHTML = '';
+                    
+                    if (term === '') {
+                        teacherResults.style.display = 'none';
+                        return;
+                    }
+                    
+                    const filtered = teachers.filter(teacher => 
+                        teacher.name.toLowerCase().includes(term) || 
+                        teacher.email.toLowerCase().includes(term)
+                    );
+                    
+                    if (filtered.length === 0) {
+                        teacherResults.innerHTML = '<div style="padding: 12px; color: #666; font-size: 13px;">No teachers found</div>';
+                        showResults();
+                        return;
+                    }
+                    
+                    filtered.forEach(teacher => {
+                        const div = document.createElement('div');
+                        div.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid #ddd;';
+                        div.onmouseover = function() { this.style.backgroundColor = '#f0f0f0'; };
+                        div.onmouseout = function() { this.style.backgroundColor = 'white'; };
+                        div.innerHTML = '<div style="font-weight: 600; color: #333;">' + teacher.name + '</div><div style="font-size: 11px; color: #666; margin-top: 2px;">' + teacher.email + '</div>';
+                        div.addEventListener('click', function() {
+                            teacherSearch.value = teacher.name + ' (' + teacher.email + ')';
+                            teacherIdInput.value = teacher.id;
+                            selectedTeacherName.textContent = teacher.name + ' (' + teacher.email + ')';
+                            selectedTeacherDiv.style.display = '';
+                            hideResults();
+                        });
+                        teacherResults.appendChild(div);
+                    });
+                    
+                    showResults();
+                }
+                
+                // Search input event
+                teacherSearch.addEventListener('input', function() {
+                    filterTeachers(this.value);
+                });
+                
+                // Focus events
+                teacherSearch.addEventListener('focus', function() {
+                    if (this.value.trim() !== '') {
+                        filterTeachers(this.value);
+                    }
+                });
+                
+                // Hide results when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!teacherSearch.contains(e.target) && !teacherResults.contains(e.target)) {
+                        hideResults();
+                    }
+                });
+                
+                // Clear teacher selection
+                if (clearTeacherBtn) {
+                    clearTeacherBtn.addEventListener('click', function() {
+                        teacherSearch.value = '';
+                        teacherIdInput.value = '';
+                        selectedTeacherDiv.style.display = 'none';
+                        hideResults();
+                    });
+                }
+            }
+
+            // Auto-calculate duration from time range
+            const startTimeInput = document.getElementById('schedule_time_start');
+            const endTimeInput = document.getElementById('schedule_time_end');
+            const durationInput = document.getElementById('duration');
+            
+            function calculateDuration() {
+                if (startTimeInput && endTimeInput && durationInput) {
+                    const startTime = startTimeInput.value;
+                    const endTime = endTimeInput.value;
+                    
+                    if (startTime && endTime) {
+                        // Parse time strings (HH:MM format)
+                        const [startHours, startMinutes] = startTime.split(':').map(Number);
+                        const [endHours, endMinutes] = endTime.split(':').map(Number);
+                        
+                        // Convert to minutes for easier calculation
+                        const startTotalMinutes = startHours * 60 + startMinutes;
+                        const endTotalMinutes = endHours * 60 + endMinutes;
+                        
+                        // Calculate difference in minutes
+                        let diffMinutes = endTotalMinutes - startTotalMinutes;
+                        
+                        // Handle case where end time is next day (e.g., 11 PM to 1 AM)
+                        if (diffMinutes < 0) {
+                            diffMinutes += 24 * 60; // Add 24 hours
+                        }
+                        
+                        // Calculate hours and minutes
+                        const hours = Math.floor(diffMinutes / 60);
+                        const minutes = diffMinutes % 60;
+                        
+                        // Format duration display (e.g., "4 hours (240 minutes)" or "3 hours 3 minutes (183 minutes)")
+                        let durationText = '';
+                        let durationValue = hours; // For form submission, use hours (round up if there are minutes)
+                        
+                        if (hours > 0 && minutes > 0) {
+                            durationText = `${hours} hour${hours > 1 ? 's' : ''} ${minutes} minute${minutes > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            // Round up to next hour if there are minutes (for form validation)
+                            durationValue = hours + 1;
+                        } else if (hours > 0) {
+                            durationText = `${hours} hour${hours > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            durationValue = hours;
+                        } else {
+                            durationText = `${minutes} minute${minutes > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            durationValue = 1; // Minimum 1 hour
+                        }
+                        
+                        // Limit to 8 hours maximum
+                        if (durationValue > 8) {
+                            durationValue = 8;
+                            durationText = `8 hours (480 minutes)`;
+                        } else if (durationValue < 1) {
+                            durationValue = 1;
+                            durationText = `1 hour (60 minutes)`;
+                        }
+                        
+                        // Set the display value (for form submission - rounded up hours)
+                        durationInput.value = durationValue;
+                        
+                        // Update the helper text to show exact duration with minutes
+                        // Find helper text by class or by looking for the paragraph after the input
+                        let helperText = durationInput.parentElement.querySelector('.text-xs.text-gray-500');
+                        if (!helperText) {
+                            // Try to find the existing helper text paragraph
+                            const allParagraphs = durationInput.parentElement.querySelectorAll('p');
+                            for (let p of allParagraphs) {
+                                if (p.textContent.includes('Automatically calculated') || p.textContent.includes('time range')) {
+                                    helperText = p;
+                                    break;
+                                }
+                            }
+                        }
+                        if (helperText) {
+                            // Show exact duration in helper text
+                            let exactDurationText = '';
+                            if (hours > 0 && minutes > 0) {
+                                exactDurationText = `${hours} hour${hours > 1 ? 's' : ''} ${minutes} minute${minutes > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            } else if (hours > 0) {
+                                exactDurationText = `${hours} hour${hours > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            } else {
+                                exactDurationText = `${minutes} minute${minutes > 1 ? 's' : ''} (${diffMinutes} minutes)`;
+                            }
+                            helperText.textContent = `Automatically calculated: ${exactDurationText}`;
+                        }
+                    }
+                }
+            }
+            
+            // Calculate duration when times change
+            if (startTimeInput) {
+                startTimeInput.addEventListener('change', calculateDuration);
+                startTimeInput.addEventListener('input', calculateDuration);
+            }
+            
+            if (endTimeInput) {
+                endTimeInput.addEventListener('change', calculateDuration);
+                endTimeInput.addEventListener('input', calculateDuration);
+            }
+            
+            // Calculate on page load if both times are already set
+            if (startTimeInput && endTimeInput && startTimeInput.value && endTimeInput.value) {
+                calculateDuration();
+            }
+            
+            // Validation functions for special characters
+            window.validateAlphanumericSpace = function(event) {
+                const char = String.fromCharCode(event.which || event.keyCode);
+                // Allow: letters, numbers, spaces, backspace, delete, tab, enter
+                const allowedPattern = /^[a-zA-Z0-9\s]$/;
+                const specialKeys = [8, 9, 13, 27, 46]; // backspace, tab, enter, escape, delete
+                
+                if (specialKeys.includes(event.keyCode) || event.ctrlKey || event.metaKey) {
+                    return true;
+                }
+                
+                if (!allowedPattern.test(char)) {
+                    event.preventDefault();
+                    return false;
+                }
+                return true;
+            };
+            
+            window.validateInput = function(input) {
+                const value = input.value;
+                const errorId = input.id + '_error';
+                const errorElement = document.getElementById(errorId);
+                
+                // Check for special characters (anything that's not alphanumeric or space)
+                const specialCharPattern = /[^a-zA-Z0-9\s]/g;
+                const hasSpecialChars = specialCharPattern.test(value);
+                
+                if (hasSpecialChars) {
+                    // Remove special characters
+                    input.value = value.replace(specialCharPattern, '');
+                    
+                    if (errorElement) {
+                        errorElement.textContent = 'Special characters are not allowed and have been removed.';
+                        errorElement.style.display = 'block';
+                        setTimeout(() => {
+                            errorElement.style.display = 'none';
+                        }, 3000);
+                    }
+                } else if (errorElement) {
+                    errorElement.style.display = 'none';
+                }
+            };
+        });
+    </script>
 </body>
 </html>
 

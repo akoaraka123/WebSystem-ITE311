@@ -270,11 +270,6 @@
                                 <i class="w-5 h-5 mr-3 <?= $currentPage == 'my-courses' ? '' : 'text-gray-500' ?> fas fa-book-reader"></i>
                                 My Courses
                             </a>
-                            
-                            <a href="<?= base_url('create-course') ?>" class="sidebar-item flex items-center px-4 py-3 text-sm font-medium <?= $currentPage == 'create-course' ? 'text-white bg-primary' : 'text-gray-700 hover:bg-gray-100' ?> rounded-lg">
-                                <i class="w-5 h-5 mr-3 <?= $currentPage == 'create-course' ? '' : 'text-gray-500' ?> fas fa-plus-circle"></i>
-                                Create Course
-                            </a>
                         <?php elseif(session('role') == 'student'): ?>
                             <div class="mt-4 mb-2">
                                 <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Learning</p>
@@ -490,15 +485,33 @@
                                                 </p>
                                             <?php endif; ?>
                                             
-                                            <div class="flex gap-2 mt-4">
-                                                <button onclick="acceptEnrollment(<?= $pending['id'] ?>)" 
-                                                        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
-                                                    <i class="mr-1 fas fa-check"></i> Accept
-                                                </button>
-                                                <button onclick="rejectEnrollment(<?= $pending['id'] ?>)" 
-                                                        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
-                                                    <i class="mr-1 fas fa-times"></i> Reject
-                                                </button>
+                                            <div class="mt-4">
+                                                <?php if (!empty($pending['admin_approved']) && $pending['admin_approved'] == 1): ?>
+                                                    <div class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                                        <p class="text-sm text-blue-800 text-center">
+                                                            <i class="mr-2 fas fa-user-shield"></i>
+                                                            Enrollment request from Administrator
+                                                        </p>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <div class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                                                        <p class="text-sm text-yellow-800 text-center">
+                                                            <i class="mr-2 fas fa-clock"></i>
+                                                            Waiting for teacher approval
+                                                        </p>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <div class="flex gap-2">
+                                                    <button onclick="acceptEnrollment(<?= $pending['id'] ?>)" 
+                                                            class="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
+                                                        <i class="mr-1 fas fa-check"></i> Accept
+                                                    </button>
+                                                    <button onclick="rejectEnrollment(<?= $pending['id'] ?>)" 
+                                                            class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
+                                                        <i class="mr-1 fas fa-times"></i> Reject
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -519,8 +532,8 @@
                                 <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="enrolledCoursesContainer">
                                     <?php foreach ($enrolled as $enrollment): ?>
                                         <div class="overflow-hidden bg-white rounded-lg shadow course-card course-item" 
-                                             data-school-year="<?= esc($enrollment['school_year'] ?? '') ?>"
-                                             data-semester="<?= esc($enrollment['semester'] ?? '') ?>">
+                                             data-school-year="<?= esc($enrollment['acad_year_name'] ?? '') ?>"
+                                             data-semester="<?= esc($enrollment['semester_name'] ?? '') ?>">
                                             <div class="p-6">
                                                 <div class="flex items-center justify-between mb-3">
                                                     <h3 class="text-lg font-semibold text-gray-900 course-title">
@@ -531,25 +544,110 @@
                                                     </span>
                                                 </div>
                                                 
-                                                <!-- School Year and Semester Info -->
-                                                <div class="mb-2 flex gap-2 flex-wrap">
-                                                    <?php if (!empty($enrollment['school_year'])): ?>
-                                                        <span class="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
-                                                            <i class="mr-1 fas fa-calendar"></i> <?= esc($enrollment['school_year']) ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                    <?php if (!empty($enrollment['semester'])): ?>
-                                                        <span class="px-2 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded">
-                                                            <i class="mr-1 fas fa-calendar-alt"></i> <?= esc($enrollment['semester']) ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </div>
-                                                
                                                 <?php if (!empty($enrollment['description'])): ?>
-                                                    <p class="mt-2 text-sm text-gray-600">
+                                                    <p class="mt-2 text-sm text-gray-600 mb-3">
                                                         <?= esc($enrollment['description']) ?>
                                                     </p>
                                                 <?php endif; ?>
+                                                
+                                                <!-- Academic Information Section -->
+                                                <div class="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200">
+                                                    <div class="space-y-2">
+                                                        <?php if (!empty($enrollment['course_number'])): ?>
+                                                        <div class="flex items-center text-xs text-gray-700">
+                                                            <i class="fas fa-hashtag mr-2 text-gray-500 w-3"></i>
+                                                            <span class="font-medium">Code:</span>
+                                                            <span class="ml-2"><?= esc($enrollment['course_number']) ?></span>
+                                                        </div>
+                                                        <?php endif; ?>
+
+                                                        <?php if (!empty($enrollment['acad_year_name'])): ?>
+                                                        <div class="flex items-center text-xs text-gray-700">
+                                                            <i class="fas fa-calendar-alt mr-2 text-gray-500 w-3"></i>
+                                                            <span class="font-medium">Academic Year:</span>
+                                                            <span class="ml-2"><?= esc($enrollment['acad_year_name']) ?></span>
+                                                        </div>
+                                                        <?php endif; ?>
+
+                                                        <?php if (!empty($enrollment['semester_name'])): ?>
+                                                        <div class="flex items-center text-xs text-gray-700">
+                                                            <i class="fas fa-calendar-week mr-2 text-gray-500 w-3"></i>
+                                                            <span class="font-medium">Semester:</span>
+                                                            <span class="ml-2"><?= esc($enrollment['semester_name']) ?></span>
+                                                        </div>
+                                                        <?php endif; ?>
+
+                                                        <?php if (!empty($enrollment['term_name'])): ?>
+                                                        <div class="flex items-center text-xs text-gray-700">
+                                                            <i class="fas fa-bookmark mr-2 text-gray-500 w-3"></i>
+                                                            <span class="font-medium">Term:</span>
+                                                            <span class="ml-2"><?= esc($enrollment['term_name']) ?></span>
+                                                        </div>
+                                                        <?php endif; ?>
+
+                                                        <?php 
+                                                        $startTime = $enrollment['schedule_time_start'] ?? $enrollment['schedule_time'] ?? '';
+                                                        $endTime = $enrollment['schedule_time_end'] ?? '';
+                                                        if ($startTime || !empty($enrollment['schedule_date'])): 
+                                                        ?>
+                                                        <div class="flex items-center text-xs text-gray-700">
+                                                            <i class="fas fa-clock mr-2 text-gray-500 w-3"></i>
+                                                            <span class="font-medium">Schedule:</span>
+                                                            <span class="ml-2">
+                                                                <?php if ($startTime): ?>
+                                                                    <?php 
+                                                                    $startFormatted = date('g:i A', strtotime($startTime));
+                                                                    if ($endTime) {
+                                                                        $endFormatted = date('g:i A', strtotime($endTime));
+                                                                        echo esc($startFormatted) . ' - ' . esc($endFormatted);
+                                                                    } else {
+                                                                        echo esc($startFormatted);
+                                                                    }
+                                                                    ?>
+                                                                <?php endif; ?>
+                                                                <?php if (!empty($enrollment['schedule_date'])): ?>
+                                                                    <?php if ($startTime): ?>, <?php endif; ?>
+                                                                    <?= date('M d, Y', strtotime($enrollment['schedule_date'])) ?>
+                                                                <?php endif; ?>
+                                                            </span>
+                                                        </div>
+                                                        <?php endif; ?>
+
+                                                        <?php 
+                                                        // Calculate exact duration from start and end times
+                                                        $startTime = $enrollment['schedule_time_start'] ?? $enrollment['schedule_time'] ?? '';
+                                                        $endTime = $enrollment['schedule_time_end'] ?? '';
+                                                        if ($startTime && $endTime): 
+                                                            $startTimestamp = strtotime($startTime);
+                                                            $endTimestamp = strtotime($endTime);
+                                                            $diffMinutes = round(($endTimestamp - $startTimestamp) / 60);
+                                                            $hours = floor($diffMinutes / 60);
+                                                            $minutes = $diffMinutes % 60;
+                                                        ?>
+                                                        <div class="flex items-center text-xs text-gray-700">
+                                                            <i class="fas fa-hourglass-half mr-2 text-gray-500 w-3"></i>
+                                                            <span class="font-medium">Duration:</span>
+                                                            <span class="ml-2">
+                                                                <?php 
+                                                                if ($hours > 0 && $minutes > 0) {
+                                                                    echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '') . ' ' . esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
+                                                                } else if ($hours > 0) {
+                                                                    echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '');
+                                                                } else {
+                                                                    echo esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
+                                                                }
+                                                                ?>
+                                                            </span>
+                                                        </div>
+                                                        <?php elseif (!empty($enrollment['duration'])): ?>
+                                                        <div class="flex items-center text-xs text-gray-700">
+                                                            <i class="fas fa-hourglass-half mr-2 text-gray-500 w-3"></i>
+                                                            <span class="font-medium">Duration:</span>
+                                                            <span class="ml-2"><?= esc($enrollment['duration']) ?> <?= $enrollment['duration'] == 1 ? 'Hour' : 'Hours' ?></span>
+                                                        </div>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
 
                                                 <!-- View Enrolled Students Button -->
                                                 <div class="mt-4 mb-4">
@@ -717,6 +815,60 @@
                 </div>
             </div>
 
+            <!-- Pending Enrollment Requests for Teacher -->
+            <?php if (!empty($pending_enrollments ?? [])): ?>
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">Pending Enrollment Requests</h3>
+                    <span class="px-3 py-1 text-sm font-medium text-yellow-800 bg-yellow-100 rounded-full">
+                        <span id="pendingCountTeacher"><?= count($pending_enrollments) ?></span> Pending
+                    </span>
+                </div>
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="pendingEnrollmentsTeacherContainer">
+                    <?php foreach ($pending_enrollments as $pending): ?>
+                        <div class="overflow-hidden bg-white rounded-lg shadow border-2 border-yellow-200">
+                            <div class="p-6">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-lg font-semibold text-gray-900">
+                                        <?= esc($pending['course_title'] ?? 'Untitled Course') ?>
+                                    </h3>
+                                    <span class="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded">
+                                        Pending
+                                    </span>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <p class="text-sm font-medium text-gray-700">
+                                        <i class="mr-2 fas fa-user-graduate"></i>
+                                        Student: <?= esc($pending['student_name'] ?? 'Unknown') ?>
+                                    </p>
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        <i class="mr-1 fas fa-envelope"></i>
+                                        <?= esc($pending['student_email'] ?? '') ?>
+                                    </p>
+                                    <p class="mt-2 text-xs text-gray-500">
+                                        <i class="mr-1 fas fa-calendar"></i>
+                                        Requested: <?= date('M d, Y', strtotime($pending['enrollment_date'])) ?>
+                                    </p>
+                                </div>
+                                
+                                <div class="flex gap-2 mt-4">
+                                    <button onclick="teacherApproveEnrollment(<?= $pending['id'] ?>, <?= $pending['course_id'] ?>)" 
+                                            class="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
+                                        <i class="mr-1 fas fa-check"></i> Approve
+                                    </button>
+                                    <button onclick="teacherRejectEnrollment(<?= $pending['id'] ?>, <?= $pending['course_id'] ?>)" 
+                                            class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
+                                        <i class="mr-1 fas fa-times"></i> Reject
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Enrollment Statistics Summary -->
             <?php 
                 $totalAccepted = 0;
@@ -770,10 +922,10 @@
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">My Courses</h2>
-                    <a href="<?= base_url('create-course') ?>" 
-                       class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <i class="mr-2 fas fa-plus"></i> Create New Course
-                    </a>
+                    <p class="text-sm text-gray-600">
+                        <i class="mr-1 fas fa-info-circle"></i>
+                        Courses are assigned by administrators
+                    </p>
                 </div>
 
                 <?php if (!empty($myCourses)): ?>
@@ -922,13 +1074,7 @@
                     <div class="p-8 text-center bg-white rounded-lg shadow">
                         <i class="mx-auto text-4xl text-gray-300 fas fa-chalkboard-teacher"></i>
                         <h3 class="mt-4 text-lg font-medium text-gray-900">No courses yet</h3>
-                        <p class="mt-1 text-gray-500">Get started by creating your first course.</p>
-                        <div class="mt-6">
-                            <a href="<?= base_url('create-course') ?>" 
-                               class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                <i class="mr-2 fas fa-plus"></i> Create Course
-                            </a>
-                        </div>
+                        <p class="mt-1 text-gray-500">Courses are assigned by administrators. Contact admin to get courses assigned to you.</p>
                     </div>
                 <?php endif; ?>
             </div>
@@ -1083,15 +1229,6 @@
                         </div>
                     </a>
 
-                    <a href="<?= base_url('create-course') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-green-500">
-                        <div class="flex-shrink-0 p-3 bg-green-100 rounded-lg">
-                            <i class="text-2xl text-green-600 fas fa-book-medical"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-900">Create Course</p>
-                            <p class="text-xs text-gray-500">Add new course</p>
-                        </div>
-                    </a>
 
                     <a href="<?= base_url('school-setup') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-purple-500">
                         <div class="flex-shrink-0 p-3 bg-purple-100 rounded-lg">
@@ -1940,6 +2077,63 @@ $(document).ready(function() {
             formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
 
             fetch('<?= base_url('course/reject-enrollment') ?>', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Enrollment request rejected.');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to reject enrollment');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        }
+
+        // Teacher approval functions
+        function teacherApproveEnrollment(enrollmentId, courseId) {
+            if (!confirm('Are you sure you want to approve this enrollment request?')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('enrollment_id', enrollmentId);
+            formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+            fetch('<?= base_url('course/teacher-approve-enrollment') ?>', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Enrollment approved successfully!');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to approve enrollment');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        }
+
+        function teacherRejectEnrollment(enrollmentId, courseId) {
+            if (!confirm('Are you sure you want to reject this enrollment request?')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('enrollment_id', enrollmentId);
+            formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+            fetch('<?= base_url('course/teacher-reject-enrollment') ?>', {
                 method: 'POST',
                 body: formData
             })

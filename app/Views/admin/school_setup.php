@@ -422,11 +422,115 @@
             </div>
         <?php endif; ?>
 
-        <!-- School Settings Section -->
+        <!-- Academic Year Management Section -->
+        <div class="section-card" style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="section-title" style="margin: 0;">
+                    <i class="fas fa-calendar" style="margin-right: 10px;"></i>
+                    Academic Year Management
+                </h2>
+                <button type="button" class="btn btn-success" onclick="openAddAcademicYearModal()">
+                    <i class="fas fa-plus" style="margin-right: 8px;"></i>
+                    Add Academic Year
+                </button>
+            </div>
+            
+            <?php if (!empty($academicYears)): ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Display Name</th>
+                            <th>Year Start</th>
+                            <th>Year End</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($academicYears as $acadYear): ?>
+                            <tr>
+                                <td><strong><?= esc($acadYear['display_name']) ?></strong></td>
+                                <td><?= esc($acadYear['year_start']) ?></td>
+                                <td><?= esc($acadYear['year_end']) ?></td>
+                                <td>
+                                    <span class="badge <?= $acadYear['is_active'] == 1 ? 'badge-success' : 'badge-secondary' ?>">
+                                        <?= $acadYear['is_active'] == 1 ? 'Active' : 'Inactive' ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; margin-right: 5px;"
+                                            onclick="openEditAcademicYearModal(<?= $acadYear['id'] ?>)">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p style="color: #666; padding: 20px; text-align: center;">No academic years found. Please add one.</p>
+            <?php endif; ?>
+        </div>
+
+        <!-- Semester Management Section -->
+        <div class="section-card" style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="section-title" style="margin: 0;">
+                    <i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>
+                    Semester Management
+                </h2>
+                <button type="button" class="btn btn-success" onclick="openAddSemesterModal()">
+                    <i class="fas fa-plus" style="margin-right: 8px;"></i>
+                    Add Semester
+                </button>
+            </div>
+            
+            <?php if (!empty($semesters)): ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Academic Year</th>
+                            <th>Semester Number</th>
+                            <th>Name</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($semesters as $semester): ?>
+                            <tr>
+                                <td><?= esc($semester['acad_year_name'] ?? 'N/A') ?></td>
+                                <td><?= esc($semester['semester_number']) ?></td>
+                                <td><strong><?= esc($semester['name']) ?></strong></td>
+                                <td><?= $semester['start_date'] ? date('M d, Y', strtotime($semester['start_date'])) : 'N/A' ?></td>
+                                <td><?= $semester['end_date'] ? date('M d, Y', strtotime($semester['end_date'])) : 'N/A' ?></td>
+                                <td>
+                                    <span class="badge <?= $semester['is_active'] == 1 ? 'badge-success' : 'badge-secondary' ?>">
+                                        <?= $semester['is_active'] == 1 ? 'Active' : 'Inactive' ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; margin-right: 5px;"
+                                            onclick="openEditSemesterModal(<?= $semester['id'] ?>)">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p style="color: #666; padding: 20px; text-align: center;">No semesters found. Please add one.</p>
+            <?php endif; ?>
+        </div>
+
+        <!-- School Settings Section (Legacy - can be kept for backward compatibility) -->
         <div class="section-card">
             <h2 class="section-title">
                 <i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>
-                School Year & Semester Settings
+                School Year & Semester Settings (Legacy)
             </h2>
             
             <?php if($activeSettings): ?>
@@ -557,6 +661,116 @@
         </div>
     </div>
 
+    <!-- Add/Edit Academic Year Modal -->
+    <div id="academicYearModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeAcademicYearModal()">&times;</span>
+                <h2 id="academicYearModalTitle">Add Academic Year</h2>
+            </div>
+            <form id="academicYearForm">
+                <?= csrf_field() ?>
+                <input type="hidden" id="acad_year_id" name="acad_year_id">
+                
+                <div class="form-group">
+                    <label for="year_start">Year Start *</label>
+                    <input type="number" id="year_start" name="year_start" required min="2000" max="2100"
+                           placeholder="e.g., 2024">
+                </div>
+                
+                <div class="form-group">
+                    <label for="year_end">Year End *</label>
+                    <input type="number" id="year_end" name="year_end" required min="2000" max="2100"
+                           placeholder="e.g., 2025">
+                </div>
+                
+                <div class="form-group">
+                    <label for="display_name">Display Name *</label>
+                    <input type="text" id="display_name" name="display_name" required
+                           placeholder="e.g., 2024-2025">
+                    <small style="color: #666;">This will be shown in dropdowns</small>
+                </div>
+                
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="acad_year_is_active" name="is_active" value="1" checked
+                               style="width: auto; margin-right: 8px;">
+                        <span>Active</span>
+                    </label>
+                </div>
+                
+                <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAcademicYearModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Academic Year</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Semester Modal -->
+    <div id="semesterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeSemesterModal()">&times;</span>
+                <h2 id="semesterModalTitle">Add Semester</h2>
+            </div>
+            <form id="semesterForm">
+                <?= csrf_field() ?>
+                <input type="hidden" id="semester_id" name="semester_id">
+                
+                <div class="form-group">
+                    <label for="semester_acad_year_id">Academic Year *</label>
+                    <select id="semester_acad_year_id" name="acad_year_id" required>
+                        <option value="">Select Academic Year</option>
+                        <?php foreach($academicYears as $acadYear): ?>
+                            <option value="<?= $acadYear['id'] ?>"><?= esc($acadYear['display_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="semester_number">Semester Number *</label>
+                    <select id="semester_number" name="semester_number" required>
+                        <option value="">Select</option>
+                        <option value="1">1st Semester</option>
+                        <option value="2">2nd Semester</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="semester_name">Semester Name *</label>
+                    <input type="text" id="semester_name" name="name" required
+                           placeholder="e.g., 1st Semester, 2nd Semester">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label for="semester_start_date">Start Date</label>
+                        <input type="date" id="semester_start_date" name="start_date">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="semester_end_date">End Date</label>
+                        <input type="date" id="semester_end_date" name="end_date">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="semester_is_active" name="is_active" value="1" checked
+                               style="width: auto; margin-right: 8px;">
+                        <span>Active</span>
+                    </label>
+                </div>
+                
+                <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeSemesterModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Semester</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Add/Edit Program Modal -->
     <div id="programModal" class="modal">
         <div class="modal-content">
@@ -605,6 +819,102 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
+        // Academic Year Modal Functions (defined globally so they're available immediately)
+        function openAddAcademicYearModal() {
+            const modal = document.getElementById('academicYearModal');
+            const title = document.getElementById('academicYearModalTitle');
+            const form = document.getElementById('academicYearForm');
+            const acadYearId = document.getElementById('acad_year_id');
+            const isActive = document.getElementById('acad_year_is_active');
+            
+            if (title) title.textContent = 'Add Academic Year';
+            if (form) form.reset();
+            if (acadYearId) acadYearId.value = '';
+            if (isActive) isActive.checked = true;
+            if (modal) modal.style.display = 'block';
+        }
+
+        function openEditAcademicYearModal(acadYearId) {
+            if (typeof $ === 'undefined') {
+                alert('Please wait for the page to fully load.');
+                return;
+            }
+            
+            $.get('<?= base_url('school-setup/getAcademicYear') ?>/' + acadYearId, function(response) {
+                if (response.success) {
+                    const acadYear = response.academicYear;
+                    const modal = document.getElementById('academicYearModal');
+                    const title = document.getElementById('academicYearModalTitle');
+                    
+                    if (title) title.textContent = 'Edit Academic Year';
+                    if (document.getElementById('acad_year_id')) document.getElementById('acad_year_id').value = acadYear.id;
+                    if (document.getElementById('year_start')) document.getElementById('year_start').value = acadYear.year_start;
+                    if (document.getElementById('year_end')) document.getElementById('year_end').value = acadYear.year_end;
+                    if (document.getElementById('display_name')) document.getElementById('display_name').value = acadYear.display_name;
+                    if (document.getElementById('acad_year_is_active')) document.getElementById('acad_year_is_active').checked = acadYear.is_active == 1;
+                    if (modal) modal.style.display = 'block';
+                } else {
+                    alert('Error loading academic year: ' + response.message);
+                }
+            }).fail(function() {
+                alert('Failed to load academic year details.');
+            });
+        }
+
+        function closeAcademicYearModal() {
+            const modal = document.getElementById('academicYearModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // Semester Modal Functions (defined globally)
+        function openAddSemesterModal() {
+            const modal = document.getElementById('semesterModal');
+            const title = document.getElementById('semesterModalTitle');
+            const form = document.getElementById('semesterForm');
+            const semesterId = document.getElementById('semester_id');
+            const isActive = document.getElementById('semester_is_active');
+            
+            if (title) title.textContent = 'Add Semester';
+            if (form) form.reset();
+            if (semesterId) semesterId.value = '';
+            if (isActive) isActive.checked = true;
+            if (modal) modal.style.display = 'block';
+        }
+
+        function openEditSemesterModal(semesterId) {
+            if (typeof $ === 'undefined') {
+                alert('Please wait for the page to fully load.');
+                return;
+            }
+            
+            $.get('<?= base_url('school-setup/getSemester') ?>/' + semesterId, function(response) {
+                if (response.success) {
+                    const semester = response.semester;
+                    const modal = document.getElementById('semesterModal');
+                    const title = document.getElementById('semesterModalTitle');
+                    
+                    if (title) title.textContent = 'Edit Semester';
+                    if (document.getElementById('semester_id')) document.getElementById('semester_id').value = semester.id;
+                    if (document.getElementById('semester_acad_year_id')) document.getElementById('semester_acad_year_id').value = semester.acad_year_id;
+                    if (document.getElementById('semester_number')) document.getElementById('semester_number').value = semester.semester_number;
+                    if (document.getElementById('semester_name')) document.getElementById('semester_name').value = semester.name;
+                    if (document.getElementById('semester_start_date')) document.getElementById('semester_start_date').value = semester.start_date || '';
+                    if (document.getElementById('semester_end_date')) document.getElementById('semester_end_date').value = semester.end_date || '';
+                    if (document.getElementById('semester_is_active')) document.getElementById('semester_is_active').checked = semester.is_active == 1;
+                    if (modal) modal.style.display = 'block';
+                } else {
+                    alert('Error loading semester: ' + response.message);
+                }
+            }).fail(function() {
+                alert('Failed to load semester details.');
+            });
+        }
+
+        function closeSemesterModal() {
+            const modal = document.getElementById('semesterModal');
+            if (modal) modal.style.display = 'none';
+        }
+
         // Wait for DOM to be ready
         $(document).ready(function() {
             // Get CSRF token from meta tag
@@ -808,11 +1118,105 @@
             });
             };
 
-            // Close modal when clicking outside
+
+            // Save Academic Year
+            $('#academicYearForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                let formData = $('#academicYearForm').serialize();
+                const isActive = $('#acad_year_is_active').is(':checked') ? '1' : '0';
+                formData = formData.replace(/&?is_active=[^&]*/, '');
+                formData += (formData ? '&' : '') + 'is_active=' + isActive;
+
+                $.ajax({
+                    url: '<?= base_url('school-setup/saveAcademicYear') ?>',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        if (response.csrf_hash) {
+                            const csrfTokenName = getCSRFTokenName();
+                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
+                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                        }
+                        
+                        if (response.success) {
+                            alert(response.message);
+                            closeAcademicYearModal();
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'An error occurred. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        alert(errorMsg);
+                    }
+                });
+            });
+
+            // Save Semester
+            $('#semesterForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                let formData = $('#semesterForm').serialize();
+                const isActive = $('#semester_is_active').is(':checked') ? '1' : '0';
+                formData = formData.replace(/&?is_active=[^&]*/, '');
+                formData += (formData ? '&' : '') + 'is_active=' + isActive;
+
+                $.ajax({
+                    url: '<?= base_url('school-setup/saveSemester') ?>',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        if (response.csrf_hash) {
+                            const csrfTokenName = getCSRFTokenName();
+                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
+                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                        }
+                        
+                        if (response.success) {
+                            alert(response.message);
+                            closeSemesterModal();
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'An error occurred. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        alert(errorMsg);
+                    }
+                });
+            });
+
+            // Close modals when clicking outside
             window.onclick = function(event) {
-                const modal = document.getElementById('programModal');
-                if (event.target == modal) {
+                const programModal = document.getElementById('programModal');
+                const academicYearModal = document.getElementById('academicYearModal');
+                const semesterModal = document.getElementById('semesterModal');
+                
+                if (event.target == programModal) {
                     closeProgramModal();
+                }
+                if (event.target == academicYearModal) {
+                    closeAcademicYearModal();
+                }
+                if (event.target == semesterModal) {
+                    closeSemesterModal();
                 }
             }
         }); // End of $(document).ready
