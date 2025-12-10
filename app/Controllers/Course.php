@@ -939,38 +939,46 @@ class Course extends BaseController
             // If student has no enrollments yet, allow enrollment (first enrollment)
         }
 
-        // Check if there's a rejected enrollment - if so, update it to pending instead of creating new
+        // Check if there's a rejected enrollment - if so, update it to accepted instead of creating new
         $rejectedEnrollment = $this->enrollmentModel->where('user_id', $studentId)
                                                      ->where('course_id', $courseId)
                                                      ->where('status', 'rejected')
                                                      ->first();
 
-        // Create pending enrollment request
+        // Teacher enrolls student - creates pending enrollment, student needs to accept/reject
         try {
             if ($rejectedEnrollment) {
                 // Update rejected enrollment to pending (allows teacher to re-add after student rejected)
                 $this->enrollmentModel->update($rejectedEnrollment['id'], [
                     'status' => 'pending',
+                    'teacher_approved' => 1, // Teacher has approved
+                    'teacher_approved_at' => date('Y-m-d H:i:s'),
+                    'admin_approved' => 0, // Not admin-initiated, so we can distinguish
                     'enrollment_date' => date('Y-m-d H:i:s')
                 ]);
             } else {
-                // Create new pending enrollment
+                // Create new pending enrollment - teacher enrolls student, student needs to accept/reject
                 $this->enrollmentModel->enrollUser([
                     'user_id' => $studentId,
                     'course_id' => $courseId,
                     'enrollment_date' => date('Y-m-d H:i:s'),
-                    'status' => 'pending'
+                    'status' => 'pending',
+                    'teacher_approved' => 1, // Teacher has approved
+                    'teacher_approved_at' => date('Y-m-d H:i:s'),
+                    'admin_approved' => 0 // Not admin-initiated, so we can distinguish
                 ]);
             }
 
             // Create notifications
             $notif = new \App\Models\NotificationModel();
-            // Notify the student about the enrollment request
-            $notif->add($studentId, 'You have a new enrollment request for: ' . ($course['title'] ?? 'a course'));
+            $notif->add($studentId, 'You have a new enrollment request for: ' . ($course['title'] ?? 'a course') . ' from your teacher. Please accept or reject it.');
+            if (!empty($course['teacher_id'])) {
+                $notif->add((int)$course['teacher_id'], 'You sent an enrollment request to a student for your course: ' . ($course['title'] ?? ''));
+            }
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Enrollment request sent to student. They need to accept it.',
+                'message' => 'Enrollment request sent to student. They need to accept or reject it.',
                 'csrf_hash' => csrf_hash()
             ]);
         } catch (\Exception $e) {
@@ -1299,28 +1307,28 @@ class Course extends BaseController
             // If student has no enrollments yet, allow enrollment (first enrollment)
         }
 
-        // Admin creates pending enrollment - student needs to accept/reject
+        // Admin enrolls student - creates pending enrollment, student needs to accept/reject
         try {
             $this->enrollmentModel->enrollUser([
                 'user_id' => $studentId,
                 'course_id' => $courseId,
                 'enrollment_date' => date('Y-m-d H:i:s'),
                 'status' => 'pending',
-                'teacher_approved' => 0,
-                'admin_approved' => 1, // Mark as admin-initiated
+                'teacher_approved' => 0, // Not teacher-initiated, so we can distinguish
+                'admin_approved' => 1, // Admin has approved
                 'admin_approved_at' => date('Y-m-d H:i:s')
             ]);
 
             // Create notifications
             $notif = new \App\Models\NotificationModel();
-            $notif->add($studentId, 'You have a new enrollment request for: ' . ($course['title'] ?? 'a course') . '. Please accept or reject it.');
+            $notif->add($studentId, 'You have a new enrollment request for: ' . ($course['title'] ?? 'a course') . ' from administrator. Please accept or reject it.');
             if (!empty($course['teacher_id'])) {
-                $notif->add((int)$course['teacher_id'], 'Admin sent an enrollment request for a student in your course: ' . ($course['title'] ?? ''));
+                $notif->add((int)$course['teacher_id'], 'Admin sent an enrollment request to a student for your course: ' . ($course['title'] ?? ''));
             }
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Enrollment request sent to student. They need to accept it.',
+                'message' => 'Enrollment request sent to student. They need to accept or reject it.',
                 'csrf_hash' => csrf_hash()
             ]);
         } catch (\Exception $e) {
@@ -1393,6 +1401,105 @@ class Course extends BaseController
                 
                 // Notify teacher if course has one
                 if (!empty($course['teacher_id'])) {
+                    $notif->add((int)$course['teacher_id'], 'Admin removed a student (' . ($student['name'] ?? 'Unknown') . ') from your course: ' . ($course['title'] ?? ''));
+                }
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Student removed from course successfully',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to remove student',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to remove student: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
+    }
+
+    /**
+     * Teacher/Admin: Remove student from course
+     */
+    public function teacherRemoveStudent()
+    {
+        $session = session();
+        
+        // Security: only teachers and admin can remove students
+        if (!$session->get('isLoggedIn')) {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+        
+        $role = $session->get('role');
+        if ($role !== 'teacher' && $role !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $courseId = (int) $this->request->getPost('course_id');
+        $studentId = (int) $this->request->getPost('student_id');
+
+        if ($courseId <= 0 || $studentId <= 0) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Invalid course or student ID', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Verify course exists
+        $course = $this->courseModel->find($courseId);
+        if (!$course) {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Course not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // For teachers: verify course belongs to this teacher
+        // For admin: allow access to all courses
+        if ($role === 'teacher' && $course['teacher_id'] != $session->get('userID')) {
+            return $this->response->setStatusCode(403)
+                ->setJSON(['success' => false, 'message' => 'Access denied. You can only remove students from your own courses.', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Verify student exists and is actually a student
+        $userModel = new \App\Models\UserModel();
+        $student = $userModel->find($studentId);
+        if (!$student || $student['role'] !== 'student') {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Student not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Check if student is enrolled
+        $enrollment = $this->enrollmentModel->where('user_id', $studentId)
+                                           ->where('course_id', $courseId)
+                                           ->first();
+        
+        if (!$enrollment) {
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Student is not enrolled in this course', 
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // Remove enrollment
+        try {
+            $removed = $this->enrollmentModel->unenroll($studentId, $courseId);
+            
+            if ($removed) {
+                // Create notification for student
+                $notif = new \App\Models\NotificationModel();
+                $removedBy = ($role === 'admin') ? 'admin' : 'your teacher';
+                $notif->add($studentId, 'You have been removed from the course: ' . ($course['title'] ?? 'a course') . ' by ' . $removedBy . '.');
+                
+                // If admin removed, also notify the teacher
+                if ($role === 'admin' && !empty($course['teacher_id'])) {
                     $notif->add((int)$course['teacher_id'], 'Admin removed a student (' . ($student['name'] ?? 'Unknown') . ') from your course: ' . ($course['title'] ?? ''));
                 }
                 

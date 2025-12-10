@@ -74,6 +74,7 @@ $routes->post('course/get-semesters-by-academic-year', 'Course::getSemestersByAc
 $routes->post('course/get-terms-by-semester', 'Course::getTermsBySemester');
 $routes->post('course/teacher-approve-enrollment', 'Course::teacherApproveEnrollment');
 $routes->post('course/teacher-reject-enrollment', 'Course::teacherRejectEnrollment');
+$routes->post('course/teacher-remove-student', 'Course::teacherRemoveStudent');
 $routes->post('course/admin-approve-enrollment', 'Course::adminApproveEnrollment');
 $routes->post('course/admin-reject-enrollment', 'Course::adminRejectEnrollment');
 $routes->get('course/pending-admin-approvals', 'Course::getPendingAdminApprovals');

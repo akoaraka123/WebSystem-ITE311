@@ -44,7 +44,7 @@ class EnrollmentModel extends Model
     // Get pending enrollment requests for a student
     public function getPendingEnrollments($userID)
     {
-        return $this->select('enrollments.id, courses.id as course_id, courses.title, courses.description, courses.teacher_id, enrollments.enrollment_date, enrollments.status, enrollments.admin_approved, users.name as teacher_name')
+        return $this->select('enrollments.id, courses.id as course_id, courses.title, courses.description, courses.teacher_id, enrollments.enrollment_date, enrollments.status, enrollments.admin_approved, enrollments.teacher_approved, users.name as teacher_name')
                     ->join('courses', 'courses.id = enrollments.course_id')
                     ->join('users', 'users.id = courses.teacher_id', 'left')
                     ->where('enrollments.user_id', $userID)

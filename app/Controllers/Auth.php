@@ -421,8 +421,27 @@ public function dashboard()
             break;
 
         case 'teacher':
-            // Teacher: show only courses assigned to them
-            $myCourses = $courseModel->where('teacher_id', $userID)->findAll();
+            // Teacher: show only courses assigned to them with full academic info
+            $myCourses = $courseModel->select('courses.*, 
+                            academic_years.display_name as acad_year_name,
+                            semesters.name as semester_name,
+                            terms.term_name,
+                            programs.code as program_code,
+                            programs.name as program_name,
+                            courses.schedule_time_start,
+                            courses.schedule_time_end,
+                            courses.schedule_date,
+                            courses.course_number,
+                            courses.duration,
+                            users.name as teacher_name,
+                            users.id as teacher_user_id')
+                        ->join('academic_years', 'academic_years.id = courses.acad_year_id', 'left')
+                        ->join('semesters', 'semesters.id = courses.semester_id', 'left')
+                        ->join('terms', 'terms.id = courses.term_id', 'left')
+                        ->join('programs', 'programs.id = courses.program_id', 'left')
+                        ->join('users', 'users.id = courses.teacher_id', 'left')
+                        ->where('courses.teacher_id', $userID)
+                        ->findAll();
             $enrollments = [];
             $enrollmentStats = []; // For detailed stats (accepted, pending)
             $materials = [];

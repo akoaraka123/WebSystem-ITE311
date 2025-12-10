@@ -486,11 +486,27 @@
                                             <?php endif; ?>
                                             
                                             <div class="mt-4">
-                                                <?php if (!empty($pending['admin_approved']) && $pending['admin_approved'] == 1): ?>
+                                                <?php 
+                                                    // Check if enrollment is from admin or teacher
+                                                    // Admin-initiated: admin_approved = 1, teacher_approved = 0
+                                                    // Teacher-initiated: teacher_approved = 1, admin_approved = 0
+                                                    // Student self-enrolled: both = 0
+                                                    $isAdminInitiated = !empty($pending['admin_approved']) && $pending['admin_approved'] == 1 && (empty($pending['teacher_approved']) || $pending['teacher_approved'] == 0);
+                                                    $isTeacherInitiated = !empty($pending['teacher_approved']) && $pending['teacher_approved'] == 1 && (empty($pending['admin_approved']) || $pending['admin_approved'] == 0);
+                                                ?>
+                                                
+                                                <?php if ($isAdminInitiated): ?>
                                                     <div class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
                                                         <p class="text-sm text-blue-800 text-center">
                                                             <i class="mr-2 fas fa-user-shield"></i>
                                                             Enrollment request from Administrator
+                                                        </p>
+                                                    </div>
+                                                <?php elseif ($isTeacherInitiated): ?>
+                                                    <div class="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-md">
+                                                        <p class="text-sm text-purple-800 text-center">
+                                                            <i class="mr-2 fas fa-chalkboard-teacher"></i>
+                                                            Enrollment request from Teacher
                                                         </p>
                                                     </div>
                                                 <?php else: ?>
@@ -502,16 +518,19 @@
                                                     </div>
                                                 <?php endif; ?>
                                                 
-                                                <div class="flex gap-2">
-                                                    <button onclick="acceptEnrollment(<?= $pending['id'] ?>)" 
-                                                            class="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
-                                                        <i class="mr-1 fas fa-check"></i> Accept
-                                                    </button>
-                                                    <button onclick="rejectEnrollment(<?= $pending['id'] ?>)" 
-                                                            class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
-                                                        <i class="mr-1 fas fa-times"></i> Reject
-                                                    </button>
-                                                </div>
+                                                <?php if ($isAdminInitiated || $isTeacherInitiated): ?>
+                                                    <!-- Show accept/reject buttons for admin/teacher initiated enrollments -->
+                                                    <div class="flex gap-2">
+                                                        <button onclick="acceptEnrollment(<?= $pending['id'] ?>)" 
+                                                                class="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
+                                                            <i class="mr-1 fas fa-check"></i> Accept
+                                                        </button>
+                                                        <button onclick="rejectEnrollment(<?= $pending['id'] ?>)" 
+                                                                class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
+                                                            <i class="mr-1 fas fa-times"></i> Reject
+                                                        </button>
+                                                    </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -976,18 +995,108 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- School Year and Semester Info -->
-                                    <div class="mb-3 flex gap-2 flex-wrap">
-                                        <?php if (!empty($course['school_year'])): ?>
-                                            <span class="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
-                                                <i class="mr-1 fas fa-calendar"></i> <?= esc($course['school_year']) ?>
-                                            </span>
-                                        <?php endif; ?>
-                                        <?php if (!empty($course['semester'])): ?>
-                                            <span class="px-2 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded">
-                                                <i class="mr-1 fas fa-calendar-alt"></i> <?= esc($course['semester']) ?>
-                                            </span>
-                                        <?php endif; ?>
+                                    <!-- Course Information Section -->
+                                    <div class="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-2">
+                                            <i class="mr-1 fas fa-info-circle"></i> Course Information
+                                        </h4>
+                                        <div class="space-y-1.5 text-xs">
+                                            <?php if (!empty($course['course_number'])): ?>
+                                                <div class="flex items-center text-gray-700">
+                                                    <i class="mr-2 w-4 text-gray-500 fas fa-hashtag"></i>
+                                                    <span class="font-medium">Course Code:</span>
+                                                    <span class="ml-1"><?= esc($course['course_number']) ?></span>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['acad_year_name'])): ?>
+                                                <div class="flex items-center text-gray-700">
+                                                    <i class="mr-2 w-4 text-gray-500 fas fa-calendar"></i>
+                                                    <span class="font-medium">Academic Year:</span>
+                                                    <span class="ml-1"><?= esc($course['acad_year_name']) ?></span>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['semester_name'])): ?>
+                                                <div class="flex items-center text-gray-700">
+                                                    <i class="mr-2 w-4 text-gray-500 fas fa-calendar-alt"></i>
+                                                    <span class="font-medium">Semester:</span>
+                                                    <span class="ml-1"><?= esc($course['semester_name']) ?></span>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['term_name'])): ?>
+                                                <div class="flex items-center text-gray-700">
+                                                    <i class="mr-2 w-4 text-gray-500 fas fa-bookmark"></i>
+                                                    <span class="font-medium">Term:</span>
+                                                    <span class="ml-1"><?= esc($course['term_name']) ?></span>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['schedule_time_start']) && !empty($course['schedule_time_end'])): ?>
+                                                <div class="flex items-center text-gray-700">
+                                                    <i class="mr-2 w-4 text-gray-500 fas fa-clock"></i>
+                                                    <span class="font-medium">Time:</span>
+                                                    <span class="ml-1">
+                                                        <?php
+                                                            $startTime = date('g:i A', strtotime($course['schedule_time_start']));
+                                                            $endTime = date('g:i A', strtotime($course['schedule_time_end']));
+                                                            echo esc($startTime . ' - ' . $endTime);
+                                                            
+                                                            // Calculate duration
+                                                            if (!empty($course['schedule_time_start']) && !empty($course['schedule_time_end'])) {
+                                                                $start = new \DateTime($course['schedule_time_start']);
+                                                                $end = new \DateTime($course['schedule_time_end']);
+                                                                $diff = $start->diff($end);
+                                                                $hours = $diff->h;
+                                                                $minutes = $diff->i;
+                                                                
+                                                                $durationText = '';
+                                                                if ($hours > 0) {
+                                                                    $durationText .= $hours . ' hour' . ($hours > 1 ? 's' : '');
+                                                                }
+                                                                if ($minutes > 0) {
+                                                                    if ($hours > 0) $durationText .= ' ';
+                                                                    $durationText .= $minutes . ' minute' . ($minutes > 1 ? 's' : '');
+                                                                }
+                                                                if (!empty($durationText)) {
+                                                                    echo ' | Duration: ' . $durationText;
+                                                                }
+                                                            }
+                                                        ?>
+                                                    </span>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['schedule_date'])): ?>
+                                                <div class="flex items-center text-gray-700">
+                                                    <i class="mr-2 w-4 text-gray-500 far fa-calendar"></i>
+                                                    <span class="font-medium">Date:</span>
+                                                    <span class="ml-1"><?= date('M j, Y', strtotime($course['schedule_date'])) ?></span>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['created_at'])): ?>
+                                                <div class="flex items-center text-gray-700">
+                                                    <i class="mr-2 w-4 text-gray-500 fas fa-calendar-plus"></i>
+                                                    <span class="font-medium">Created:</span>
+                                                    <span class="ml-1"><?= date('M j, Y', strtotime($course['created_at'])) ?></span>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['teacher_name']) || !empty($course['teacher_user_id'])): ?>
+                                                <div class="flex items-center text-gray-700">
+                                                    <i class="mr-2 w-4 text-gray-500 fas fa-user-tie"></i>
+                                                    <span class="font-medium">Teacher:</span>
+                                                    <span class="ml-1">
+                                                        <?= esc($course['teacher_name'] ?? 'Unknown') ?>
+                                                        <?php if (!empty($course['teacher_user_id'])): ?>
+                                                            <span class="text-gray-500">(ID: <?= esc($course['teacher_user_id']) ?>)</span>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                     
                                     <?php if (!empty($course['description'])): ?>
@@ -2153,7 +2262,10 @@ $(document).ready(function() {
         }
 
         // Enrollment Details Modal Functions
+        let currentEnrollmentCourseId = null;
+        
         function openEnrollmentDetailsModal(courseId, courseTitle) {
+            currentEnrollmentCourseId = courseId;
             document.getElementById('enrollmentDetailsModal').classList.remove('hidden');
             document.getElementById('enrollmentCourseTitle').textContent = courseTitle;
             
@@ -2212,16 +2324,24 @@ $(document).ready(function() {
                 acceptedContainer.innerHTML = enrollments.accepted.map(enrollment => `
                     <div class="flex items-center justify-between p-3 bg-green-50 rounded-md mb-2">
                         <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-900">${enrollment.student_name}</p>
-                            <p class="text-xs text-gray-500">${enrollment.student_email}</p>
+                            <p class="text-sm font-medium text-gray-900">${escapeHtml(enrollment.student_name || 'Unknown')}</p>
+                            <p class="text-xs text-gray-500">${escapeHtml(enrollment.student_email || '')}</p>
                             <p class="text-xs text-gray-400 mt-1">
                                 <i class="far fa-clock mr-1"></i>
                                 ${new Date(enrollment.enrollment_date).toLocaleString()}
                             </p>
                         </div>
-                        <span class="px-2 py-1 text-xs font-medium text-green-800 bg-green-200 rounded">
-                            <i class="fas fa-check-circle mr-1"></i>Accepted
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 text-xs font-medium text-green-800 bg-green-200 rounded">
+                                <i class="fas fa-check-circle mr-1"></i>Accepted
+                            </span>
+                            <button type="button" 
+                                    onclick="confirmRemoveStudentFromCourse(${enrollment.user_id}, ${currentEnrollmentCourseId}, '${escapeHtml(enrollment.student_name || 'Student')}', '${escapeHtml(document.getElementById('enrollmentCourseTitle').textContent)}')"
+                                    class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                    title="Remove student">
+                                <i class="fas fa-user-minus mr-1"></i> Remove
+                            </button>
+                        </div>
                     </div>
                 `).join('');
             } else {
