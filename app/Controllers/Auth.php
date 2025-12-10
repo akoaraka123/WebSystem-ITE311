@@ -419,6 +419,38 @@ public function dashboard()
             $programModel = new \App\Models\ProgramModel();
             $data['totalPrograms'] = $programModel->where('is_active', 1)->countAllResults();
             
+            // Get all courses grouped by program for admin dashboard
+            $allCourses = $courseModel->getCoursesWithAcademicInfo();
+            $groupedCoursesByProgram = [];
+            
+            foreach ($allCourses as $course) {
+                $programId = $course['program_id'] ?? null;
+                $programKey = $programId ? $programId : 'no_program';
+                $programName = !empty($course['program_code']) 
+                    ? $course['program_code'] . ' - ' . $course['program_name'] 
+                    : 'No Program Assigned';
+                
+                if (!isset($groupedCoursesByProgram[$programKey])) {
+                    $groupedCoursesByProgram[$programKey] = [
+                        'program_id' => $programId,
+                        'program_name' => $programName,
+                        'program_code' => $course['program_code'] ?? '',
+                        'courses' => []
+                    ];
+                }
+                
+                $groupedCoursesByProgram[$programKey]['courses'][] = $course;
+            }
+            
+            // Sort programs (No Program Assigned last)
+            uksort($groupedCoursesByProgram, function($a, $b) use ($groupedCoursesByProgram) {
+                if ($a === 'no_program') return 1;
+                if ($b === 'no_program') return -1;
+                return strcmp($groupedCoursesByProgram[$a]['program_code'] ?? '', $groupedCoursesByProgram[$b]['program_code'] ?? '');
+            });
+            
+            $data['groupedCoursesByProgram'] = $groupedCoursesByProgram;
+            
             // Initialize recentUploads as empty array first
             $data['recentUploads'] = [];
             
@@ -492,10 +524,26 @@ public function dashboard()
             // Get all pending enrollment requests for this teacher
             $data['pending_enrollments'] = $enrollmentModel->getPendingEnrollmentsForTeacher($userID);
 
+            // Get unique academic years and semesters from courses for filter dropdowns
+            $uniqueAcademicYears = [];
+            $uniqueSemesters = [];
+            foreach ($myCourses as $course) {
+                if (!empty($course['acad_year_name']) && !in_array($course['acad_year_name'], $uniqueAcademicYears)) {
+                    $uniqueAcademicYears[] = $course['acad_year_name'];
+                }
+                if (!empty($course['semester_name']) && !in_array($course['semester_name'], $uniqueSemesters)) {
+                    $uniqueSemesters[] = $course['semester_name'];
+                }
+            }
+            sort($uniqueAcademicYears);
+            sort($uniqueSemesters);
+            
             $data['myCourses'] = $myCourses;
             $data['enrollments'] = $enrollments;
             $data['enrollmentStats'] = $enrollmentStats; // Add detailed stats
             $data['materials'] = $materials;
+            $data['uniqueAcademicYears'] = $uniqueAcademicYears; // For teacher dashboard filter
+            $data['uniqueSemesters'] = $uniqueSemesters; // For teacher dashboard filter
             break;
 
         case 'student':

@@ -417,22 +417,8 @@
 
                     <!-- STUDENT DASHBOARD -->
                     <?php if ($user['role'] === 'student'): ?>
-                        <!-- Search and Filter Section -->
+                        <!-- Filter Section (School Year and Semester only) -->
                         <div class="mb-6 bg-white rounded-lg shadow p-4">
-                            <div class="mb-4">
-                                <label class="block mb-2 text-sm font-medium text-gray-700">Search Courses</label>
-                                <div class="relative">
-                                    <input type="text" 
-                                           id="searchCourseInput" 
-                                           placeholder="Search by course name, description, or code..." 
-                                           class="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                           oninput="setTimeout(function(){if(typeof window.filterCourses === 'function') window.filterCourses();}, 10);"
-                                           onkeyup="if(typeof window.filterCourses === 'function') window.filterCourses();"
-                                           onpaste="setTimeout(function(){if(typeof window.filterCourses === 'function') window.filterCourses();}, 10);"
-                                           autocomplete="off">
-                                    <i class="absolute left-3 top-3 text-gray-400 fas fa-search"></i>
-                                </div>
-                            </div>
                             <div class="flex flex-wrap items-center gap-4">
                                 <div class="flex-1 min-w-[200px]">
                                     <label class="block mb-2 text-sm font-medium text-gray-700">School Year</label>
@@ -554,14 +540,46 @@
                         <?php endif; ?>
 
                         <div class="mb-8">
-                            <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center justify-between mb-6">
                                 <h3 class="text-xl font-semibold text-gray-800">My Enrolled Courses</h3>
                                 <span class="px-3 py-1 text-sm font-medium text-green-800 bg-green-100 rounded-full">
                                     <span id="enrolledCount"><?= !empty($enrolled) ? count($enrolled) : 0 ?></span> Enrolled
                                 </span>
                             </div>
 
+                            <!-- Search Courses Section inside My Enrolled Courses -->
+                            <div class="mb-6 bg-white rounded-lg shadow p-4">
+                                <label class="block mb-2 text-sm font-medium text-gray-700">Search Courses</label>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <input type="text" 
+                                               id="searchCourseInput" 
+                                               placeholder="Search by course name, description, or code..." 
+                                               class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                               autocomplete="off"
+                                               oninput="if(typeof window.filterCourses === 'function') { window.filterCourses(); } else { console.error('filterCourses not found'); }"
+                                               onkeyup="if(typeof window.filterCourses === 'function') { window.filterCourses(); }"
+                                               onkeypress="if(event.key === 'Enter') { if(typeof window.filterCourses === 'function') { window.filterCourses(); } }">
+                                        <i class="absolute left-3 top-3 text-gray-400 fas fa-search"></i>
+                                    </div>
+                                    <button type="button" 
+                                            id="searchButtonStudent"
+                                            onclick="if(typeof window.filterCourses === 'function') { window.filterCourses(); }"
+                                            class="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2">
+                                        <i class="fas fa-search"></i>
+                                        <span>Search</span>
+                                    </button>
+                                </div>
+                            </div>
+
                             <?php if (!empty($enrolled)): ?>
+                                <!-- No courses found message (hidden by default) -->
+                                <div id="noCoursesFoundStudent" class="mb-6 p-8 text-center bg-white rounded-lg shadow border-2 border-gray-200 hidden" style="display: none;">
+                                    <i class="mx-auto text-5xl text-gray-300 fas fa-search"></i>
+                                    <h3 class="mt-4 text-lg font-medium text-gray-900">No courses found</h3>
+                                    <p class="mt-2 text-sm text-gray-500">No courses found matching your search.</p>
+                                </div>
+                                
                                 <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="enrolledCoursesContainer">
                                     <?php foreach ($enrolled as $enrollment): ?>
                                         <div class="overflow-hidden bg-white rounded-lg shadow course-card course-item" 
@@ -890,7 +908,7 @@
 
         <!-- TEACHER DASHBOARD -->
         <?php if ($user['role'] === 'teacher'): ?>
-            <!-- Filter Section -->
+            <!-- Filter Section (School Year and Semester only) -->
             <div class="mb-6 bg-white rounded-lg shadow p-4">
                 <div class="flex flex-wrap items-center gap-4">
                     <div class="flex-1 min-w-[200px]">
@@ -898,10 +916,18 @@
                         <select id="filterSchoolYearTeacher" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                             <option value="">All School Years</option>
                             <?php
-                            $currentYear = date('Y');
-                            for ($i = $currentYear - 2; $i <= $currentYear + 2; $i++) {
-                                $nextYear = $i + 1;
-                                echo '<option value="' . $i . '-' . $nextYear . '">' . $i . '-' . $nextYear . '</option>';
+                            // Use unique academic years from courses if available
+                            if (!empty($uniqueAcademicYears ?? [])) {
+                                foreach ($uniqueAcademicYears as $acadYear) {
+                                    echo '<option value="' . esc($acadYear) . '">' . esc($acadYear) . '</option>';
+                                }
+                            } else {
+                                // Fallback to generated years if no courses
+                                $currentYear = date('Y');
+                                for ($i = $currentYear - 2; $i <= $currentYear + 2; $i++) {
+                                    $nextYear = $i + 1;
+                                    echo '<option value="' . $i . '-' . $nextYear . '">' . $i . '-' . $nextYear . '</option>';
+                                }
                             }
                             ?>
                         </select>
@@ -910,9 +936,19 @@
                         <label class="block mb-2 text-sm font-medium text-gray-700">Semester</label>
                         <select id="filterSemesterTeacher" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                             <option value="">All Semesters</option>
-                            <option value="1st Semester">1st Semester</option>
-                            <option value="2nd Semester">2nd Semester</option>
-                            <option value="Summer">Summer</option>
+                            <?php
+                            // Use unique semesters from courses if available
+                            if (!empty($uniqueSemesters ?? [])) {
+                                foreach ($uniqueSemesters as $semester) {
+                                    echo '<option value="' . esc($semester) . '">' . esc($semester) . '</option>';
+                                }
+                            } else {
+                                // Fallback to default semesters if no courses
+                                echo '<option value="1st Semester">1st Semester</option>';
+                                echo '<option value="2nd Semester">2nd Semester</option>';
+                                echo '<option value="Summer">Summer</option>';
+                            }
+                            ?>
                         </select>
                     </div>
                     <div class="flex items-end">
@@ -1030,22 +1066,57 @@
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">My Courses</h2>
-                    <p class="text-sm text-gray-600">
+                </div>
+
+                <!-- Search Courses Section inside My Courses -->
+                <div class="mb-6 bg-white rounded-lg shadow p-4">
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Search Courses</label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <input type="text" 
+                                   id="searchCourseInputTeacher" 
+                                   placeholder="Search by course name, description, or code..." 
+                                   class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                   autocomplete="off"
+                                   oninput="if(typeof window.filterCoursesTeacher === 'function') { window.filterCoursesTeacher(); } else { console.error('filterCoursesTeacher not found'); }"
+                                   onkeyup="if(typeof window.filterCoursesTeacher === 'function') { window.filterCoursesTeacher(); }"
+                                   onkeypress="if(event.key === 'Enter') { if(typeof window.filterCoursesTeacher === 'function') { window.filterCoursesTeacher(); } }">
+                            <i class="absolute left-3 top-3 text-gray-400 fas fa-search"></i>
+                        </div>
+                        <button type="button" 
+                                id="searchButtonTeacher"
+                                onclick="if(typeof window.filterCoursesTeacher === 'function') { window.filterCoursesTeacher(); }"
+                                class="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2">
+                            <i class="fas fa-search"></i>
+                            <span>Search</span>
+                        </button>
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-600 mb-4">
                         <i class="mr-1 fas fa-info-circle"></i>
                         Courses are assigned by administrators
                     </p>
                 </div>
 
                 <?php if (!empty($myCourses)): ?>
+                    <!-- No courses found message (hidden by default) -->
+                    <div id="noCoursesFoundTeacher" class="mb-6 p-8 text-center bg-white rounded-lg shadow border-2 border-gray-200 hidden" style="display: none;">
+                        <i class="mx-auto text-5xl text-gray-300 fas fa-search"></i>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900">No courses found</h3>
+                        <p class="mt-2 text-sm text-gray-500">No courses found matching your search.</p>
+                    </div>
+                    
                     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="teacherCoursesContainer">
                         <?php foreach ($myCourses as $course): ?>
                             <div class="overflow-hidden bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 course-item-teacher" 
                                  id="course-<?= esc($course['id']) ?>"
-                                 data-school-year="<?= esc($course['school_year'] ?? '') ?>"
-                                 data-semester="<?= esc($course['semester'] ?? '') ?>">
+                                 data-school-year="<?= esc($course['acad_year_name'] ?? '') ?>"
+                                 data-semester="<?= esc($course['semester_name'] ?? '') ?>"
+                                 data-course-code="<?= esc($course['course_number'] ?? '') ?>">
                                 <div class="p-6">
                                     <div class="flex items-center justify-between mb-4">
-                                        <h3 class="text-lg font-semibold text-gray-900"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
+                                        <h3 class="text-lg font-semibold text-gray-900 course-title"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
                                         <div class="flex items-center gap-2">
                                             <!-- Enrollment Statistics -->
                                             <div class="flex items-center gap-2">
@@ -1470,6 +1541,134 @@
                 </div>
             </div>
 
+            <!-- Courses by Program Section -->
+            <?php if (!empty($groupedCoursesByProgram ?? [])): ?>
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Courses by Program</h3>
+                </div>
+
+                <!-- Search Courses Section -->
+                <div class="mb-6 bg-white rounded-lg shadow p-4">
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Search Courses</label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <input type="text" 
+                                   id="searchCourseInputAdmin" 
+                                   placeholder="Search by course name, description, or code..." 
+                                   class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                   autocomplete="off"
+                                   oninput="if(typeof window.filterCoursesAdmin === 'function') { window.filterCoursesAdmin(); } else { console.error('filterCoursesAdmin not found'); }"
+                                   onkeyup="if(typeof window.filterCoursesAdmin === 'function') { window.filterCoursesAdmin(); }"
+                                   onkeypress="if(event.key === 'Enter') { if(typeof window.filterCoursesAdmin === 'function') { window.filterCoursesAdmin(); } }">
+                            <i class="absolute left-3 top-3 text-gray-400 fas fa-search"></i>
+                        </div>
+                        <button type="button" 
+                                id="searchButtonAdmin"
+                                onclick="if(typeof window.filterCoursesAdmin === 'function') { window.filterCoursesAdmin(); }"
+                                class="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2">
+                            <i class="fas fa-search"></i>
+                            <span>Search</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- No courses found message (hidden by default) -->
+                <div id="noCoursesFoundAdmin" class="mb-6 p-8 text-center bg-white rounded-lg shadow border-2 border-gray-200 hidden" style="display: none;">
+                    <i class="mx-auto text-5xl text-gray-300 fas fa-search"></i>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900">No courses found</h3>
+                    <p class="mt-2 text-sm text-gray-500">No courses found matching your search.</p>
+                </div>
+
+                <?php foreach ($groupedCoursesByProgram as $programKey => $programData): ?>
+                    <div class="program-section-admin mb-8" data-program-name="<?= esc(strtolower($programData['program_name'])) ?>">
+                        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg p-6 mb-4">
+                            <h2 class="text-2xl font-bold text-white flex items-center justify-between">
+                                <span class="flex items-center">
+                                    <i class="fas fa-graduation-cap mr-3 text-3xl"></i>
+                                    <?= esc($programData['program_name']) ?>
+                                </span>
+                                <span class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-lg">
+                                    <?= count($programData['courses']) ?> <?= count($programData['courses']) == 1 ? 'Course' : 'Courses' ?>
+                                </span>
+                            </h2>
+                        </div>
+                        
+                        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="adminCoursesContainer-<?= esc($programKey) ?>">
+                            <?php foreach ($programData['courses'] as $course): ?>
+                                <div class="overflow-hidden bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 course-item-admin" 
+                                     id="course-<?= esc($course['id']) ?>"
+                                     data-school-year="<?= esc($course['acad_year_name'] ?? '') ?>"
+                                     data-semester="<?= esc($course['semester_name'] ?? '') ?>"
+                                     data-course-code="<?= esc($course['course_number'] ?? '') ?>"
+                                     data-program-name="<?= esc(strtolower($programData['program_name'])) ?>">
+                                    <div class="p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-900 course-title"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
+                                        </div>
+                                        
+                                        <div class="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                            <h4 class="text-sm font-semibold text-gray-700 mb-2">
+                                                <i class="mr-1 fas fa-info-circle"></i> Course Information
+                                            </h4>
+                                            <div class="space-y-1.5 text-xs">
+                                                <?php if (!empty($course['course_number'])): ?>
+                                                    <div class="flex items-center text-gray-700">
+                                                        <i class="mr-2 w-4 text-gray-500 fas fa-hashtag"></i>
+                                                        <span class="font-medium">Course Code:</span>
+                                                        <span class="ml-1"><?= esc($course['course_number']) ?></span>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($course['acad_year_name'])): ?>
+                                                    <div class="flex items-center text-gray-700">
+                                                        <i class="mr-2 w-4 text-gray-500 fas fa-calendar"></i>
+                                                        <span class="font-medium">Academic Year:</span>
+                                                        <span class="ml-1"><?= esc($course['acad_year_name']) ?></span>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($course['semester_name'])): ?>
+                                                    <div class="flex items-center text-gray-700">
+                                                        <i class="mr-2 w-4 text-gray-500 fas fa-calendar-alt"></i>
+                                                        <span class="font-medium">Semester:</span>
+                                                        <span class="ml-1"><?= esc($course['semester_name']) ?></span>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($course['teacher_name'])): ?>
+                                                    <div class="flex items-center text-gray-700">
+                                                        <i class="mr-2 w-4 text-gray-500 fas fa-user-tie"></i>
+                                                        <span class="font-medium">Teacher:</span>
+                                                        <span class="ml-1"><?= esc($course['teacher_name']) ?></span>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        
+                                        <?php if (!empty($course['description'])): ?>
+                                            <p class="mb-4 text-sm text-gray-600"><?= esc($course['description']) ?></p>
+                                        <?php endif; ?>
+                                        
+                                        <div class="flex gap-2 mt-4">
+                                            <a href="<?= base_url('courses/view/' . $course['id']) ?>" 
+                                               class="flex-1 text-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors">
+                                                <i class="fas fa-eye mr-2"></i> View
+                                            </a>
+                                            <a href="<?= base_url('edit-course/' . $course['id']) ?>" 
+                                               class="flex-1 text-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors">
+                                                <i class="fas fa-edit mr-2"></i> Edit
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
             <!-- Recent File Uploads -->
             <div class="mt-8">
                 <div class="mb-6">
@@ -1553,6 +1752,351 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+    // Define filterCoursesTeacher function IMMEDIATELY - before any other code runs
+    window.filterCoursesTeacher = function() {
+        try {
+            const schoolYearEl = document.getElementById('filterSchoolYearTeacher');
+            const semesterEl = document.getElementById('filterSemesterTeacher');
+            const searchInputEl = document.getElementById('searchCourseInputTeacher');
+            
+            const schoolYear = schoolYearEl ? schoolYearEl.value : '';
+            const semester = semesterEl ? semesterEl.value : '';
+            // Case-insensitive search - convert to lowercase
+            const searchTerm = searchInputEl ? searchInputEl.value.toLowerCase().trim() : '';
+            const courses = document.querySelectorAll('.course-item-teacher');
+            let visibleCount = 0;
+
+            console.log('🔍 filterCoursesTeacher called', {
+                searchTerm: searchTerm,
+                coursesFound: courses.length,
+                schoolYear: schoolYear,
+                semester: semester
+            });
+
+            if (courses.length === 0) {
+                console.warn('⚠️ No courses found with class .course-item-teacher');
+                return;
+            }
+
+            courses.forEach((course, index) => {
+                const courseSchoolYear = course.getAttribute('data-school-year') || '';
+                const courseSemester = course.getAttribute('data-semester') || '';
+                const courseCode = course.getAttribute('data-course-code') || '';
+                
+                // Get course text content for search - CASE INSENSITIVE
+                const courseTitleEl = course.querySelector('.course-title');
+                let titleText = courseTitleEl ? courseTitleEl.textContent.toLowerCase().trim() : '';
+                
+                // If no course-title class, try to get title from h3
+                if (!titleText) {
+                    const h3El = course.querySelector('h3');
+                    if (h3El) {
+                        titleText = h3El.textContent.toLowerCase().trim();
+                    }
+                }
+                
+                // If still no title, try getting from any h3 in the course
+                if (!titleText) {
+                    const allH3 = course.querySelectorAll('h3');
+                    if (allH3.length > 0) {
+                        titleText = allH3[0].textContent.toLowerCase().trim();
+                    }
+                }
+                
+                // Get description - try multiple selectors
+                let courseDescription = '';
+                const descElement = course.querySelector('p.text-sm.text-gray-600') || 
+                                  course.querySelector('p.mb-4.text-sm.text-gray-600') ||
+                                  course.querySelector('.card-text') ||
+                                  course.querySelector('p');
+                if (descElement) {
+                    courseDescription = descElement.textContent.toLowerCase().trim();
+                }
+                
+                // Get all text from the course card (includes course code, academic info, etc.)
+                // CASE INSENSITIVE - convert everything to lowercase
+                const fullText = course.textContent.toLowerCase().replace(/\s+/g, ' ').trim();
+                
+                // Combine searchable text - include title, description, code (all lowercase)
+                const searchableText = (titleText + ' ' + courseDescription + ' ' + courseCode.toLowerCase()).replace(/\s+/g, ' ').trim();
+                
+                const matchSchoolYear = !schoolYear || courseSchoolYear === schoolYear;
+                const matchSemester = !semester || courseSemester === semester;
+                
+                // Case-insensitive search - searchTerm is already lowercase, search in lowercase text
+                const matchSearch = !searchTerm || 
+                                  searchableText.includes(searchTerm) || 
+                                  fullText.includes(searchTerm) ||
+                                  titleText.includes(searchTerm) ||
+                                  courseCode.toLowerCase().includes(searchTerm);
+                
+                const shouldShow = matchSchoolYear && matchSemester && matchSearch;
+                
+                console.log(`Course ${index + 1}: "${titleText}"`, {
+                    searchTerm: searchTerm,
+                    titleText: titleText,
+                    courseCode: courseCode.toLowerCase(),
+                    matchSearch: matchSearch,
+                    matchSchoolYear: matchSchoolYear,
+                    matchSemester: matchSemester,
+                    shouldShow: shouldShow
+                });
+                
+                if (shouldShow) {
+                    // Show course - remove all hiding styles and classes
+                    course.style.display = 'block';
+                    course.style.visibility = 'visible';
+                    course.style.opacity = '1';
+                    course.style.height = 'auto';
+                    course.style.overflow = 'visible';
+                    course.classList.remove('hidden');
+                    course.removeAttribute('data-hidden');
+                    // Remove any inline style that might hide it
+                    const currentStyle = course.getAttribute('style') || '';
+                    if (currentStyle.includes('display: none')) {
+                        course.setAttribute('style', currentStyle.replace(/display:\s*none[^;]*;?/gi, ''));
+                    }
+                    visibleCount++;
+                } else {
+                    // Hide course - completely remove from layout
+                    course.style.display = 'none';
+                    course.style.visibility = 'hidden';
+                    course.style.opacity = '0';
+                    course.style.height = '0';
+                    course.style.overflow = 'hidden';
+                    course.style.margin = '0';
+                    course.style.padding = '0';
+                    course.classList.add('hidden');
+                    course.setAttribute('data-hidden', 'true');
+                }
+            });
+            
+            // Show/hide "no courses found" message
+            const noCoursesFoundMsg = document.getElementById('noCoursesFoundTeacher');
+            const shouldShowMessage = visibleCount === 0 && searchTerm && searchTerm.length > 0;
+            
+            console.log('🔍 Teacher message display check:', {
+                messageElement: noCoursesFoundMsg ? 'FOUND' : 'NOT FOUND',
+                visibleCount: visibleCount,
+                searchTerm: searchTerm,
+                searchTermLength: searchTerm.length,
+                shouldShowMessage: shouldShowMessage
+            });
+            
+            if (noCoursesFoundMsg) {
+                if (shouldShowMessage) {
+                    // Show message - use multiple methods to ensure visibility
+                    noCoursesFoundMsg.removeAttribute('hidden');
+                    noCoursesFoundMsg.removeAttribute('style');
+                    noCoursesFoundMsg.classList.remove('hidden');
+                    noCoursesFoundMsg.style.display = 'block';
+                    noCoursesFoundMsg.style.visibility = 'visible';
+                    noCoursesFoundMsg.style.opacity = '1';
+                    noCoursesFoundMsg.style.position = 'relative';
+                    noCoursesFoundMsg.style.zIndex = '10';
+                    // Force a reflow to ensure the browser applies the styles
+                    noCoursesFoundMsg.offsetHeight;
+                    console.log('✅ MESSAGE SHOWN - Teacher');
+                } else {
+                    // Hide message
+                    noCoursesFoundMsg.setAttribute('hidden', 'hidden');
+                    noCoursesFoundMsg.classList.add('hidden');
+                    noCoursesFoundMsg.style.display = 'none';
+                    noCoursesFoundMsg.style.visibility = 'hidden';
+                    noCoursesFoundMsg.style.opacity = '0';
+                }
+            } else {
+                console.error('❌ noCoursesFoundTeacher element NOT FOUND in DOM');
+            }
+            
+            console.log('✅ Filter complete', { 
+                visibleCount: visibleCount, 
+                totalCourses: courses.length,
+                searchTerm: searchTerm
+            });
+        } catch (error) {
+            console.error('❌ Error in filterCoursesTeacher:', error);
+        }
+    };
+    
+    // Define filterCoursesAdmin function for Admin Dashboard
+    window.filterCoursesAdmin = function() {
+        try {
+            const searchInputEl = document.getElementById('searchCourseInputAdmin');
+            // Case-insensitive search - convert to lowercase
+            const searchTerm = searchInputEl ? searchInputEl.value.toLowerCase().trim() : '';
+            const courses = document.querySelectorAll('.course-item-admin');
+            let visibleCount = 0;
+
+            console.log('🔍 filterCoursesAdmin called', {
+                searchTerm: searchTerm,
+                coursesFound: courses.length
+            });
+
+            // If no courses at all and there's a search term, show "no courses found" message
+            if (courses.length === 0) {
+                const noCoursesFoundMsg = document.getElementById('noCoursesFoundAdmin');
+                if (noCoursesFoundMsg) {
+                    if (searchTerm) {
+                        noCoursesFoundMsg.classList.remove('hidden');
+                        noCoursesFoundMsg.style.display = 'block';
+                    } else {
+                        noCoursesFoundMsg.classList.add('hidden');
+                        noCoursesFoundMsg.style.display = 'none';
+                    }
+                }
+                return;
+            }
+
+            courses.forEach((course, index) => {
+                const courseCode = course.getAttribute('data-course-code') || '';
+                const programName = course.getAttribute('data-program-name') || '';
+                
+                // Get course text content for search - CASE INSENSITIVE
+                const courseTitleEl = course.querySelector('.course-title');
+                let titleText = courseTitleEl ? courseTitleEl.textContent.toLowerCase().trim() : '';
+                
+                // If no course-title class, try to get title from h3
+                if (!titleText) {
+                    const h3El = course.querySelector('h3');
+                    if (h3El) {
+                        titleText = h3El.textContent.toLowerCase().trim();
+                    }
+                }
+                
+                // If still no title, try getting from any h3 in the course
+                if (!titleText) {
+                    const allH3 = course.querySelectorAll('h3');
+                    if (allH3.length > 0) {
+                        titleText = allH3[0].textContent.toLowerCase().trim();
+                    }
+                }
+                
+                // Get description - try multiple selectors
+                let courseDescription = '';
+                const descElement = course.querySelector('p.text-sm.text-gray-600') || 
+                                  course.querySelector('p.mb-4.text-sm.text-gray-600') ||
+                                  course.querySelector('.card-text') ||
+                                  course.querySelector('p');
+                if (descElement) {
+                    courseDescription = descElement.textContent.toLowerCase().trim();
+                }
+                
+                // Get all text from the course card (includes course code, academic info, etc.)
+                // CASE INSENSITIVE - convert everything to lowercase
+                const fullText = course.textContent.toLowerCase().replace(/\s+/g, ' ').trim();
+                
+                // Combine searchable text - include title, description, code, program name (all lowercase)
+                const searchableText = (titleText + ' ' + courseDescription + ' ' + courseCode.toLowerCase() + ' ' + programName).replace(/\s+/g, ' ').trim();
+                
+                // Case-insensitive search - searchTerm is already lowercase, search in lowercase text
+                const matchSearch = !searchTerm || 
+                                  searchableText.includes(searchTerm) || 
+                                  fullText.includes(searchTerm) ||
+                                  titleText.includes(searchTerm) ||
+                                  courseCode.toLowerCase().includes(searchTerm) ||
+                                  programName.includes(searchTerm);
+                
+                const shouldShow = matchSearch;
+                
+                if (shouldShow) {
+                    // Show course - remove all hiding styles and classes
+                    course.style.display = 'block';
+                    course.style.visibility = 'visible';
+                    course.style.opacity = '1';
+                    course.style.height = 'auto';
+                    course.style.overflow = 'visible';
+                    course.classList.remove('hidden');
+                    course.removeAttribute('data-hidden');
+                    // Remove any inline style that might hide it
+                    const currentStyle = course.getAttribute('style') || '';
+                    if (currentStyle.includes('display: none')) {
+                        course.setAttribute('style', currentStyle.replace(/display:\s*none[^;]*;?/gi, ''));
+                    }
+                    visibleCount++;
+                } else {
+                    // Hide course - completely remove from layout
+                    course.style.display = 'none';
+                    course.style.visibility = 'hidden';
+                    course.style.opacity = '0';
+                    course.style.height = '0';
+                    course.style.overflow = 'hidden';
+                    course.style.margin = '0';
+                    course.style.padding = '0';
+                    course.classList.add('hidden');
+                    course.setAttribute('data-hidden', 'true');
+                }
+            });
+            
+            // Also hide/show program sections based on visible courses
+            const programSections = document.querySelectorAll('.program-section-admin');
+            let totalVisibleCoursesInAllSections = 0;
+            
+            programSections.forEach(section => {
+                const sectionCourses = section.querySelectorAll('.course-item-admin');
+                const visibleCourses = Array.from(sectionCourses).filter(c => {
+                    const style = window.getComputedStyle(c);
+                    return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+                });
+                
+                totalVisibleCoursesInAllSections += visibleCourses.length;
+                
+                if (visibleCourses.length === 0 && searchTerm) {
+                    // Hide entire program section if no visible courses and search is active
+                    section.style.cssText = 'display: none !important;';
+                } else {
+                    // Show program section
+                    section.style.cssText = 'display: block !important;';
+                }
+            });
+            
+            // Show/hide "no courses found" message
+            // Use totalVisibleCoursesInAllSections instead of visibleCount to be more accurate
+            const noCoursesFoundMsg = document.getElementById('noCoursesFoundAdmin');
+            const shouldShowMessage = (totalVisibleCoursesInAllSections === 0 || visibleCount === 0) && searchTerm && searchTerm.length > 0;
+            
+            console.log('🔍 Message display check:', {
+                messageElement: noCoursesFoundMsg ? 'FOUND' : 'NOT FOUND',
+                totalVisibleCoursesInAllSections: totalVisibleCoursesInAllSections,
+                visibleCount: visibleCount,
+                searchTerm: searchTerm,
+                searchTermLength: searchTerm.length,
+                shouldShowMessage: shouldShowMessage
+            });
+            
+            if (noCoursesFoundMsg) {
+                if (shouldShowMessage) {
+                    // Show message - use multiple methods to ensure visibility
+                    noCoursesFoundMsg.removeAttribute('hidden');
+                    noCoursesFoundMsg.removeAttribute('style');
+                    noCoursesFoundMsg.classList.remove('hidden');
+                    noCoursesFoundMsg.style.display = 'block';
+                    noCoursesFoundMsg.style.visibility = 'visible';
+                    noCoursesFoundMsg.style.opacity = '1';
+                    noCoursesFoundMsg.style.position = 'relative';
+                    noCoursesFoundMsg.style.zIndex = '10';
+                    // Force a reflow to ensure the browser applies the styles
+                    noCoursesFoundMsg.offsetHeight;
+                    console.log('✅ MESSAGE SHOWN - Admin');
+                } else {
+                    // Hide message
+                    noCoursesFoundMsg.setAttribute('hidden', 'hidden');
+                    noCoursesFoundMsg.classList.add('hidden');
+                    noCoursesFoundMsg.style.display = 'none';
+                    noCoursesFoundMsg.style.visibility = 'hidden';
+                    noCoursesFoundMsg.style.opacity = '0';
+                }
+            } else {
+                console.error('❌ noCoursesFoundAdmin element NOT FOUND in DOM');
+            }
+        } catch (error) {
+            console.error('❌ Error in filterCoursesAdmin:', error);
+        }
+    };
+    
+    // Make sure functions are available immediately
+    console.log('filterCoursesTeacher function defined:', typeof window.filterCoursesTeacher);
+    console.log('filterCoursesAdmin function defined:', typeof window.filterCoursesAdmin);
 $(document).ready(function() {
     // Toggle user dropdown
     $('#user-menu-button').click(function(e) {
@@ -2045,68 +2589,114 @@ $(document).ready(function() {
             const searchInputEl = document.getElementById('searchCourseInput');
             
             if (!searchInputEl) {
-                console.error('Search input element not found');
                 return;
             }
             
             const schoolYear = schoolYearEl ? schoolYearEl.value : '';
             const semester = semesterEl ? semesterEl.value : '';
+            // Case-insensitive search - convert to lowercase
             const searchTerm = searchInputEl.value ? searchInputEl.value.toLowerCase().trim() : '';
             const courses = document.querySelectorAll('.course-item');
             let visibleCount = 0;
 
+            // If no courses at all and there's a search term, show "no courses found" message
             if (courses.length === 0) {
+                const noCoursesFoundMsg = document.getElementById('noCoursesFoundAdmin');
+                if (noCoursesFoundMsg) {
+                    if (searchTerm) {
+                        noCoursesFoundMsg.classList.remove('hidden');
+                        noCoursesFoundMsg.style.display = 'block';
+                        noCoursesFoundMsg.style.visibility = 'visible';
+                        noCoursesFoundMsg.style.opacity = '1';
+                    } else {
+                        noCoursesFoundMsg.classList.add('hidden');
+                        noCoursesFoundMsg.style.display = 'none';
+                    }
+                }
                 return;
             }
 
-            courses.forEach(course => {
+            courses.forEach((course, index) => {
                 const courseSchoolYear = course.getAttribute('data-school-year') || '';
                 const courseSemester = course.getAttribute('data-semester') || '';
                 const courseCode = course.getAttribute('data-course-code') || '';
                 
-                // Get course text content for search
+                // Get course text content for search - CASE INSENSITIVE
                 const courseTitleEl = course.querySelector('.course-title');
-                const courseTitle = courseTitleEl ? courseTitleEl.textContent.toLowerCase().trim() : '';
+                let titleText = courseTitleEl ? courseTitleEl.textContent.toLowerCase().trim() : '';
+                
+                // If no course-title class, try to get title from h3
+                if (!titleText) {
+                    const h3El = course.querySelector('h3');
+                    if (h3El) {
+                        titleText = h3El.textContent.toLowerCase().trim();
+                    }
+                }
+                
+                // If still no title, try getting from any h3 in the course
+                if (!titleText) {
+                    const allH3 = course.querySelectorAll('h3');
+                    if (allH3.length > 0) {
+                        titleText = allH3[0].textContent.toLowerCase().trim();
+                    }
+                }
                 
                 // Get description - try multiple selectors
                 let courseDescription = '';
                 const descElement = course.querySelector('p.text-sm.text-gray-600') || 
+                                  course.querySelector('p.mb-4.text-sm.text-gray-600') ||
                                   course.querySelector('p.mt-2.text-sm.text-gray-600') ||
-                                  course.querySelector('.card-text');
+                                  course.querySelector('.card-text') ||
+                                  course.querySelector('p');
                 if (descElement) {
                     courseDescription = descElement.textContent.toLowerCase().trim();
                 }
                 
                 // Get all text from the course card (includes course code, academic info, etc.)
-                // Remove extra whitespace and normalize
+                // CASE INSENSITIVE - convert everything to lowercase
                 const fullText = course.textContent.toLowerCase().replace(/\s+/g, ' ').trim();
                 
-                // Combine searchable text - include title, description, code
-                const searchableText = (courseTitle + ' ' + courseDescription + ' ' + courseCode).toLowerCase().replace(/\s+/g, ' ').trim();
+                // Combine searchable text - include title, description, code (all lowercase)
+                const searchableText = (titleText + ' ' + courseDescription + ' ' + courseCode.toLowerCase()).replace(/\s+/g, ' ').trim();
                 
                 const matchSchoolYear = !schoolYear || courseSchoolYear === schoolYear;
                 const matchSemester = !semester || courseSemester === semester;
                 
-                // Search in both specific fields and full text
+                // Case-insensitive search - searchTerm is already lowercase, search in lowercase text
                 const matchSearch = !searchTerm || 
                                   searchableText.includes(searchTerm) || 
                                   fullText.includes(searchTerm) ||
-                                  courseTitle.includes(searchTerm) ||
+                                  titleText.includes(searchTerm) ||
                                   courseCode.toLowerCase().includes(searchTerm);
                 
-                if (matchSchoolYear && matchSemester && matchSearch) {
-                    // Show course
-                    course.style.display = '';
+                const shouldShow = matchSchoolYear && matchSemester && matchSearch;
+                
+                if (shouldShow) {
+                    // Show course - remove all hiding styles and classes
+                    course.style.display = 'block';
                     course.style.visibility = 'visible';
                     course.style.opacity = '1';
+                    course.style.height = 'auto';
+                    course.style.overflow = 'visible';
                     course.classList.remove('hidden');
+                    course.removeAttribute('data-hidden');
+                    // Remove any inline style that might hide it
+                    const currentStyle = course.getAttribute('style') || '';
+                    if (currentStyle.includes('display: none')) {
+                        course.setAttribute('style', currentStyle.replace(/display:\s*none[^;]*;?/gi, ''));
+                    }
                     visibleCount++;
                 } else {
-                    // Hide course
+                    // Hide course - completely remove from layout
                     course.style.display = 'none';
                     course.style.visibility = 'hidden';
                     course.style.opacity = '0';
+                    course.style.height = '0';
+                    course.style.overflow = 'hidden';
+                    course.style.margin = '0';
+                    course.style.padding = '0';
                     course.classList.add('hidden');
+                    course.setAttribute('data-hidden', 'true');
                 }
             });
 
@@ -2114,6 +2704,26 @@ $(document).ready(function() {
             const countElement = document.getElementById('enrolledCount');
             if (countElement) {
                 countElement.textContent = visibleCount;
+            }
+            
+            // Show/hide "no courses found" message
+            const noCoursesFoundMsg = document.getElementById('noCoursesFoundStudent');
+            const shouldShowMessage = visibleCount === 0 && searchTerm && searchTerm.length > 0;
+            
+            if (noCoursesFoundMsg) {
+                if (shouldShowMessage) {
+                    // Show message - use cssText to override all styles and ensure visibility
+                    noCoursesFoundMsg.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; position: relative !important; z-index: 10 !important;';
+                    noCoursesFoundMsg.classList.remove('hidden');
+                    noCoursesFoundMsg.removeAttribute('hidden');
+                    // Force a reflow to ensure the browser applies the styles
+                    noCoursesFoundMsg.offsetHeight;
+                } else {
+                    // Hide message - use cssText to ensure it's hidden
+                    noCoursesFoundMsg.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
+                    noCoursesFoundMsg.classList.add('hidden');
+                    noCoursesFoundMsg.setAttribute('hidden', 'hidden');
+                }
             }
         } catch (error) {
             console.error('Error in filterCourses:', error);
@@ -2129,36 +2739,27 @@ $(document).ready(function() {
         if (filterSemester) filterSemester.value = '';
         if (searchInput) searchInput.value = '';
         
-        if (typeof filterCourses === 'function') {
-            filterCourses();
+        if (typeof window.filterCourses === 'function') {
+            window.filterCourses();
         }
     }
 
-    // Filter functions for Teacher Dashboard
-    function filterCoursesTeacher() {
-        const schoolYear = document.getElementById('filterSchoolYearTeacher')?.value || '';
-        const semester = document.getElementById('filterSemesterTeacher')?.value || '';
-        const courses = document.querySelectorAll('.course-item-teacher');
-
-        courses.forEach(course => {
-            const courseSchoolYear = course.getAttribute('data-school-year') || '';
-            const courseSemester = course.getAttribute('data-semester') || '';
-            
-            const matchSchoolYear = !schoolYear || courseSchoolYear === schoolYear;
-            const matchSemester = !semester || courseSemester === semester;
-            
-            if (matchSchoolYear && matchSemester) {
-                course.style.display = '';
-            } else {
-                course.style.display = 'none';
-            }
-        });
-    }
+    // Filter function for Teacher Dashboard is already defined at the top of the script
+    // Filter function for Teacher Dashboard is already defined at the top of the script
+    // No need to redefine it here
 
     function clearFiltersTeacher() {
-        document.getElementById('filterSchoolYearTeacher').value = '';
-        document.getElementById('filterSemesterTeacher').value = '';
-        filterCoursesTeacher();
+        const filterSchoolYearTeacher = document.getElementById('filterSchoolYearTeacher');
+        const filterSemesterTeacher = document.getElementById('filterSemesterTeacher');
+        const searchInputTeacher = document.getElementById('searchCourseInputTeacher');
+        
+        if (filterSchoolYearTeacher) filterSchoolYearTeacher.value = '';
+        if (filterSemesterTeacher) filterSemesterTeacher.value = '';
+        if (searchInputTeacher) searchInputTeacher.value = '';
+        
+        if (typeof window.filterCoursesTeacher === 'function') {
+            window.filterCoursesTeacher();
+        }
     }
 
     // Add event listeners for filters
@@ -2203,10 +2804,52 @@ $(document).ready(function() {
             });
         }
         if (filterSchoolYearTeacher) {
-            filterSchoolYearTeacher.addEventListener('change', filterCoursesTeacher);
+            filterSchoolYearTeacher.addEventListener('change', function() {
+                if (typeof window.filterCoursesTeacher === 'function') window.filterCoursesTeacher();
+            });
         }
         if (filterSemesterTeacher) {
-            filterSemesterTeacher.addEventListener('change', filterCoursesTeacher);
+            filterSemesterTeacher.addEventListener('change', function() {
+                if (typeof window.filterCoursesTeacher === 'function') window.filterCoursesTeacher();
+            });
+        }
+        
+        const searchCourseInputTeacher = document.getElementById('searchCourseInputTeacher');
+        if (searchCourseInputTeacher) {
+            console.log('Attaching event listeners to teacher search input');
+            
+            // Immediate search on any input - no delay, triggers on every keystroke
+            searchCourseInputTeacher.addEventListener('input', function(e) {
+                console.log('Teacher search input event:', e.target.value);
+                if (typeof window.filterCoursesTeacher === 'function') {
+                    window.filterCoursesTeacher();
+                } else {
+                    console.error('filterCoursesTeacher function not found!');
+                }
+            }, false);
+            
+            searchCourseInputTeacher.addEventListener('keyup', function(e) {
+                console.log('Teacher search keyup event:', e.target.value);
+                if (typeof window.filterCoursesTeacher === 'function') {
+                    window.filterCoursesTeacher();
+                } else {
+                    console.error('filterCoursesTeacher function not found!');
+                }
+            }, false);
+            
+            searchCourseInputTeacher.addEventListener('paste', function(e) {
+                // Trigger search immediately after paste
+                setTimeout(function() {
+                    console.log('Teacher search paste event:', searchCourseInputTeacher.value);
+                    if (typeof window.filterCoursesTeacher === 'function') {
+                        window.filterCoursesTeacher();
+                    } else {
+                        console.error('filterCoursesTeacher function not found!');
+                    }
+                }, 0);
+            }, false);
+        } else {
+            console.error('searchCourseInputTeacher element not found!');
         }
     }
 
@@ -2234,13 +2877,11 @@ $(document).ready(function() {
                 const newInput = searchInput.cloneNode(true);
                 searchInput.parentNode.replaceChild(newInput, searchInput);
                 
-                // Add fresh event listeners
+                // Add fresh event listeners - immediate response
                 newInput.addEventListener('input', function(e) {
                     // Don't prevent default - allow normal input
                     if (typeof window.filterCourses === 'function') {
-                        setTimeout(function() {
-                            window.filterCourses();
-                        }, 50);
+                        window.filterCourses();
                     }
                 });
                 
@@ -2255,20 +2896,170 @@ $(document).ready(function() {
             }
         }
         
+        // Setup teacher search immediately
+        function setupTeacherSearch() {
+            const searchInput = document.getElementById('searchCourseInputTeacher');
+            if (searchInput && !searchInput.dataset.listenerAttached) {
+                searchInput.dataset.listenerAttached = 'true';
+                
+                // Immediate search on input - no delays
+                searchInput.addEventListener('input', function(e) {
+                    if (typeof window.filterCoursesTeacher === 'function') {
+                        window.filterCoursesTeacher();
+                    }
+                }, false);
+                
+                searchInput.addEventListener('keyup', function(e) {
+                    if (typeof window.filterCoursesTeacher === 'function') {
+                        window.filterCoursesTeacher();
+                    }
+                }, false);
+                
+                searchInput.addEventListener('keydown', function(e) {
+                    // Trigger immediately on keydown for faster response
+                    if (typeof window.filterCoursesTeacher === 'function') {
+                        requestAnimationFrame(function() {
+                            window.filterCoursesTeacher();
+                        });
+                    }
+                }, false);
+                
+                searchInput.addEventListener('paste', function(e) {
+                    setTimeout(function() {
+                        if (typeof window.filterCoursesTeacher === 'function') {
+                            window.filterCoursesTeacher();
+                        }
+                    }, 0);
+                }, false);
+                
+                console.log('Teacher search input listeners attached');
+            }
+        }
+        
+        function setupAdminSearch() {
+            const searchInput = document.getElementById('searchCourseInputAdmin');
+            if (searchInput && !searchInput.dataset.listenerAttached) {
+                searchInput.dataset.listenerAttached = 'true';
+                
+                // Immediate search on input - no delays
+                searchInput.addEventListener('input', function(e) {
+                    if (typeof window.filterCoursesAdmin === 'function') {
+                        window.filterCoursesAdmin();
+                    }
+                }, false);
+                
+                searchInput.addEventListener('keyup', function(e) {
+                    if (typeof window.filterCoursesAdmin === 'function') {
+                        window.filterCoursesAdmin();
+                    }
+                }, false);
+                
+                searchInput.addEventListener('paste', function(e) {
+                    setTimeout(function() {
+                        if (typeof window.filterCoursesAdmin === 'function') {
+                            window.filterCoursesAdmin();
+                        }
+                    }, 0);
+                }, false);
+                
+                console.log('Admin search input listeners attached');
+            }
+        }
+        
         // Try multiple times to ensure it works
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
                 setupSearch();
+                setupTeacherSearch();
+                setupAdminSearch();
                 setTimeout(setupSearch, 500);
+                setTimeout(setupTeacherSearch, 500);
+                setTimeout(setupAdminSearch, 500);
             });
         } else {
             setupSearch();
+            setupTeacherSearch();
+            setupAdminSearch();
             setTimeout(setupSearch, 500);
+            setTimeout(setupTeacherSearch, 500);
+            setTimeout(setupAdminSearch, 500);
         }
         
         // Also try when window loads
         window.addEventListener('load', function() {
             setTimeout(setupSearch, 200);
+            setTimeout(setupTeacherSearch, 200);
+            setTimeout(setupAdminSearch, 200);
+        });
+    })();
+    </script>
+    
+    <!-- Separate script for teacher search to ensure immediate response -->
+    <script>
+    // Ensure teacher search works immediately even if jQuery ready hasn't fired yet
+    (function() {
+        function setupTeacherSearch() {
+            const searchInput = document.getElementById('searchCourseInputTeacher');
+            if (searchInput) {
+                // Check if already attached
+                if (searchInput.dataset.listenerAttached === 'true') {
+                    return; // Already attached, skip
+                }
+                
+                searchInput.dataset.listenerAttached = 'true';
+                
+                // Immediate search on input - no delays, triggers on every keystroke
+                searchInput.addEventListener('input', function(e) {
+                    console.log('Teacher search INPUT event:', e.target.value);
+                    if (typeof window.filterCoursesTeacher === 'function') {
+                        window.filterCoursesTeacher();
+                    } else {
+                        console.error('filterCoursesTeacher function not available!');
+                    }
+                }, false);
+                
+                searchInput.addEventListener('keyup', function(e) {
+                    console.log('Teacher search KEYUP event:', e.target.value);
+                    if (typeof window.filterCoursesTeacher === 'function') {
+                        window.filterCoursesTeacher();
+                    } else {
+                        console.error('filterCoursesTeacher function not available!');
+                    }
+                }, false);
+                
+                searchInput.addEventListener('paste', function(e) {
+                    setTimeout(function() {
+                        console.log('Teacher search PASTE event:', searchInput.value);
+                        if (typeof window.filterCoursesTeacher === 'function') {
+                            window.filterCoursesTeacher();
+                        } else {
+                            console.error('filterCoursesTeacher function not available!');
+                        }
+                    }, 0);
+                }, false);
+                
+                console.log('✅ Teacher search input listeners attached successfully');
+            } else {
+                console.warn('⚠️ searchCourseInputTeacher element not found yet');
+            }
+        }
+        
+        // Try multiple times to ensure it works
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setupTeacherSearch();
+                setTimeout(setupTeacherSearch, 100);
+                setTimeout(setupTeacherSearch, 500);
+            });
+        } else {
+            setupTeacherSearch();
+            setTimeout(setupTeacherSearch, 100);
+            setTimeout(setupTeacherSearch, 500);
+        }
+        
+        // Also try when window loads
+        window.addEventListener('load', function() {
+            setTimeout(setupTeacherSearch, 200);
         });
     })();
     </script>
@@ -2978,3 +3769,5 @@ $(document).ready(function() {
 
 </body>
 </html>
+
+
