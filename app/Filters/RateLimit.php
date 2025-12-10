@@ -29,6 +29,35 @@ class RateLimit implements FilterInterface
                 $session->setFlashdata('error', "Too many login attempts. Please try again in {$minutes} minute(s).");
                 return redirect()->to(base_url('login'))->withInput();
             }
+            
+            // If lockout expired but they try again, increment lockout count for progressive lockout
+            // This handles the case where they wait out the first lockout and fail again
+            if ($lockoutUntil !== null && $lockoutUntil <= time()) {
+                // Lockout expired, but they're trying again - check if they should get longer lockout
+                $lockoutCountKey = 'login_lockout_count_' . md5($ipAddress);
+                $lockoutCount = $cache->get($lockoutCountKey) ?? 0;
+                
+                // If they've been locked out before and are trying again, apply progressive lockout
+                if ($lockoutCount > 0) {
+                    $lockoutCount++;
+                    
+                    // Progressive lockout: first time = 5 minutes, second time = 10 minutes
+                    if ($lockoutCount == 1) {
+                        $lockoutDuration = 300; // 5 minutes
+                        $lockoutMinutes = 5;
+                    } else {
+                        $lockoutDuration = 600; // 10 minutes
+                        $lockoutMinutes = 10;
+                    }
+                    
+                    // Apply new lockout
+                    $cache->save($lockoutKey, time() + $lockoutDuration, $lockoutDuration);
+                    $cache->save($lockoutCountKey, $lockoutCount, 900);
+                    
+                    $session->setFlashdata('error', "Too many login attempts. Please try again in {$lockoutMinutes} minute(s).");
+                    return redirect()->to(base_url('login'))->withInput();
+                }
+            }
         }
     }
 

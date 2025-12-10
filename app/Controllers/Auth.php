@@ -115,8 +115,26 @@ public function login()
             // Lock account after 5 failed attempts
             if ($attempts >= 5) {
                 $lockoutKey = 'login_lockout_' . md5($ipAddress);
-                $cache->save($lockoutKey, time() + 900, 900); // 15 minutes lockout
-                $session->setFlashdata('error', 'Too many failed login attempts. Please try again in 15 minutes.');
+                $lockoutCountKey = 'login_lockout_count_' . md5($ipAddress);
+                
+                // Get current lockout count (how many times they've been locked out)
+                $lockoutCount = $cache->get($lockoutCountKey) ?? 0;
+                $lockoutCount++;
+                
+                // Progressive lockout: first time = 5 minutes, second time = 10 minutes
+                if ($lockoutCount == 1) {
+                    $lockoutDuration = 300; // 5 minutes = 300 seconds
+                    $lockoutMinutes = 5;
+                } else {
+                    $lockoutDuration = 600; // 10 minutes = 600 seconds
+                    $lockoutMinutes = 10;
+                }
+                
+                // Save lockout time and count
+                $cache->save($lockoutKey, time() + $lockoutDuration, $lockoutDuration);
+                $cache->save($lockoutCountKey, $lockoutCount, 900); // Keep count for 15 minutes
+                
+                $session->setFlashdata('error', "Too many failed login attempts. Please try again in {$lockoutMinutes} minute(s).");
             } else {
                 $remaining = 5 - $attempts;
                 $session->setFlashdata('error', 'Incorrect password. ' . $remaining . ' attempt(s) remaining.');
@@ -131,6 +149,8 @@ public function login()
         $cache->delete($key);
         $lockoutKey = 'login_lockout_' . md5($ipAddress);
         $cache->delete($lockoutKey);
+        $lockoutCountKey = 'login_lockout_count_' . md5($ipAddress);
+        $cache->delete($lockoutCountKey);
 
         // Regenerate session ID for security (prevent session fixation)
         $session->regenerate(true);
