@@ -27,13 +27,18 @@ class Materials extends Controller
             }
 
             $allowedTypes = [
-                'pdf', 'doc', 'docx', 'ppt', 'pptx',
-                'xls', 'xlsx', 'zip', 'rar',
-                'png', 'jpg', 'jpeg', 'gif', 'txt'
+                'pdf', 'ppt', 'pptx'
             ];
             $ext = strtolower($file->getClientExtension());
             if (!in_array($ext, $allowedTypes)) {
                 $session->setFlashdata('error', '❌ Invalid file type. Allowed: ' . implode(', ', $allowedTypes));
+                return redirect()->back()->withInput();
+            }
+
+            // Validate term_id is required
+            $term_id = $this->request->getPost('term_id');
+            if (empty($term_id) || $term_id === '' || $term_id === '0') {
+                $session->setFlashdata('error', '❌ Please select a term (PRELIM, MIDTERM, or FINAL)');
                 return redirect()->back()->withInput();
             }
 
@@ -48,9 +53,15 @@ class Materials extends Controller
 
             try {
                 if ($file->move($uploadPath, $newName)) {
-                    // Get term_id from request
+                    // Get term_id from request - REQUIRED
                     $term_id = $this->request->getPost('term_id');
-                    $term_id = !empty($term_id) ? (int)$term_id : null;
+                    if (empty($term_id) || $term_id === '' || $term_id === '0') {
+                        // Delete the uploaded file since validation failed
+                        @unlink($uploadPath . $newName);
+                        $session->setFlashdata('error', '❌ Please select a term (PRELIM, MIDTERM, or FINAL)');
+                        return redirect()->back()->withInput();
+                    }
+                    $term_id = (int)$term_id;
                     
                     $materialModel->insertMaterial([
                         'course_id' => $course_id,
@@ -117,11 +128,19 @@ class Materials extends Controller
             return $this->response->setJSON($response);
         }
 
-        $allowedTypes = ['pdf','doc','docx','ppt','pptx','xls','xlsx','zip','rar','png','jpg','jpeg','gif','txt'];
+        $allowedTypes = ['pdf', 'ppt', 'pptx'];
         $ext = strtolower($file->getClientExtension());
 
         if (!in_array($ext, $allowedTypes)) {
             $response['message'] = 'Invalid file type. Allowed: ' . implode(', ', $allowedTypes);
+            $response['csrf_hash'] = csrf_hash();
+            return $this->response->setJSON($response);
+        }
+
+        // Validate term_id is required
+        $term_id = $this->request->getPost('term_id');
+        if (empty($term_id) || $term_id === '' || $term_id === '0') {
+            $response['message'] = 'Please select a term (PRELIM, MIDTERM, or FINAL)';
             $response['csrf_hash'] = csrf_hash();
             return $this->response->setJSON($response);
         }
@@ -143,21 +162,28 @@ class Materials extends Controller
         log_message('info', 'New name: ' . $newName);
         log_message('info', 'Full path: ' . $uploadPath . $newName);
 
-        try {
-            if ($file->move($uploadPath, $newName)) {
-                log_message('info', 'File moved successfully');
-                
-                // Get term_id from request
-                $term_id = $this->request->getPost('term_id');
-                $term_id = !empty($term_id) ? (int)$term_id : null;
-                
-                $insertID = $materialModel->insertMaterial([
-                    'course_id' => $course_id,
-                    'term_id' => $term_id,
-                    'file_name' => $originalName,
-                    'file_path' => 'uploads/materials/' . $newName,
-                    'created_at' => date('Y-m-d H:i:s'),
-                ]);
+            try {
+                if ($file->move($uploadPath, $newName)) {
+                    log_message('info', 'File moved successfully');
+                    
+                    // Get term_id from request - REQUIRED
+                    $term_id = $this->request->getPost('term_id');
+                    if (empty($term_id) || $term_id === '' || $term_id === '0') {
+                        // Delete the uploaded file since validation failed
+                        @unlink($uploadPath . $newName);
+                        $response['message'] = 'Please select a term (PRELIM, MIDTERM, or FINAL)';
+                        $response['csrf_hash'] = csrf_hash();
+                        return $this->response->setJSON($response);
+                    }
+                    $term_id = (int)$term_id;
+                    
+                    $insertID = $materialModel->insertMaterial([
+                        'course_id' => $course_id,
+                        'term_id' => $term_id,
+                        'file_name' => $originalName,
+                        'file_path' => 'uploads/materials/' . $newName,
+                        'created_at' => date('Y-m-d H:i:s'),
+                    ]);
                 
                 log_message('info', 'Material inserted with ID: ' . $insertID);
 
@@ -206,29 +232,64 @@ class Materials extends Controller
     {
         $session = session();
         if (!$session->get('isLoggedIn')) {
+            $session->setFlashdata('error', '❌ Please log in to download materials.');
             return redirect()->to(base_url('login'));
         }
 
         $materialModel = new MaterialModel();
         $material = $materialModel->find($id);
 
+        if (!$material) {
+            $session->setFlashdata('error', '❌ Material not found.');
+            return redirect()->back();
+        }
+
+        // Construct file path - files are stored in writable/uploads/materials/
         $filePath = WRITEPATH . ($material['file_path'] ?? '');
-        if (!$material || !is_file($filePath)) {
+        
+        // Verify file exists
+        if (!is_file($filePath)) {
             $session->setFlashdata('error', '❌ File not found or already deleted.');
             return redirect()->back();
         }
 
+        // Access control based on role
         $role = $session->get('role');
+        $userID = $session->get('userID');
+        $courseModel = new \App\Models\CourseModel();
+        $enrollmentModel = new \App\Models\EnrollmentModel();
+
         if ($role === 'student') {
-            $userID = $session->get('userID');
-            $enrollmentModel = new \App\Models\EnrollmentModel();
-            if (!$enrollmentModel->isAlreadyEnrolled($userID, $material['course_id'])) {
-                $session->setFlashdata('error', '❌ Access denied. You are not enrolled in this course.');
+            // Students can only download if they are enrolled and approved
+            $enrollment = $enrollmentModel->where('user_id', $userID)
+                                         ->where('course_id', $material['course_id'])
+                                         ->where('status', 'accepted')
+                                         ->where('teacher_approved', 1)
+                                         ->first();
+            
+            if (!$enrollment) {
+                $session->setFlashdata('error', '❌ Access denied. You are not enrolled in this course or your enrollment is not approved.');
                 return redirect()->back();
             }
+        } elseif ($role === 'teacher') {
+            // Teachers can only download materials from their own courses
+            $course = $courseModel->find($material['course_id']);
+            if (!$course || $course['teacher_id'] != $userID) {
+                $session->setFlashdata('error', '❌ Access denied. This material belongs to a course you are not assigned to.');
+                return redirect()->back();
+            }
+        } elseif ($role === 'admin') {
+            // Admins can download any material
+            // No additional check needed
+        } else {
+            $session->setFlashdata('error', '❌ Access denied. Invalid user role.');
+            return redirect()->back();
         }
 
-        return $this->response->download($filePath, null);
+        // Set proper filename for download
+        $originalFileName = $material['file_name'] ?? 'material_' . $id;
+        
+        return $this->response->download($filePath, $originalFileName);
     }
 
     // ==============================
@@ -236,37 +297,89 @@ class Materials extends Controller
     // ==============================
     public function delete($id)
     {
+        $session = session();
+        if (!$session->get('isLoggedIn')) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Please log in to delete materials.'
+                ]);
+            }
+            return redirect()->to(base_url('login'));
+        }
+
         $materialModel = new MaterialModel();
         $material = $materialModel->find($id);
 
         if ($material) {
-            $filePath = ROOTPATH . 'public/' . $material['file_path'];
-            if (file_exists($filePath)) unlink($filePath);
+            // Access control - only teacher of the course or admin can delete
+            $role = $session->get('role');
+            $userID = $session->get('userID');
+            
+            if ($role === 'teacher') {
+                $courseModel = new \App\Models\CourseModel();
+                $course = $courseModel->find($material['course_id']);
+                if (!$course || $course['teacher_id'] != $userID) {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON([
+                            'success' => false,
+                            'message' => 'Access denied. You can only delete materials from your own courses.'
+                        ]);
+                    }
+                    $session->setFlashdata('error', '❌ Access denied. You can only delete materials from your own courses.');
+                    return redirect()->back();
+                }
+            } elseif ($role !== 'admin') {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Access denied. Only teachers and admins can delete materials.'
+                    ]);
+                }
+                $session->setFlashdata('error', '❌ Access denied. Only teachers and admins can delete materials.');
+                return redirect()->back();
+            }
+
+            // Delete the physical file - files are stored in writable/uploads/materials/
+            $filePath = WRITEPATH . $material['file_path'];
+            if (file_exists($filePath)) {
+                @unlink($filePath);
+            }
             
             $materialModel->delete($id);
             
-            // Check if this is an AJAX request
-            if ($this->request->isAJAX()) {
+            // Always return JSON for AJAX requests, check multiple ways
+            $isAjax = $this->request->isAJAX() || 
+                     $this->request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest' ||
+                     strpos($this->request->getHeaderLine('Accept'), 'application/json') !== false;
+            
+            if ($isAjax) {
                 return $this->response->setJSON([
                     'success' => true,
-                    'message' => 'Material deleted successfully.'
+                    'message' => 'Material deleted successfully.',
+                    'csrf_hash' => csrf_hash()
                 ]);
             }
             
             session()->setFlashdata('success', '🗑️ Material deleted successfully.');
+            return redirect()->back();
         } else {
-            // Check if this is an AJAX request
-            if ($this->request->isAJAX()) {
+            // Always return JSON for AJAX requests
+            $isAjax = $this->request->isAJAX() || 
+                     $this->request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest' ||
+                     strpos($this->request->getHeaderLine('Accept'), 'application/json') !== false;
+            
+            if ($isAjax) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Material not found.'
+                    'message' => 'Material not found.',
+                    'csrf_hash' => csrf_hash()
                 ]);
             }
             
             session()->setFlashdata('error', '❌ Material not found.');
+            return redirect()->back();
         }
-
-        return redirect()->back();
     }
 
     // ==============================

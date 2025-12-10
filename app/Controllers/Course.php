@@ -212,7 +212,7 @@ class Course extends BaseController
             'teacher_id' => 'required|integer',
             'acad_year_id' => 'required|integer',
             'semester_id' => 'required|integer',
-            'term_id' => 'required|integer',
+            'term_id' => 'permit_empty|integer',
             'course_number' => 'required|max_length[50]|alpha_numeric_space',
             'schedule_time_start' => 'required',
             'schedule_time_end' => 'required',
@@ -244,42 +244,53 @@ class Course extends BaseController
                 return redirect()->to(base_url('create-course'))->withInput();
             }
 
-            // Check for time conflict
+            // Check for time conflict - REQUIRED validation
             $scheduleTimeStart = $this->request->getPost('schedule_time_start');
             $scheduleTimeEnd = $this->request->getPost('schedule_time_end');
             $scheduleDate = $this->request->getPost('schedule_date');
             
-            if (!empty($scheduleTimeStart) && !empty($scheduleTimeEnd) && !empty($scheduleDate)) {
-                $conflict = $this->courseModel->checkTeacherTimeConflict(
-                    $teacherId, 
-                    $scheduleTimeStart, 
-                    $scheduleTimeEnd, 
-                    $scheduleDate
-                );
+            // Validate that all schedule fields are provided
+            if (empty($scheduleTimeStart) || empty($scheduleDate)) {
+                $session->setFlashdata('error', 'Schedule time and date are required.');
+                return redirect()->to(base_url('create-course'))->withInput();
+            }
+            
+            // Get academic year ID for conflict check (only check conflicts within same academic year)
+            $acadYearId = $this->request->getPost('acad_year_id');
+            $acadYearId = !empty($acadYearId) ? (int) $acadYearId : null;
+            
+            // Check for time conflict with same teacher, same date, same academic year, and same/overlapping time
+            $conflict = $this->courseModel->checkTeacherTimeConflict(
+                $teacherId, 
+                $scheduleTimeStart, 
+                $scheduleTimeEnd, 
+                $scheduleDate,
+                null, // No course to exclude (creating new)
+                $acadYearId // Only check conflicts within same academic year
+            );
+            
+            if ($conflict) {
+                $conflictStart = $conflict['schedule_time_start'] ?? $conflict['schedule_time'] ?? '';
+                $conflictEnd = $conflict['schedule_time_end'] ?? '';
                 
-                if ($conflict) {
-                    $conflictStart = $conflict['schedule_time_start'] ?? $conflict['schedule_time'] ?? '';
-                    $conflictEnd = $conflict['schedule_time_end'] ?? '';
-                    
-                    // Format time for display
-                    if ($conflictStart) {
-                        $conflictStartFormatted = date('g:i A', strtotime($conflictStart));
-                        if ($conflictEnd) {
-                            $conflictEndFormatted = date('g:i A', strtotime($conflictEnd));
-                            $conflictTime = $conflictStartFormatted . ' - ' . $conflictEndFormatted;
-                        } else {
-                            $conflictTime = $conflictStartFormatted;
-                        }
+                // Format time for display
+                if ($conflictStart) {
+                    $conflictStartFormatted = date('g:i A', strtotime($conflictStart));
+                    if ($conflictEnd) {
+                        $conflictEndFormatted = date('g:i A', strtotime($conflictEnd));
+                        $conflictTime = $conflictStartFormatted . ' - ' . $conflictEndFormatted;
                     } else {
-                        $conflictTime = 'Unknown time';
+                        $conflictTime = $conflictStartFormatted;
                     }
-                    
-                    $session->setFlashdata('error', 
-                        'Time conflict detected! Teacher already has a class "' . esc($conflict['title']) . 
-                        '" scheduled at ' . esc($conflictTime) . ' on ' . date('M d, Y', strtotime($scheduleDate)) . 
-                        '. Please choose a different time or date.');
-                    return redirect()->to(base_url('create-course'))->withInput();
+                } else {
+                    $conflictTime = 'Unknown time';
                 }
+                
+                $session->setFlashdata('error', 
+                    '❌ Time Conflict Detected! The teacher is already assigned to course "' . esc($conflict['title']) . 
+                    '" at ' . esc($conflictTime) . ' on ' . date('M d, Y', strtotime($scheduleDate)) . 
+                    '. Please choose a different time or date.');
+                return redirect()->to(base_url('create-course'))->withInput();
             }
 
             $data = [
@@ -320,9 +331,17 @@ class Course extends BaseController
                 $data['course_number'] = trim($courseNumber);
             }
 
-            $scheduleTime = $this->request->getPost('schedule_time');
-            if (!empty($scheduleTime)) {
-                $data['schedule_time'] = $scheduleTime;
+            // Save schedule times
+            $scheduleTimeStart = $this->request->getPost('schedule_time_start');
+            if (!empty($scheduleTimeStart)) {
+                $data['schedule_time_start'] = $scheduleTimeStart;
+                // Keep schedule_time for backward compatibility (use start time)
+                $data['schedule_time'] = $scheduleTimeStart;
+            }
+
+            $scheduleTimeEnd = $this->request->getPost('schedule_time_end');
+            if (!empty($scheduleTimeEnd)) {
+                $data['schedule_time_end'] = $scheduleTimeEnd;
             }
 
             $scheduleDate = $this->request->getPost('schedule_date');
@@ -371,6 +390,17 @@ class Course extends BaseController
             $terms = $termModel->getTermsBySemester($course['semester_id']);
         }
 
+        // Get validation errors from session if any (from failed validation)
+        $validationErrors = $session->getFlashdata('validation_errors');
+        $validator = null;
+        if (!empty($validationErrors)) {
+            // Create a validator instance to display errors
+            $validator = \Config\Services::validation();
+            foreach ($validationErrors as $field => $error) {
+                $validator->setError($field, $error);
+            }
+        }
+
         $data = [
             'title' => 'Edit Course - LMS',
             'course' => $course,
@@ -379,7 +409,8 @@ class Course extends BaseController
             'programs' => [],
             'academicYears' => $academicYears,
             'semesters' => $semesters,
-            'terms' => $terms
+            'terms' => $terms,
+            'validation' => $validator
         ];
 
         // For admin users, fetch teachers and programs
@@ -416,7 +447,6 @@ class Course extends BaseController
             'description' => 'required|min_length[10]|alpha_numeric_space',
             'acad_year_id' => 'required|integer',
             'semester_id' => 'required|integer',
-            'term_id' => 'required|integer',
             'course_number' => 'required|max_length[50]|alpha_numeric_space',
             'schedule_time_start' => 'required',
             'schedule_time_end' => 'required',
@@ -447,43 +477,53 @@ class Course extends BaseController
                 }
             }
 
-            // Check for time conflict before updating
+            // Check for time conflict before updating - REQUIRED validation
             $scheduleTimeStart = $this->request->getPost('schedule_time_start');
             $scheduleTimeEnd = $this->request->getPost('schedule_time_end');
             $scheduleDate = $this->request->getPost('schedule_date');
             
-            if (!empty($scheduleTimeStart) && !empty($scheduleTimeEnd) && !empty($scheduleDate)) {
-                $conflict = $this->courseModel->checkTeacherTimeConflict(
-                    $teacherId, 
-                    $scheduleTimeStart, 
-                    $scheduleTimeEnd, 
-                    $scheduleDate,
-                    $id // Exclude current course from conflict check
-                );
+            // Validate that all schedule fields are provided
+            if (empty($scheduleTimeStart) || empty($scheduleDate)) {
+                $session->setFlashdata('error', 'Schedule time and date are required.');
+                return redirect()->to(base_url('edit-course/' . $id))->withInput();
+            }
+            
+            // Get academic year ID for conflict check (only check conflicts within same academic year)
+            $acadYearId = $this->request->getPost('acad_year_id');
+            $acadYearId = !empty($acadYearId) ? (int) $acadYearId : null;
+            
+            // Check for time conflict with same teacher, same date, same academic year, and same/overlapping time
+            $conflict = $this->courseModel->checkTeacherTimeConflict(
+                $teacherId, 
+                $scheduleTimeStart, 
+                $scheduleTimeEnd, 
+                $scheduleDate,
+                $id, // Exclude current course from conflict check
+                $acadYearId // Only check conflicts within same academic year
+            );
+            
+            if ($conflict) {
+                $conflictStart = $conflict['schedule_time_start'] ?? $conflict['schedule_time'] ?? '';
+                $conflictEnd = $conflict['schedule_time_end'] ?? '';
                 
-                if ($conflict) {
-                    $conflictStart = $conflict['schedule_time_start'] ?? $conflict['schedule_time'] ?? '';
-                    $conflictEnd = $conflict['schedule_time_end'] ?? '';
-                    
-                    // Format time for display
-                    if ($conflictStart) {
-                        $conflictStartFormatted = date('g:i A', strtotime($conflictStart));
-                        if ($conflictEnd) {
-                            $conflictEndFormatted = date('g:i A', strtotime($conflictEnd));
-                            $conflictTime = $conflictStartFormatted . ' - ' . $conflictEndFormatted;
-                        } else {
-                            $conflictTime = $conflictStartFormatted;
-                        }
+                // Format time for display
+                if ($conflictStart) {
+                    $conflictStartFormatted = date('g:i A', strtotime($conflictStart));
+                    if ($conflictEnd) {
+                        $conflictEndFormatted = date('g:i A', strtotime($conflictEnd));
+                        $conflictTime = $conflictStartFormatted . ' - ' . $conflictEndFormatted;
                     } else {
-                        $conflictTime = 'Unknown time';
+                        $conflictTime = $conflictStartFormatted;
                     }
-                    
-                    $session->setFlashdata('error', 
-                        'Time conflict detected! Teacher already has a class "' . esc($conflict['title']) . 
-                        '" scheduled at ' . esc($conflictTime) . ' on ' . date('M d, Y', strtotime($scheduleDate)) . 
-                        '. Please choose a different time or date.');
-                    return redirect()->to(base_url('edit-course/' . $id))->withInput();
+                } else {
+                    $conflictTime = 'Unknown time';
                 }
+                
+                $session->setFlashdata('error', 
+                    '❌ Time Conflict Detected! The teacher is already assigned to course "' . esc($conflict['title']) . 
+                    '" at ' . esc($conflictTime) . ' on ' . date('M d, Y', strtotime($scheduleDate)) . 
+                    '. Please choose a different time or date.');
+                return redirect()->to(base_url('edit-course/' . $id))->withInput();
             }
 
             $data = [
@@ -543,7 +583,8 @@ class Course extends BaseController
             $redirectTo = $session->get('role') === 'admin' ? base_url('courses') : base_url('my-courses');
             return redirect()->to($redirectTo);
         } else {
-            $session->setFlashdata('error', 'Please correct the errors below.');
+            // Store validation errors in session and redirect with input
+            $session->setFlashdata('validation_errors', $this->validator->getErrors());
             return redirect()->to(base_url('edit-course/' . $id))->withInput();
         }
     }
@@ -572,6 +613,31 @@ class Course extends BaseController
             $session->setFlashdata('error', 'Course not found.');
             return redirect()->to(base_url('courses'));
         }
+
+        // Access control for students - must be enrolled
+        $role = $session->get('role');
+        if ($role === 'student') {
+            $userID = $session->get('userID');
+            $enrollmentModel = new \App\Models\EnrollmentModel();
+            $enrollment = $enrollmentModel->where('user_id', $userID)
+                                         ->where('course_id', $course['id'])
+                                         ->where('status', 'accepted')
+                                         ->where('teacher_approved', 1)
+                                         ->first();
+            
+            if (!$enrollment) {
+                $session->setFlashdata('error', '❌ Access denied. You are not enrolled in this course or your enrollment is not approved.');
+                return redirect()->to(base_url('courses'));
+            }
+        } elseif ($role === 'teacher') {
+            // Teachers can only view their own courses
+            $userID = $session->get('userID');
+            if ($course['teacher_id'] != $userID) {
+                $session->setFlashdata('error', '❌ Access denied. This course is not assigned to you.');
+                return redirect()->to(base_url('courses'));
+            }
+        }
+        // Admins can view any course
 
         $materialModel = new MaterialModel();
         $materials = $materialModel->getMaterialsByCourse($course['id']);
@@ -1566,6 +1632,50 @@ class Course extends BaseController
         if (!$teacher || $teacher['role'] !== 'teacher') {
             return $this->response->setStatusCode(404)
                 ->setJSON(['success' => false, 'message' => 'Teacher not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Check for time conflict if course has schedule
+        $scheduleTimeStart = $course['schedule_time_start'] ?? $course['schedule_time'] ?? null;
+        $scheduleTimeEnd = $course['schedule_time_end'] ?? null;
+        $scheduleDate = $course['schedule_date'] ?? null;
+        $acadYearId = $course['acad_year_id'] ?? null; // Get academic year from course
+        
+        if (!empty($scheduleTimeStart) && !empty($scheduleDate)) {
+            $conflict = $this->courseModel->checkTeacherTimeConflict(
+                $teacherId, 
+                $scheduleTimeStart, 
+                $scheduleTimeEnd, 
+                $scheduleDate,
+                $courseId, // Exclude current course from conflict check
+                $acadYearId // Only check conflicts within same academic year
+            );
+            
+            if ($conflict) {
+                $conflictStart = $conflict['schedule_time_start'] ?? $conflict['schedule_time'] ?? '';
+                $conflictEnd = $conflict['schedule_time_end'] ?? '';
+                
+                // Format time for display
+                if ($conflictStart) {
+                    $conflictStartFormatted = date('g:i A', strtotime($conflictStart));
+                    if ($conflictEnd) {
+                        $conflictEndFormatted = date('g:i A', strtotime($conflictEnd));
+                        $conflictTime = $conflictStartFormatted . ' - ' . $conflictEndFormatted;
+                    } else {
+                        $conflictTime = $conflictStartFormatted;
+                    }
+                } else {
+                    $conflictTime = 'Unknown time';
+                }
+                
+                return $this->response->setStatusCode(400)
+                    ->setJSON([
+                        'success' => false, 
+                        'message' => '❌ Time Conflict Detected! The teacher is already assigned to course "' . esc($conflict['title']) . 
+                                    '" at ' . esc($conflictTime) . ' on ' . date('M d, Y', strtotime($scheduleDate)) . 
+                                    '. Please choose a different teacher or update the course schedule.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+            }
         }
 
         try {

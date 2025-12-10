@@ -287,6 +287,135 @@ class SchoolSetup extends BaseController
     }
 
     /**
+     * Save or update academic year
+     */
+    public function saveAcademicYear()
+    {
+        $session = session();
+        
+        // Check if user is logged in and is admin
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Validate year inputs - allow any reasonable year values
+        $yearStart = $this->request->getPost('year_start');
+        $yearEnd = $this->request->getPost('year_end');
+        
+        // Check if values are provided and are numeric
+        if (empty($yearStart) || !is_numeric($yearStart)) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Year Start is required and must be a number', 'csrf_hash' => csrf_hash()]);
+        }
+        
+        if (empty($yearEnd) || !is_numeric($yearEnd)) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Year End is required and must be a number', 'csrf_hash' => csrf_hash()]);
+        }
+        
+        $yearStart = (int) $yearStart;
+        $yearEnd = (int) $yearEnd;
+        
+        // Validate reasonable year range (1900 to 2100)
+        if ($yearStart < 1900 || $yearStart > 2100) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Year Start must be between 1900 and 2100', 'csrf_hash' => csrf_hash()]);
+        }
+        
+        if ($yearEnd < 1900 || $yearEnd > 2100) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Year End must be between 1900 and 2100', 'csrf_hash' => csrf_hash()]);
+        }
+        
+        // Validate that year_end is greater than year_start
+        if ($yearEnd <= $yearStart) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Year End must be greater than Year Start', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Auto-generate display name from year_start and year_end
+        $displayName = $yearStart . '-' . $yearEnd;
+
+        try {
+            $data = [
+                'year_start' => $yearStart,
+                'year_end' => $yearEnd,
+                'display_name' => $displayName,
+                'is_active' => $this->request->getPost('is_active') == '1' ? 1 : 0
+            ];
+
+            $acadYearId = $this->request->getPost('acad_year_id');
+            
+            if ($acadYearId) {
+                // Update existing - don't auto-generate semesters/terms for updates
+                $this->academicYearModel->update($acadYearId, $data);
+                $message = 'Academic year updated successfully!';
+            } else {
+                // Create new academic year
+                $newAcadYearId = $this->academicYearModel->insert($data);
+                
+                if ($newAcadYearId) {
+                    // Auto-generate 3 semesters for the new academic year
+                    $semesters = [
+                        ['number' => 1, 'name' => '1st Semester'],
+                        ['number' => 2, 'name' => '2nd Semester'],
+                        ['number' => 3, 'name' => 'Summer']
+                    ];
+                    
+                    foreach ($semesters as $semester) {
+                        $semesterData = [
+                            'acad_year_id' => $newAcadYearId,
+                            'semester_number' => $semester['number'],
+                            'name' => $semester['name'],
+                            'is_active' => 1
+                        ];
+                        
+                        $semesterId = $this->semesterModel->insert($semesterData);
+                        
+                        if ($semesterId) {
+                            // Auto-generate 3 terms for each semester (Prelim, Midterm, Final)
+                            $terms = [
+                                ['name' => 'Prelim', 'order' => 1],
+                                ['name' => 'Midterm', 'order' => 2],
+                                ['name' => 'Final', 'order' => 3]
+                            ];
+                            
+                            foreach ($terms as $term) {
+                                $termData = [
+                                    'semester_id' => $semesterId,
+                                    'term_name' => $term['name'],
+                                    'term_order' => $term['order'],
+                                    'is_active' => 1
+                                ];
+                                
+                                $this->termModel->insert($termData);
+                            }
+                        }
+                    }
+                    
+                    $message = 'Academic year created successfully with 3 semesters and 3 terms each!';
+                } else {
+                    throw new \Exception('Failed to create academic year');
+                }
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $message,
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to save academic year: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
+    }
+
+    /**
      * Get academic year details (for editing)
      */
     public function getAcademicYear($id)
@@ -334,6 +463,203 @@ class SchoolSetup extends BaseController
             'semester' => $semester,
             'csrf_hash' => csrf_hash()
         ]);
+    }
+
+    /**
+     * Save or update semester
+     */
+    public function saveSemester()
+    {
+        $session = session();
+        
+        // Check if user is logged in and is admin
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        $rules = [
+            'acad_year_id' => 'required|integer',
+            'semester_number' => 'required|integer|in_list[1,2,3]',
+            'start_date' => 'permit_empty|valid_date',
+            'end_date' => 'permit_empty|valid_date'
+        ];
+
+        if (!$this->validate($rules)) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Validation failed', 'errors' => $this->validator->getErrors(), 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Generate semester name based on semester_number
+        $semesterNumber = (int) $this->request->getPost('semester_number');
+        $semesterNames = [
+            1 => '1st Semester',
+            2 => '2nd Semester',
+            3 => 'Summer'
+        ];
+        $semesterName = $semesterNames[$semesterNumber] ?? 'Unknown';
+
+        // Validate dates if provided
+        $startDate = $this->request->getPost('start_date');
+        $endDate = $this->request->getPost('end_date');
+        
+        if (!empty($startDate) && !empty($endDate)) {
+            $startTimestamp = strtotime($startDate);
+            $endTimestamp = strtotime($endDate);
+            
+            if ($startTimestamp >= $endTimestamp) {
+                return $this->response->setStatusCode(400)
+                    ->setJSON(['success' => false, 'message' => 'End date must be after start date', 'csrf_hash' => csrf_hash()]);
+            }
+        }
+
+        try {
+            $data = [
+                'acad_year_id' => (int) $this->request->getPost('acad_year_id'),
+                'semester_number' => $semesterNumber,
+                'name' => $semesterName,
+                'start_date' => !empty($startDate) ? $startDate : null,
+                'end_date' => !empty($endDate) ? $endDate : null,
+                'is_active' => $this->request->getPost('is_active') == '1' ? 1 : 0
+            ];
+
+            $semesterId = $this->request->getPost('semester_id');
+            
+            if ($semesterId) {
+                // Update existing
+                $this->semesterModel->update($semesterId, $data);
+                $message = 'Semester updated successfully!';
+            } else {
+                // Create new
+                $this->semesterModel->insert($data);
+                $message = 'Semester created successfully!';
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $message,
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to save semester: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
+    }
+
+    /**
+     * Delete semester
+     */
+    public function deleteSemester($id)
+    {
+        $session = session();
+        
+        // Check if user is logged in and is admin
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        try {
+            $semester = $this->semesterModel->find($id);
+            if (!$semester) {
+                return $this->response->setStatusCode(404)
+                    ->setJSON(['success' => false, 'message' => 'Semester not found', 'csrf_hash' => csrf_hash()]);
+            }
+
+            // Check if semester has courses
+            $courseModel = new \App\Models\CourseModel();
+            $coursesWithSemester = $courseModel->where('semester_id', $id)->countAllResults();
+            
+            if ($coursesWithSemester > 0) {
+                return $this->response->setStatusCode(400)
+                    ->setJSON([
+                        'success' => false,
+                        'message' => 'Cannot delete semester. It has ' . $coursesWithSemester . ' course(s) assigned to it.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+            }
+
+            $this->semesterModel->delete($id);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Semester deleted successfully!',
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to delete semester: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
+    }
+
+    /**
+     * Delete academic year
+     */
+    public function deleteAcademicYear($id)
+    {
+        $session = session();
+        
+        // Check if user is logged in and is admin
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'admin') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        try {
+            $acadYear = $this->academicYearModel->find($id);
+            if (!$acadYear) {
+                return $this->response->setStatusCode(404)
+                    ->setJSON(['success' => false, 'message' => 'Academic year not found', 'csrf_hash' => csrf_hash()]);
+            }
+
+            // Check if academic year has semesters
+            $semestersWithAcadYear = $this->semesterModel->where('acad_year_id', $id)->countAllResults();
+            
+            if ($semestersWithAcadYear > 0) {
+                return $this->response->setStatusCode(400)
+                    ->setJSON([
+                        'success' => false,
+                        'message' => 'Cannot delete academic year. It has ' . $semestersWithAcadYear . ' semester(s) assigned to it.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+            }
+
+            // Check if academic year has courses
+            $courseModel = new \App\Models\CourseModel();
+            $coursesWithAcadYear = $courseModel->where('acad_year_id', $id)->countAllResults();
+            
+            if ($coursesWithAcadYear > 0) {
+                return $this->response->setStatusCode(400)
+                    ->setJSON([
+                        'success' => false,
+                        'message' => 'Cannot delete academic year. It has ' . $coursesWithAcadYear . ' course(s) assigned to it.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+            }
+
+            $this->academicYearModel->delete($id);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Academic year deleted successfully!',
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to delete academic year: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
     }
 }
 

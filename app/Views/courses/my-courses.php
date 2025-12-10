@@ -215,13 +215,6 @@
                                                 </div>
                                                 <?php endif; ?>
 
-                                                <?php if (!empty($course['term_name'])): ?>
-                                                <div class="flex items-center text-sm text-gray-700">
-                                                    <i class="fas fa-bookmark mr-2 text-gray-500 w-4"></i>
-                                                    <span class="font-medium">Term:</span>
-                                                    <span class="ml-2"><?= esc($course['term_name']) ?></span>
-                                                </div>
-                                                <?php endif; ?>
 
                                                 <?php 
                                                 $startTime = $course['schedule_time_start'] ?? $course['schedule_time'] ?? '';

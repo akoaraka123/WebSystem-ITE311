@@ -111,6 +111,8 @@ $routes->get('school-setup', 'SchoolSetup::index');
 $routes->post('school-setup/saveSettings', 'SchoolSetup::saveSettings');
 $routes->post('school-setup/saveProgram', 'SchoolSetup::saveProgram');
 $routes->post('school-setup/deleteProgram/(:num)', 'SchoolSetup::deleteProgram/$1');
+$routes->post('school-setup/deleteSemester/(:num)', 'SchoolSetup::deleteSemester/$1');
+$routes->post('school-setup/deleteAcademicYear/(:num)', 'SchoolSetup::deleteAcademicYear/$1');
 $routes->get('school-setup/getProgram/(:num)', 'SchoolSetup::getProgram/$1');
 $routes->post('school-setup/saveAcademicYear', 'SchoolSetup::saveAcademicYear');
 $routes->post('school-setup/saveSemester', 'SchoolSetup::saveSemester');

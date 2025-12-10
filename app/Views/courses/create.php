@@ -27,6 +27,17 @@
         }
     </script>
     <style>
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         body {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
@@ -122,16 +133,25 @@
                     <?php endif; ?>
 
                     <?php if (!empty(session()->getFlashdata('error'))): ?>
-                        <div class="p-4 mb-6 text-red-700 bg-red-100 border-l-4 border-red-500 rounded">
+                        <div class="p-4 mb-6 text-red-700 bg-red-100 border-l-4 border-red-500 rounded shadow-lg" style="animation: slideIn 0.3s ease-out;">
                             <div class="flex">
                                 <div class="flex-shrink-0">
-                                    <i class="fas fa-exclamation-circle"></i>
+                                    <i class="fas fa-exclamation-circle text-xl"></i>
                                 </div>
                                 <div class="ml-3">
-                                    <p class="text-sm"><?= session()->getFlashdata('error') ?></p>
+                                    <p class="text-sm font-semibold"><?= session()->getFlashdata('error') ?></p>
                                 </div>
                             </div>
                         </div>
+                        <script>
+                            // Auto-scroll to error message
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const errorDiv = document.querySelector('.bg-red-100');
+                                if (errorDiv) {
+                                    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            });
+                        </script>
                     <?php endif; ?>
 
                     <!-- Create Course Form -->
@@ -253,26 +273,6 @@
                                         <p class="mt-1 text-sm text-red-600"><?= $validation->getError('semester_id') ?></p>
                                     <?php endif; ?>
                                     <p class="mt-1 text-xs text-gray-500">Please select Academic Year first</p>
-                                </div>
-
-                                <!-- Term -->
-                                <div>
-                                    <label for="term_id" class="block text-sm font-medium text-gray-700">Term (Termino/Yugto) *</label>
-                                    <select id="term_id" name="term_id" required
-                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
-                                        <option value="">Select Semester first to load terms</option>
-                                        <?php if(isset($terms) && !empty($terms)): ?>
-                                            <?php foreach($terms as $term): ?>
-                                                <option value="<?= $term['id'] ?>" <?= old('term_id') == $term['id'] ? 'selected' : '' ?>>
-                                                    <?= esc($term['term_name']) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </select>
-                                    <?php if (isset($validation) && $validation->getError('term_id')): ?>
-                                        <p class="mt-1 text-sm text-red-600"><?= $validation->getError('term_id') ?></p>
-                                    <?php endif; ?>
-                                    <p class="mt-1 text-xs text-gray-500">Please select Academic Year and Semester first</p>
                                 </div>
 
                                 <!-- Course Number (CN) -->
@@ -399,7 +399,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             const acadYearSelect = document.getElementById('acad_year_id');
             const semesterSelect = document.getElementById('semester_id');
-            const termSelect = document.getElementById('term_id');
 
             // Get CSRF token from form
             function getCSRFToken() {
@@ -412,11 +411,9 @@
                 acadYearSelect.addEventListener('change', function() {
                     const acadYearId = this.value;
                     
-                    // Reset semester and term
+                    // Reset semester
                     semesterSelect.innerHTML = '<option value="">Loading semesters...</option>';
                     semesterSelect.disabled = true;
-                    termSelect.innerHTML = '<option value="">Select Semester first to load terms</option>';
-                    termSelect.disabled = true;
                     
                     if (acadYearId) {
                         const formData = new URLSearchParams();
@@ -472,74 +469,6 @@
                     } else {
                         semesterSelect.innerHTML = '<option value="">Select Academic Year first</option>';
                         semesterSelect.disabled = false;
-                        termSelect.disabled = false;
-                    }
-                });
-            }
-
-            // Load terms when semester changes
-            if (semesterSelect) {
-                semesterSelect.addEventListener('change', function() {
-                    const semesterId = this.value;
-                    
-                    // Reset term
-                    termSelect.innerHTML = '<option value="">Loading terms...</option>';
-                    termSelect.disabled = true;
-                    
-                    if (semesterId) {
-                        const formData = new URLSearchParams();
-                        formData.append('semester_id', semesterId);
-                        formData.append('<?= csrf_token() ?>', getCSRFToken());
-                        
-                        fetch('<?= base_url('course/get-terms-by-semester') ?>', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: formData.toString()
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log('Terms response:', data);
-                            
-                            // Update CSRF token if provided
-                            if (data.csrf_hash) {
-                                const csrfInput = document.querySelector('input[name="<?= csrf_token() ?>"]');
-                                if (csrfInput) {
-                                    csrfInput.value = data.csrf_hash;
-                                }
-                            }
-                            
-                            termSelect.innerHTML = '<option value="">Select Term</option>';
-                            termSelect.disabled = false;
-                            
-                            if (data.success && data.terms && data.terms.length > 0) {
-                                console.log('Found terms:', data.terms.length);
-                                data.terms.forEach(term => {
-                                    const option = document.createElement('option');
-                                    option.value = term.id;
-                                    option.textContent = term.term_name;
-                                    termSelect.appendChild(option);
-                                });
-                            } else {
-                                termSelect.innerHTML = '<option value="">No terms available</option>';
-                                console.log('No terms found for semester:', semesterId, 'Response:', data);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error loading terms:', error);
-                            termSelect.innerHTML = '<option value="">Error loading terms</option>';
-                            termSelect.disabled = false;
-                        });
-                    } else {
-                        termSelect.innerHTML = '<option value="">Select Semester first to load terms</option>';
-                        termSelect.disabled = false;
                     }
                 });
             }

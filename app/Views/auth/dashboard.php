@@ -1072,6 +1072,11 @@
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
+                                            <a href="<?= base_url('edit-course/' . $course['id']) ?>" 
+                                               class="p-2 text-blue-600 rounded-full hover:bg-blue-50 transition-colors duration-200"
+                                               title="Edit course">
+                                                <i class="w-4 h-4 fas fa-edit"></i>
+                                            </a>
                                             <form action="<?= base_url('course/delete/' . $course['id']) ?>" method="POST" style="display: inline;">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" 
@@ -1198,10 +1203,10 @@
                                                        hover:file:bg-blue-100">
                                         </div>
                                         <div class="mb-2">
-                                            <label class="block mb-1 text-sm font-medium text-gray-700">Term</label>
+                                            <label class="block mb-1 text-sm font-medium text-gray-700">Term <span class="text-red-500">*</span></label>
                                             <select name="term_id" id="term_id_<?= esc($course['id']) ?>" required
                                                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                                                <option value="">Select Term</option>
+                                                <option value="">Select Term (Required)</option>
                                                 <?php
                                                 // Get terms for this course's semester
                                                 $termModel = new \App\Models\TermModel();
@@ -1949,35 +1954,84 @@ $(document).ready(function() {
         fetchNotifications();
     }, 30000);
 
-    // Handle material deletion
-    $('.delete-material').on('click', function(e) {
+    // Handle material deletion - use event delegation for dynamically added elements
+    $(document).on('click', '.delete-material', function(e) {
         e.preventDefault();
-        var materialId = $(this).data('material-id');
-        var materialItem = $(this).closest('li');
+        e.stopPropagation();
+        
+        var btn = $(this);
+        var materialId = btn.data('material-id');
+        var materialItem = btn.closest('li');
+        
+        if (!materialId) {
+            alert('Invalid material ID');
+            return;
+        }
         
         if (confirm('Are you sure you want to delete this material?')) {
+            // Disable button to prevent double-click
+            btn.prop('disabled', true).css('opacity', '0.5');
+            
+            // Get CSRF token
+            var csrfInput = $('input[name^="<?= csrf_token() ?>"]').first();
+            var csrfName = csrfInput.attr('name');
+            var csrfHash = csrfInput.val();
+            
+            var data = {};
+            if (csrfName && csrfHash) {
+                data[csrfName] = csrfHash;
+            }
+            
             $.ajax({
                 url: '<?= base_url('materials/delete') ?>/' + materialId,
                 type: 'POST',
-                data: {
-                    '<?= csrf_token() ?>': $('input[name="<?= csrf_token() ?>"]').val()
-                },
+                data: data,
+                dataType: 'json',
                 success: function(response) {
-                    console.log('Delete response:', response);
+                    // Update CSRF token if provided
+                    if (response.csrf_hash && csrfInput.length) {
+                        csrfInput.val(response.csrf_hash);
+                    }
+                    
                     if (response.success) {
                         // Remove the material from the list
                         materialItem.fadeOut(300, function() {
                             $(this).remove();
+                            
+                            // Check if no materials left, show message
+                            var materialsList = materialItem.closest('ul');
+                            if (materialsList.find('li').length === 0) {
+                                materialsList.html('<li class="py-4 text-sm text-center text-gray-500 bg-gray-50 rounded-md"><i class="mr-2 far fa-folder-open"></i> No materials uploaded yet</li>');
+                            }
                         });
-                        // Show success message
-                        alert(response.message || 'Material deleted successfully!');
                     } else {
                         alert(response.message || 'Failed to delete material');
+                        btn.prop('disabled', false).css('opacity', '1');
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.log('Delete error:', xhr.responseText);
-                    alert('An error occurred while deleting the material');
+                    console.error('Delete error:', {
+                        status: xhr.status,
+                        responseText: xhr.responseText,
+                        error: error
+                    });
+                    
+                    var errorMsg = 'An error occurred while deleting the material';
+                    
+                    // Try to parse error response
+                    if (xhr.responseText) {
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            if (errorResponse.message) {
+                                errorMsg = errorResponse.message;
+                            }
+                        } catch (e) {
+                            // Not JSON, use default message
+                        }
+                    }
+                    
+                    alert(errorMsg);
+                    btn.prop('disabled', false).css('opacity', '1');
                 }
             });
         }

@@ -29,7 +29,26 @@
             <div class="mb-3">
               <label for="material" class="form-label">Choose file</label>
               <input class="form-control" type="file" id="material" name="material" required>
-              <div class="form-text">Allowed types: pdf, doc, docx, ppt, pptx, xls, xlsx, zip, rar, png, jpg, jpeg, gif, txt</div>
+              <div class="form-text">Allowed types: PDF, PPT, PPTX only</div>
+            </div>
+            <div class="mb-3">
+              <label for="term_id" class="form-label">Term <span class="text-danger">*</span></label>
+              <select class="form-control" id="term_id" name="term_id" required>
+                <option value="">Select Term (Required)</option>
+                <?php
+                // Get terms for this course's semester
+                $courseModel = new \App\Models\CourseModel();
+                $course = $courseModel->find($course_id);
+                if ($course && !empty($course['semester_id'])) {
+                    $termModel = new \App\Models\TermModel();
+                    $terms = $termModel->getTermsBySemester($course['semester_id']);
+                    foreach ($terms as $term) {
+                        echo '<option value="' . esc($term['id']) . '">' . esc(strtoupper($term['term_name'])) . '</option>';
+                    }
+                }
+                ?>
+              </select>
+              <div class="form-text">Please select PRELIM, MIDTERM, or FINAL</div>
             </div>
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-primary">Upload Material</button>

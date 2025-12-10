@@ -462,6 +462,10 @@
                                             onclick="openEditAcademicYearModal(<?= $acadYear['id'] ?>)">
                                         <i class="fas fa-edit"></i> Edit
                                     </button>
+                                    <button type="button" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;"
+                                            onclick="deleteAcademicYear(<?= $acadYear['id'] ?>, '<?= esc($acadYear['display_name']) ?>')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -516,6 +520,10 @@
                                             onclick="openEditSemesterModal(<?= $semester['id'] ?>)">
                                         <i class="fas fa-edit"></i> Edit
                                     </button>
+                                    <button type="button" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;"
+                                            onclick="deleteSemester(<?= $semester['id'] ?>, '<?= esc($semester['name']) ?>')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -524,83 +532,6 @@
             <?php else: ?>
                 <p style="color: #666; padding: 20px; text-align: center;">No semesters found. Please add one.</p>
             <?php endif; ?>
-        </div>
-
-        <!-- School Settings Section (Legacy - can be kept for backward compatibility) -->
-        <div class="section-card">
-            <h2 class="section-title">
-                <i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>
-                School Year & Semester Settings (Legacy)
-            </h2>
-            
-            <?php if($activeSettings): ?>
-                <div style="background: #e8f5e9; padding: 15px; border-radius: 3px; margin-bottom: 20px; border: 2px solid #2e7d32;">
-                    <strong>Current Active Settings:</strong><br>
-                    <span class="active-indicator"></span>
-                    <strong>School Year:</strong> <?= esc($activeSettings['school_year']) ?><br>
-                    <strong>Semester:</strong> <?= esc($activeSettings['semester']) ?><br>
-                    <strong>Start Date:</strong> <?= date('M d, Y', strtotime($activeSettings['start_date'])) ?><br>
-                    <strong>End Date:</strong> <?= date('M d, Y', strtotime($activeSettings['end_date'])) ?>
-                </div>
-            <?php else: ?>
-                <div style="background: #fff3cd; padding: 15px; border-radius: 3px; margin-bottom: 20px; border: 2px solid #ffc107;">
-                    <i class="fas fa-exclamation-triangle" style="margin-right: 10px;"></i>
-                    No active school settings. Please configure school year and semester.
-                </div>
-            <?php endif; ?>
-
-            <form id="schoolSettingsForm">
-                <?= csrf_field() ?>
-                <input type="hidden" id="settings_id" name="settings_id" value="<?= $activeSettings['id'] ?? '' ?>">
-                
-                <div class="form-group">
-                    <label for="school_year">School Year *</label>
-                    <input type="text" id="school_year" name="school_year" required
-                           value="<?= $activeSettings['school_year'] ?? '' ?>"
-                           placeholder="e.g., 2025-2026">
-                    <small style="color: #666;">Format: YYYY-YYYY (e.g., 2025-2026)</small>
-                </div>
-                
-                <div class="form-group">
-                    <label for="semester">Semester *</label>
-                    <select id="semester" name="semester" required>
-                        <option value="">Select Semester</option>
-                        <option value="1st Semester" <?= ($activeSettings['semester'] ?? '') == '1st Semester' ? 'selected' : '' ?>>1st Semester</option>
-                        <option value="2nd Semester" <?= ($activeSettings['semester'] ?? '') == '2nd Semester' ? 'selected' : '' ?>>2nd Semester</option>
-                        <option value="Summer" <?= ($activeSettings['semester'] ?? '') == 'Summer' ? 'selected' : '' ?>>Summer</option>
-                    </select>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
-                        <label for="start_date">Start Date *</label>
-                        <input type="date" id="start_date" name="start_date" required
-                               value="<?= $activeSettings['start_date'] ?? '' ?>">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="end_date">End Date *</label>
-                        <input type="date" id="end_date" name="end_date" required
-                               value="<?= $activeSettings['end_date'] ?? '' ?>">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; cursor: pointer;">
-                        <input type="checkbox" id="is_active" name="is_active" value="1" 
-                               <?= ($activeSettings['is_active'] ?? 0) == 1 ? 'checked' : '' ?>
-                               style="width: auto; margin-right: 8px;">
-                        <span>Set as Active (Only one active setting is allowed)</span>
-                    </label>
-                </div>
-                
-                <div style="margin-top: 20px;">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save" style="margin-right: 8px;"></i>
-                        <?= $activeSettings ? 'Update Settings' : 'Save Settings' ?>
-                    </button>
-                </div>
-            </form>
         </div>
 
         <!-- Programs Section -->
@@ -685,13 +616,6 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="display_name">Display Name *</label>
-                    <input type="text" id="display_name" name="display_name" required
-                           placeholder="e.g., 2024-2025">
-                    <small style="color: #666;">This will be shown in dropdowns</small>
-                </div>
-                
-                <div class="form-group">
                     <label style="display: flex; align-items: center; cursor: pointer;">
                         <input type="checkbox" id="acad_year_is_active" name="is_active" value="1" checked
                                style="width: auto; margin-right: 8px;">
@@ -734,13 +658,8 @@
                         <option value="">Select</option>
                         <option value="1">1st Semester</option>
                         <option value="2">2nd Semester</option>
+                        <option value="3">Summer</option>
                     </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="semester_name">Semester Name *</label>
-                    <input type="text" id="semester_name" name="name" required
-                           placeholder="e.g., 1st Semester, 2nd Semester">
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -933,7 +852,6 @@
                     if (document.getElementById('acad_year_id')) document.getElementById('acad_year_id').value = acadYear.id;
                     if (document.getElementById('year_start')) document.getElementById('year_start').value = acadYear.year_start;
                     if (document.getElementById('year_end')) document.getElementById('year_end').value = acadYear.year_end;
-                    if (document.getElementById('display_name')) document.getElementById('display_name').value = acadYear.display_name;
                     if (document.getElementById('acad_year_is_active')) document.getElementById('acad_year_is_active').checked = acadYear.is_active == 1;
                     if (modal) modal.style.display = 'block';
                 } else {
@@ -998,7 +916,6 @@
                     if (document.getElementById('semester_id')) document.getElementById('semester_id').value = semester.id;
                     if (document.getElementById('semester_acad_year_id')) document.getElementById('semester_acad_year_id').value = semester.acad_year_id;
                     if (document.getElementById('semester_number')) document.getElementById('semester_number').value = semester.semester_number;
-                    if (document.getElementById('semester_name')) document.getElementById('semester_name').value = semester.name;
                     if (document.getElementById('semester_start_date')) document.getElementById('semester_start_date').value = semester.start_date || '';
                     if (document.getElementById('semester_end_date')) document.getElementById('semester_end_date').value = semester.end_date || '';
                     if (document.getElementById('semester_is_active')) document.getElementById('semester_is_active').checked = semester.is_active == 1;
@@ -1039,58 +956,6 @@
                 return '<?= csrf_token() ?>';
             }
             
-            // Save School Settings
-            $('#schoolSettingsForm').on('submit', function(e) {
-                e.preventDefault();
-                
-                // Serialize form data including CSRF token
-                let formData = $('#schoolSettingsForm').serialize();
-                
-                // Add is_active checkbox value (serialize doesn't include unchecked checkboxes)
-                const isActive = $('#is_active').is(':checked') ? '1' : '0';
-                // Remove existing is_active if present and add new one
-                formData = formData.replace(/&?is_active=[^&]*/, '');
-                formData += (formData ? '&' : '') + 'is_active=' + isActive;
-
-                $.ajax({
-                    url: '<?= base_url('school-setup/saveSettings') ?>',
-                    type: 'POST',
-                    data: formData,
-                    dataType: 'json',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    success: function(response) {
-                        // Update CSRF token if provided
-                        if (response.csrf_hash) {
-                            const csrfTokenName = getCSRFTokenName();
-                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
-                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
-                        }
-                        
-                        if (response.success) {
-                            alert(response.message);
-                            location.reload();
-                        } else {
-                            alert('Error: ' + response.message);
-                        }
-                    },
-                    error: function(xhr) {
-                        let errorMsg = 'An error occurred. Please try again.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMsg = xhr.responseJSON.message;
-                        } else if (xhr.status === 403) {
-                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                        } else if (xhr.responseText) {
-                            // Check if it's a CSRF error
-                            if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
-                                errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                            }
-                        }
-                        alert(errorMsg);
-                    }
-                });
-            }); // Close $('#schoolSettingsForm').on('submit')
 
             // Program modal functions are already defined globally above
             // Save Program
@@ -1197,6 +1062,119 @@
                 });
             };
 
+            // Delete Academic Year
+            window.deleteAcademicYear = function(acadYearId, displayName) {
+                if (!confirm('Are you sure you want to delete academic year "' + displayName + '"?\n\nThis action cannot be undone.')) {
+                    return;
+                }
+
+                const formData = {};
+                const csrfTokenName = getCSRFTokenName();
+                const csrfToken = getCSRFToken() || $('input[name="' + csrfTokenName + '"]').val();
+                formData[csrfTokenName] = csrfToken;
+
+                $.ajax({
+                    url: '<?= base_url('school-setup/deleteAcademicYear') ?>/' + acadYearId,
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        // Update CSRF token if provided
+                        if (response.csrf_hash) {
+                            const csrfTokenName = getCSRFTokenName();
+                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
+                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                        }
+                        
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'An error occurred. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.status === 403) {
+                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                        } else if (xhr.responseText) {
+                            if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
+                                errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                            }
+                        }
+                        alert(errorMsg);
+                    }
+                });
+            };
+
+            // Delete Semester
+            window.deleteSemester = function(semesterId, semesterName) {
+                if (!confirm('Are you sure you want to delete semester "' + semesterName + '"?\n\nThis action cannot be undone.')) {
+                    return;
+                }
+
+                const formData = {};
+                const csrfTokenName = getCSRFTokenName();
+                const csrfToken = getCSRFToken() || $('input[name="' + csrfTokenName + '"]').val();
+                formData[csrfTokenName] = csrfToken;
+
+                $.ajax({
+                    url: '<?= base_url('school-setup/deleteSemester') ?>/' + semesterId,
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        // Update CSRF token if provided
+                        if (response.csrf_hash) {
+                            const csrfTokenName = getCSRFTokenName();
+                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
+                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                        }
+                        
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'An error occurred. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.status === 403) {
+                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                        } else if (xhr.responseText) {
+                            if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
+                                errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                            }
+                        }
+                        alert(errorMsg);
+                    }
+                });
+            };
+
+            // Auto-generate display name from year start and year end
+            function generateDisplayName() {
+                const yearStart = $('#year_start').val();
+                const yearEnd = $('#year_end').val();
+                if (yearStart && yearEnd) {
+                    // Display name will be auto-generated on backend, but we can show a preview
+                    // The backend will handle the actual generation
+                }
+            }
+            
+            $('#year_start, #year_end').on('input change', function() {
+                generateDisplayName();
+            });
 
             // Save Academic Year
             $('#academicYearForm').on('submit', function(e) {
@@ -1232,8 +1210,18 @@
                     },
                     error: function(xhr) {
                         let errorMsg = 'An error occurred. Please try again.';
+                        
+                        // Update CSRF token if provided in error response
+                        if (xhr.responseJSON && xhr.responseJSON.csrf_hash) {
+                            const csrfTokenName = getCSRFTokenName();
+                            $('meta[name="' + csrfTokenName + '"]').attr('content', xhr.responseJSON.csrf_hash);
+                            $('input[name="' + csrfTokenName + '"]').val(xhr.responseJSON.csrf_hash);
+                        }
+                        
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.status === 403 || (xhr.responseText && (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')))) {
+                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
                         }
                         alert(errorMsg);
                     }

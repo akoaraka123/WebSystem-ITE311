@@ -354,13 +354,6 @@
                                             </div>
                                             <?php endif; ?>
                                             
-                                            <?php if (!empty($course['term_name'])): ?>
-                                            <div class="text-muted small mb-2">
-                                                <i class="fas fa-bookmark me-2"></i>
-                                                <span><strong>Term:</strong> <?= esc($course['term_name']) ?></span>
-                                            </div>
-                                            <?php endif; ?>
-                                            
                                             <?php if (!empty($course['schedule_time_start']) || !empty($course['schedule_time']) || !empty($course['schedule_date']) || !empty($course['duration'])): ?>
                                             <div class="text-muted small mb-3">
                                                 <i class="fas fa-clock me-2"></i>
@@ -368,30 +361,32 @@
                                                     <?php 
                                                     $startTime = $course['schedule_time_start'] ?? $course['schedule_time'] ?? '';
                                                     $endTime = $course['schedule_time_end'] ?? '';
-                                                    if ($startTime): 
-                                                    ?>
-                                                        <strong>Time:</strong> 
-                                                        <?php 
+                                                    $hasTime = !empty($startTime);
+                                                    $hasDuration = !empty($course['duration']);
+                                                    $hasDate = !empty($course['schedule_date']);
+                                                    
+                                                    // Display Time (Class Time) - Show if available
+                                                    if ($hasTime): 
                                                         // Format time for display (convert 24h to 12h)
                                                         $startFormatted = date('g:i A', strtotime($startTime));
                                                         if ($endTime) {
                                                             $endFormatted = date('g:i A', strtotime($endTime));
-                                                            echo esc($startFormatted) . ' - ' . esc($endFormatted);
+                                                            echo '<strong>Class Time:</strong> ' . esc($startFormatted) . ' - ' . esc($endFormatted);
                                                         } else {
-                                                            echo esc($startFormatted);
+                                                            echo '<strong>Class Time:</strong> ' . esc($startFormatted);
                                                         }
-                                                        ?>
-                                                    <?php endif; ?>
-                                                    <?php 
-                                                    // Calculate exact duration from start and end times
-                                                    if ($startTime && $endTime): 
+                                                    endif; 
+                                                    
+                                                    // Display Duration
+                                                    if ($hasTime && $endTime): 
+                                                        // Calculate duration from start and end times
                                                         $startTimestamp = strtotime($startTime);
                                                         $endTimestamp = strtotime($endTime);
                                                         $diffMinutes = round(($endTimestamp - $startTimestamp) / 60);
                                                         $hours = floor($diffMinutes / 60);
                                                         $minutes = $diffMinutes % 60;
                                                         
-                                                        if ($startTime): ?> | <?php endif; ?>
+                                                        if ($hasTime): ?> | <?php endif; ?>
                                                         <strong>Duration:</strong> 
                                                         <?php 
                                                         if ($hours > 0 && $minutes > 0) {
@@ -402,22 +397,30 @@
                                                             echo esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
                                                         }
                                                         ?>
-                                                    <?php elseif (!empty($course['duration'])): ?>
-                                                        <?php if ($startTime): ?> | <?php endif; ?>
+                                                    <?php elseif ($hasDuration): ?>
+                                                        <?php if ($hasTime): ?> | <?php endif; ?>
                                                         <strong>Duration:</strong> <?= esc($course['duration']) ?> <?= $course['duration'] == 1 ? 'Hour' : 'Hours' ?>
                                                     <?php endif; ?>
-                                                    <?php if (!empty($course['schedule_date'])): ?>
-                                                        <?php if ($startTime || !empty($course['duration'])): ?> | <?php endif; ?>
+                                                    
+                                                    <?php // Display Date ?>
+                                                    <?php if ($hasDate): ?>
+                                                        <?php if ($hasTime || $hasDuration): ?> | <?php endif; ?>
                                                         <strong>Date:</strong> <?= date('M d, Y', strtotime($course['schedule_date'])) ?>
                                                     <?php endif; ?>
                                                 </span>
                                             </div>
                                             <?php endif; ?>
                                             
+                                            <?php if (!empty($course['teacher_id'])): ?>
                                             <div class="text-muted small mb-3">
                                                 <i class="fas fa-user-tie me-2"></i>
-                                                <span>Teacher ID: <?= esc($course['teacher_id'] ?? 'N/A') ?></span>
+                                                <span>
+                                                    <strong>Teacher:</strong> 
+                                                    <?= !empty($course['teacher_name']) ? esc($course['teacher_name']) : 'Unknown' ?>
+                                                    (ID: <?= esc($course['teacher_id']) ?>)
+                                                </span>
                                             </div>
+                                            <?php endif; ?>
                                             <div class="text-muted small mb-4">
                                                 <i class="fas fa-calendar me-2"></i>
                                                 <span>Created: <?= date('M j, Y', strtotime($course['created_at'] ?? 'now')) ?></span>
@@ -522,7 +525,8 @@
                         $.each(data, function (index, course) {
                             const description = course.description ? course.description : 'No description provided.';
                             const title = course.title ? course.title : 'Untitled Course';
-                            const teacherId = course.teacher_id ? course.teacher_id : 'N/A';
+                            const teacherId = course.teacher_id ? course.teacher_id : null;
+                            const teacherName = course.teacher_name ? course.teacher_name : 'Unknown';
                             const createdAt = course.created_at ? new Date(course.created_at).toLocaleDateString() : 'Recently added';
 
                             const card = `
@@ -534,10 +538,12 @@
                                                 <span class="badge bg-success">Active</span>
                                             </div>
                                             <p class="card-text flex-grow-1">${description}</p>
+                                            ${teacherId ? `
                                             <div class="text-muted small mb-3">
                                                 <i class="fas fa-user-tie me-2"></i>
-                                                <span>Teacher ID: ${teacherId}</span>
+                                                <span><strong>Teacher:</strong> ${teacherName} (ID: ${teacherId})</span>
                                             </div>
+                                            ` : ''}
                                             <div class="text-muted small mb-4">
                                                 <i class="fas fa-calendar me-2"></i>
                                                 <span>Created: ${createdAt}</span>
@@ -694,7 +700,7 @@
                     select.append('<option value="">Select a teacher</option>');
                     response.teachers.forEach(function(teacher) {
                         const selected = teacher.id == currentTeacherId ? 'selected' : '';
-                        select.append(`<option value="${teacher.id}" ${selected}>${teacher.name} (${teacher.email})</option>`);
+                        select.append(`<option value="${teacher.id}" ${selected} data-teacher-name="${teacher.name}" data-teacher-email="${teacher.email}">${teacher.name} (ID: ${teacher.id})</option>`);
                     });
                     
                     // Initialize Select2 with search functionality
@@ -705,6 +711,25 @@
                         width: '100%',
                         dropdownParent: $('#assignTeacherModal'),
                         minimumResultsForSearch: 0, // Always show search box
+                        templateResult: function(data) {
+                            if (!data.id) {
+                                return data.text;
+                            }
+                            const $option = $(data.element);
+                            const teacherName = $option.data('teacher-name') || data.text;
+                            const teacherId = data.id;
+                            const teacherEmail = $option.data('teacher-email') || '';
+                            return $('<span><strong>' + teacherName + '</strong> (ID: ' + teacherId + ')<br><small class="text-muted">' + teacherEmail + '</small></span>');
+                        },
+                        templateSelection: function(data) {
+                            if (!data.id) {
+                                return data.text;
+                            }
+                            const $option = $(data.element);
+                            const teacherName = $option.data('teacher-name') || data.text;
+                            const teacherId = data.id;
+                            return teacherName + ' (ID: ' + teacherId + ')';
+                        },
                         language: {
                             noResults: function() {
                                 return "No teachers found";
@@ -731,32 +756,67 @@
 
         // Submit Assign Teacher
         function submitAssignTeacher() {
+            const courseId = $('#assignTeacherCourseId').val();
+            const teacherId = $('#assignTeacherSelect').val();
+            
+            if (!courseId || !teacherId) {
+                alert('Please select a teacher');
+                return;
+            }
+            
+            // Get CSRF token from form or meta tag
+            const csrfTokenName = '<?= csrf_token() ?>';
+            const csrfInput = $('#assignTeacherForm input[name="' + csrfTokenName + '"]');
+            const csrfToken = csrfInput.length ? csrfInput.val() : $('meta[name="' + csrfTokenName + '"]').attr('content');
+            
             const formData = {
-                course_id: $('#assignTeacherCourseId').val(),
-                teacher_id: $('#assignTeacherSelect').val()
+                course_id: courseId,
+                teacher_id: teacherId
             };
             
             // Add CSRF token
-            formData['<?= csrf_token() ?>'] = '<?= csrf_hash() ?>';
+            formData[csrfTokenName] = csrfToken;
 
             $.ajax({
                 url: '<?= base_url('courses/assignTeacher') ?>',
                 type: 'POST',
                 data: formData,
                 dataType: 'json',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 success: function(response) {
+                    // Update CSRF token if provided
+                    if (response.csrf_hash) {
+                        if (csrfInput.length) {
+                            csrfInput.val(response.csrf_hash);
+                        }
+                        $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
+                    }
+                    
                     if (response.success) {
                         alert('Teacher assigned successfully!');
                         $('#assignTeacherModal').modal('hide');
                         location.reload();
                     } else {
-                        alert('Error: ' + response.message);
+                        alert('Error: ' + (response.message || 'Failed to assign teacher'));
                     }
                 },
                 error: function(xhr) {
                     let errorMsg = 'An error occurred. Please try again.';
+                    
+                    // Update CSRF token if provided in error response
+                    if (xhr.responseJSON && xhr.responseJSON.csrf_hash) {
+                        if (csrfInput.length) {
+                            csrfInput.val(xhr.responseJSON.csrf_hash);
+                        }
+                        $('meta[name="' + csrfTokenName + '"]').attr('content', xhr.responseJSON.csrf_hash);
+                    }
+                    
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
+                    } else if (xhr.status === 403 || (xhr.responseText && (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')))) {
+                        errorMsg = 'CSRF token expired. Please refresh the page and try again.';
                     }
                     alert(errorMsg);
                 }

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="<?= csrf_token() ?>" content="<?= csrf_hash() ?>">
     <title>Edit Course - Learning Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -21,6 +22,17 @@
         }
     </script>
     <style>
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         html, body {
             margin: 0;
             padding: 0;
@@ -182,10 +194,27 @@
                         </div>
                     <?php endif; ?>
 
-                    <?php if (!empty(session()->getFlashdata('error'))): ?>
+                    <?php 
+                    $hasValidationErrors = isset($validation) && $validation->hasErrors();
+                    $flashError = session()->getFlashdata('error');
+                    if ($flashError && !$hasValidationErrors): ?>
                         <div class="alert alert-danger" style="padding: 12px; border-radius: 3px; margin-bottom: 20px; border: 2px solid; display: flex; align-items: center; background: #f8d7da; color: #721c24; border-color: #f5c6cb;">
                             <i class="fas fa-exclamation-circle" style="margin-right: 10px;"></i>
-                            <?= session()->getFlashdata('error') ?>
+                            <?= $flashError ?>
+                        </div>
+                    <?php elseif ($hasValidationErrors): ?>
+                        <div class="alert alert-danger" style="padding: 12px; border-radius: 3px; margin-bottom: 20px; border: 2px solid; display: flex; align-items: center; background: #f8d7da; color: #721c24; border-color: #f5c6cb;">
+                            <i class="fas fa-exclamation-circle" style="margin-right: 10px;"></i>
+                            <div>
+                                <strong>Please correct the errors below:</strong>
+                                <ul style="margin: 8px 0 0 20px; padding: 0;">
+                                    <?php foreach ($validation->getErrors() as $field => $error): ?>
+                                        <li style="margin: 4px 0;">
+                                            <strong><?= ucfirst(str_replace('_', ' ', $field)) ?>:</strong> <?= esc($error) ?>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
                         </div>
                     <?php endif; ?>
 
@@ -293,25 +322,6 @@
                                 <?php endif; ?>
                             </div>
 
-                            <!-- Term -->
-                            <div class="form-group" style="margin-bottom: 18px;">
-                                <label for="term_id" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Term (Termino/Yugto) *</label>
-                                <select id="term_id" name="term_id" required
-                                        style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
-                                    <option value="">Select Term</option>
-                                    <?php if(isset($terms) && !empty($terms)): ?>
-                                        <?php foreach($terms as $term): ?>
-                                            <option value="<?= $term['id'] ?>" <?= (isset($course['term_id']) && $course['term_id'] == $term['id']) ? 'selected' : '' ?>>
-                                                <?= esc($term['term_name']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </select>
-                                <?php if (isset($validation) && $validation->getError('term_id')): ?>
-                                    <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('term_id') ?></p>
-                                <?php endif; ?>
-                            </div>
-
                             <!-- Course Number (CN) -->
                             <div class="form-group" style="margin-bottom: 18px;">
                                 <label for="course_number" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Course Number / Section Code (CN) *</label>
@@ -389,20 +399,18 @@
     </div>
 
     <script>
-        // Dynamic loading of semesters and terms
+        // Dynamic loading of semesters
         document.addEventListener('DOMContentLoaded', function() {
             const acadYearSelect = document.getElementById('acad_year_id');
             const semesterSelect = document.getElementById('semester_id');
-            const termSelect = document.getElementById('term_id');
 
             // Load semesters when academic year changes
             if (acadYearSelect) {
                 acadYearSelect.addEventListener('change', function() {
                     const acadYearId = this.value;
                     
-                    // Reset semester and term
+                    // Reset semester
                     semesterSelect.innerHTML = '<option value="">Select Semester</option>';
-                    termSelect.innerHTML = '<option value="">Select Term</option>';
                     
                     if (acadYearId) {
                         fetch('<?= base_url('course/get-semesters-by-academic-year') ?>', {
@@ -426,41 +434,6 @@
                         })
                         .catch(error => {
                             console.error('Error loading semesters:', error);
-                        });
-                    }
-                });
-            }
-
-            // Load terms when semester changes
-            if (semesterSelect) {
-                semesterSelect.addEventListener('change', function() {
-                    const semesterId = this.value;
-                    
-                    // Reset term
-                    termSelect.innerHTML = '<option value="">Select Term</option>';
-                    
-                    if (semesterId) {
-                        fetch('<?= base_url('course/get-terms-by-semester') ?>', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: 'semester_id=' + semesterId + '&<?= csrf_token() ?>=<?= csrf_hash() ?>'
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success && data.terms) {
-                                data.terms.forEach(term => {
-                                    const option = document.createElement('option');
-                                    option.value = term.id;
-                                    option.textContent = term.term_name;
-                                    termSelect.appendChild(option);
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error loading terms:', error);
                         });
                     }
                 });
@@ -722,6 +695,23 @@
                     errorElement.style.display = 'none';
                 }
             };
+        });
+
+        // Ensure CSRF token is always fresh before form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form[action*="edit-course"]');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Get fresh CSRF token from meta tag before submission
+                    const csrfTokenName = '<?= csrf_token() ?>';
+                    const csrfToken = document.querySelector('meta[name="' + csrfTokenName + '"]')?.getAttribute('content');
+                    const csrfInput = form.querySelector('input[name="' + csrfTokenName + '"]');
+                    
+                    if (csrfToken && csrfInput) {
+                        csrfInput.value = csrfToken;
+                    }
+                });
+            }
         });
     </script>
 </body>

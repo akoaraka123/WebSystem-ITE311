@@ -127,20 +127,6 @@
                     </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($course['term_name'])): ?>
-                    <div class="bg-pink-50 rounded-xl p-5 info-card">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
-                                <i class="fas fa-bookmark"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-xs uppercase text-pink-400 font-semibold">Term</p>
-                                <p class="text-lg font-semibold text-gray-800"><?= esc($course['term_name']) ?></p>
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-600">The grading term for this course.</p>
-                    </div>
-                    <?php endif; ?>
 
                     <?php 
                     $startTime = $course['schedule_time_start'] ?? $course['schedule_time'] ?? '';
