@@ -83,7 +83,7 @@ $routes->get('course/pending-admin-approvals', 'Course::getPendingAdminApprovals
 // ENROLLMENT
 // ========================================
 $routes->post('auth/enroll/(:num)', 'Auth::enroll/$1');
-$routes->post('course/enroll', 'Auth::enroll');
+$routes->post('course/enroll', 'Course::enroll');
 $routes->post('auth/unenroll/(:num)', 'Auth::unenroll/$1');
 
 // ========================================

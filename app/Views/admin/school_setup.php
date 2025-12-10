@@ -31,10 +31,10 @@
         html, body {
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             height: 100%;
             width: 100%;
-            position: fixed;
             font-family: Arial, sans-serif;
             background: #f0f0f0;
         }
@@ -819,19 +819,102 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
+        // Make sure jQuery is loaded
+        if (typeof jQuery === 'undefined') {
+            console.error('jQuery is not loaded!');
+        }
+        
+        // Program Modal Functions (defined globally so they're available immediately)
+        function openAddProgramModal() {
+            try {
+                console.log('openAddProgramModal called');
+                const modal = document.getElementById('programModal');
+                const title = document.getElementById('programModalTitle');
+                const form = document.getElementById('programForm');
+                const programId = document.getElementById('program_id');
+                const isActive = document.getElementById('program_is_active');
+                
+                if (!modal) {
+                    alert('Error: Program modal not found. Please refresh the page.');
+                    console.error('programModal element not found');
+                    return;
+                }
+                
+                if (title) title.textContent = 'Add Program';
+                if (form) form.reset();
+                if (programId) programId.value = '';
+                if (isActive) isActive.checked = true;
+                modal.style.display = 'block';
+                console.log('Program modal opened');
+            } catch (error) {
+                console.error('Error opening program modal:', error);
+                alert('Error opening program modal. Please check console for details.');
+            }
+        }
+
+        function openEditProgramModal(programId) {
+            if (typeof $ === 'undefined') {
+                alert('Please wait for the page to fully load.');
+                return;
+            }
+            
+            $.get('<?= base_url('school-setup/getProgram') ?>/' + programId, function(response) {
+                if (response.success) {
+                    const program = response.program;
+                    const modal = document.getElementById('programModal');
+                    const title = document.getElementById('programModalTitle');
+                    
+                    if (title) title.textContent = 'Edit Program';
+                    if (document.getElementById('program_id')) document.getElementById('program_id').value = program.id;
+                    if (document.getElementById('program_code')) document.getElementById('program_code').value = program.code;
+                    if (document.getElementById('program_name')) document.getElementById('program_name').value = program.name;
+                    if (document.getElementById('program_description')) document.getElementById('program_description').value = program.description || '';
+                    if (document.getElementById('program_is_active')) document.getElementById('program_is_active').checked = program.is_active == 1;
+                    if (modal) modal.style.display = 'block';
+                } else {
+                    alert('Error loading program: ' + response.message);
+                }
+            }).fail(function() {
+                alert('Failed to load program details.');
+            });
+        }
+
+        function closeProgramModal() {
+            const modal = document.getElementById('programModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // Make all functions globally accessible immediately
+        window.openAddProgramModal = openAddProgramModal;
+        window.openEditProgramModal = openEditProgramModal;
+        window.closeProgramModal = closeProgramModal;
+
         // Academic Year Modal Functions (defined globally so they're available immediately)
         function openAddAcademicYearModal() {
-            const modal = document.getElementById('academicYearModal');
-            const title = document.getElementById('academicYearModalTitle');
-            const form = document.getElementById('academicYearForm');
-            const acadYearId = document.getElementById('acad_year_id');
-            const isActive = document.getElementById('acad_year_is_active');
-            
-            if (title) title.textContent = 'Add Academic Year';
-            if (form) form.reset();
-            if (acadYearId) acadYearId.value = '';
-            if (isActive) isActive.checked = true;
-            if (modal) modal.style.display = 'block';
+            try {
+                console.log('openAddAcademicYearModal called');
+                const modal = document.getElementById('academicYearModal');
+                const title = document.getElementById('academicYearModalTitle');
+                const form = document.getElementById('academicYearForm');
+                const acadYearId = document.getElementById('acad_year_id');
+                const isActive = document.getElementById('acad_year_is_active');
+                
+                if (!modal) {
+                    alert('Error: Academic Year modal not found. Please refresh the page.');
+                    console.error('academicYearModal element not found');
+                    return;
+                }
+                
+                if (title) title.textContent = 'Add Academic Year';
+                if (form) form.reset();
+                if (acadYearId) acadYearId.value = '';
+                if (isActive) isActive.checked = true;
+                modal.style.display = 'block';
+                console.log('Academic Year modal opened');
+            } catch (error) {
+                console.error('Error opening academic year modal:', error);
+                alert('Error opening academic year modal. Please check console for details.');
+            }
         }
 
         function openEditAcademicYearModal(acadYearId) {
@@ -866,19 +949,37 @@
             if (modal) modal.style.display = 'none';
         }
 
+        // Make Academic Year functions globally accessible immediately
+        window.openAddAcademicYearModal = openAddAcademicYearModal;
+        window.openEditAcademicYearModal = openEditAcademicYearModal;
+        window.closeAcademicYearModal = closeAcademicYearModal;
+
         // Semester Modal Functions (defined globally)
         function openAddSemesterModal() {
-            const modal = document.getElementById('semesterModal');
-            const title = document.getElementById('semesterModalTitle');
-            const form = document.getElementById('semesterForm');
-            const semesterId = document.getElementById('semester_id');
-            const isActive = document.getElementById('semester_is_active');
-            
-            if (title) title.textContent = 'Add Semester';
-            if (form) form.reset();
-            if (semesterId) semesterId.value = '';
-            if (isActive) isActive.checked = true;
-            if (modal) modal.style.display = 'block';
+            try {
+                console.log('openAddSemesterModal called');
+                const modal = document.getElementById('semesterModal');
+                const title = document.getElementById('semesterModalTitle');
+                const form = document.getElementById('semesterForm');
+                const semesterId = document.getElementById('semester_id');
+                const isActive = document.getElementById('semester_is_active');
+                
+                if (!modal) {
+                    alert('Error: Semester modal not found. Please refresh the page.');
+                    console.error('semesterModal element not found');
+                    return;
+                }
+                
+                if (title) title.textContent = 'Add Semester';
+                if (form) form.reset();
+                if (semesterId) semesterId.value = '';
+                if (isActive) isActive.checked = true;
+                modal.style.display = 'block';
+                console.log('Semester modal opened');
+            } catch (error) {
+                console.error('Error opening semester modal:', error);
+                alert('Error opening semester modal. Please check console for details.');
+            }
         }
 
         function openEditSemesterModal(semesterId) {
@@ -915,6 +1016,18 @@
             if (modal) modal.style.display = 'none';
         }
 
+        // Make Semester functions globally accessible immediately
+        window.openAddSemesterModal = openAddSemesterModal;
+        window.openEditSemesterModal = openEditSemesterModal;
+        window.closeSemesterModal = closeSemesterModal;
+
+        // Debug: Log that functions are defined
+        console.log('Modal functions defined:', {
+            openAddProgramModal: typeof window.openAddProgramModal,
+            openAddAcademicYearModal: typeof window.openAddAcademicYearModal,
+            openAddSemesterModal: typeof window.openAddSemesterModal
+        });
+
         // Wait for DOM to be ready
         $(document).ready(function() {
             // Get CSRF token from meta tag
@@ -928,112 +1041,77 @@
             
             // Save School Settings
             $('#schoolSettingsForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            // Serialize form data including CSRF token
-            let formData = $('#schoolSettingsForm').serialize();
-            
-            // Add is_active checkbox value (serialize doesn't include unchecked checkboxes)
-            const isActive = $('#is_active').is(':checked') ? '1' : '0';
-            // Remove existing is_active if present and add new one
-            formData = formData.replace(/&?is_active=[^&]*/, '');
-            formData += (formData ? '&' : '') + 'is_active=' + isActive;
+                e.preventDefault();
+                
+                // Serialize form data including CSRF token
+                let formData = $('#schoolSettingsForm').serialize();
+                
+                // Add is_active checkbox value (serialize doesn't include unchecked checkboxes)
+                const isActive = $('#is_active').is(':checked') ? '1' : '0';
+                // Remove existing is_active if present and add new one
+                formData = formData.replace(/&?is_active=[^&]*/, '');
+                formData += (formData ? '&' : '') + 'is_active=' + isActive;
 
-            $.ajax({
-                url: '<?= base_url('school-setup/saveSettings') ?>',
-                type: 'POST',
-                data: formData,
-                dataType: 'json',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                success: function(response) {
-                    // Update CSRF token if provided
-                    if (response.csrf_hash) {
-                        const csrfTokenName = getCSRFTokenName();
-                        $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
-                        $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
-                    }
-                    
-                    if (response.success) {
-                        alert(response.message);
-                        location.reload();
-                    } else {
-                        alert('Error: ' + response.message);
-                    }
-                },
-                error: function(xhr) {
-                    let errorMsg = 'An error occurred. Please try again.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMsg = xhr.responseJSON.message;
-                    } else if (xhr.status === 403) {
-                        errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                    } else if (xhr.responseText) {
-                        // Check if it's a CSRF error
-                        if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
-                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                $.ajax({
+                    url: '<?= base_url('school-setup/saveSettings') ?>',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        // Update CSRF token if provided
+                        if (response.csrf_hash) {
+                            const csrfTokenName = getCSRFTokenName();
+                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
+                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
                         }
+                        
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'An error occurred. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.status === 403) {
+                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                        } else if (xhr.responseText) {
+                            // Check if it's a CSRF error
+                            if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
+                                errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                            }
+                        }
+                        alert(errorMsg);
                     }
-                    alert(errorMsg);
-                }
-            });
-
-            // Program Modal Functions
-            function openAddProgramModal() {
-                $('#programModalTitle').text('Add Program');
-                $('#programForm')[0].reset();
-                $('#program_id').val('');
-                $('#program_is_active').prop('checked', true);
-                $('#programModal').css('display', 'block');
-            }
-
-            function openEditProgramModal(programId) {
-                $.get('<?= base_url('school-setup/getProgram') ?>/' + programId, function(response) {
-                    if (response.success) {
-                        const program = response.program;
-                        $('#programModalTitle').text('Edit Program');
-                        $('#program_id').val(program.id);
-                        $('#program_code').val(program.code);
-                        $('#program_name').val(program.name);
-                        $('#program_description').val(program.description || '');
-                        $('#program_is_active').prop('checked', program.is_active == 1);
-                        $('#programModal').css('display', 'block');
-                    } else {
-                        alert('Error loading program: ' + response.message);
-                    }
-                }).fail(function() {
-                    alert('Failed to load program details.');
                 });
-            }
+            }); // Close $('#schoolSettingsForm').on('submit')
 
-            function closeProgramModal() {
-                $('#programModal').css('display', 'none');
-            }
-
-            // Make functions globally accessible
-            window.openAddProgramModal = openAddProgramModal;
-            window.openEditProgramModal = openEditProgramModal;
-            window.closeProgramModal = closeProgramModal;
-
+            // Program modal functions are already defined globally above
             // Save Program
             $('#programForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            // Serialize form data including CSRF token
-            let formData = $('#programForm').serialize();
-            
-            // Update code to uppercase and is_active
-            const code = $('#program_code').val().toUpperCase().trim();
-            const isActive = $('#program_is_active').is(':checked') ? '1' : '0';
-            
-            // Replace code and is_active in serialized data
-            formData = formData.replace(/code=[^&]*/, 'code=' + encodeURIComponent(code));
-            formData = formData.replace(/is_active=[^&]*/, 'is_active=' + isActive);
-            if (!formData.includes('is_active=')) {
-                formData += '&is_active=' + isActive;
-            }
+                e.preventDefault();
+                
+                // Serialize form data including CSRF token
+                let formData = $('#programForm').serialize();
+                
+                // Update code to uppercase and is_active
+                const code = $('#program_code').val().toUpperCase().trim();
+                const isActive = $('#program_is_active').is(':checked') ? '1' : '0';
+                
+                // Replace code and is_active in serialized data
+                formData = formData.replace(/code=[^&]*/, 'code=' + encodeURIComponent(code));
+                formData = formData.replace(/is_active=[^&]*/, 'is_active=' + isActive);
+                if (!formData.includes('is_active=')) {
+                    formData += '&is_active=' + isActive;
+                }
 
-            $.ajax({
+                $.ajax({
                 url: '<?= base_url('school-setup/saveProgram') ?>',
                 type: 'POST',
                 data: formData,
@@ -1067,55 +1145,56 @@
                     alert(errorMsg);
                 }
             });
+            }); // Close $('#programForm').on('submit')
 
             // Delete Program
             window.deleteProgram = function(programId, programCode) {
-            if (!confirm('Are you sure you want to delete program "' + programCode + '"?\n\nThis action cannot be undone.')) {
-                return;
-            }
-
-            const formData = {};
-            const csrfTokenName = getCSRFTokenName();
-            const csrfToken = getCSRFToken() || $('input[name="' + csrfTokenName + '"]').val();
-            formData[csrfTokenName] = csrfToken;
-
-            $.ajax({
-                url: '<?= base_url('school-setup/deleteProgram') ?>/' + programId,
-                type: 'POST',
-                data: formData,
-                dataType: 'json',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                success: function(response) {
-                    // Update CSRF token if provided
-                    if (response.csrf_hash) {
-                        const csrfTokenName = getCSRFTokenName();
-                        $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
-                        $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
-                    }
-                    
-                    if (response.success) {
-                        alert(response.message);
-                        location.reload();
-                    } else {
-                        alert('Error: ' + response.message);
-                    }
-                },
-                error: function(xhr) {
-                    let errorMsg = 'An error occurred. Please try again.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMsg = xhr.responseJSON.message;
-                    } else if (xhr.status === 403) {
-                        errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                    } else if (xhr.responseText) {
-                        if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
-                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                        }
-                    }
-                    alert(errorMsg);
+                if (!confirm('Are you sure you want to delete program "' + programCode + '"?\n\nThis action cannot be undone.')) {
+                    return;
                 }
-            });
+
+                const formData = {};
+                const csrfTokenName = getCSRFTokenName();
+                const csrfToken = getCSRFToken() || $('input[name="' + csrfTokenName + '"]').val();
+                formData[csrfTokenName] = csrfToken;
+
+                $.ajax({
+                    url: '<?= base_url('school-setup/deleteProgram') ?>/' + programId,
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        // Update CSRF token if provided
+                        if (response.csrf_hash) {
+                            const csrfTokenName = getCSRFTokenName();
+                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
+                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                        }
+                        
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'An error occurred. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.status === 403) {
+                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                        } else if (xhr.responseText) {
+                            if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
+                                errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                            }
+                        }
+                        alert(errorMsg);
+                    }
+                });
             };
 
 
