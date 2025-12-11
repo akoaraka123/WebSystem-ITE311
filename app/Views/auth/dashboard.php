@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="<?= csrf_token() ?>" content="<?= csrf_hash() ?>">
     <title>Dashboard - Learning Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -4172,6 +4173,43 @@ $(document).ready(function() {
                                 Enrolled Students by Program
                             </h3>
                             
+                            <!-- Search Bar -->
+                            <div id="enrolledStudentsSearchContainer" class="mb-4 bg-white rounded-lg shadow p-4 hidden">
+                                <label class="block mb-2 text-sm font-medium text-gray-700">Search Students</label>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <input type="text" 
+                                               id="searchEnrolledStudentsInput" 
+                                               placeholder="Type at least 2 letters to search by student name, email, or program..." 
+                                               class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                               autocomplete="off"
+                                               oninput="if(typeof window.filterEnrolledStudents === 'function') { window.filterEnrolledStudents(); }"
+                                               onkeyup="if(typeof window.filterEnrolledStudents === 'function') { window.filterEnrolledStudents(); }"
+                                               onkeypress="if(event.key === 'Enter') { if(typeof window.filterEnrolledStudents === 'function') { window.filterEnrolledStudents(); } }">
+                                        <i class="absolute left-3 top-3 text-gray-400 fas fa-search"></i>
+                                    </div>
+                                    <button type="button" 
+                                            onclick="if(typeof window.filterEnrolledStudents === 'function') { window.filterEnrolledStudents(); }"
+                                            class="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2">
+                                        <i class="fas fa-search"></i>
+                                        <span>Search</span>
+                                    </button>
+                                </div>
+                                <!-- No results message -->
+                                <div id="noEnrolledStudentsFound" class="hidden mt-4 p-4 rounded-lg border-l-4 border-orange-500 bg-orange-100 shadow-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-exclamation-triangle text-orange-500 text-xl mr-3"></i>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-orange-800">No students found matching your search.</p>
+                                            <p class="text-xs text-orange-700 mt-1">Try adjusting your search terms.</p>
+                                        </div>
+                                        <button type="button" onclick="document.getElementById('searchEnrolledStudentsInput').value=''; filterEnrolledStudents();" class="ml-auto text-orange-600 hover:text-orange-800 p-2">
+                                            <i class="fas fa-times text-xl"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Loading State -->
                             <div id="enrolledStudentsByProgramLoading" class="text-center py-8">
                                 <i class="fas fa-spinner fa-spin text-indigo-500 text-2xl"></i>
@@ -4205,6 +4243,16 @@ $(document).ready(function() {
             document.getElementById('enrolledStudentsByProgramContent').classList.add('hidden');
             document.getElementById('enrolledStudentsByProgramError').classList.add('hidden');
             
+            // Clear search input
+            const searchInput = document.getElementById('searchEnrolledStudentsInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            const searchContainer = document.getElementById('enrolledStudentsSearchContainer');
+            if (searchContainer) {
+                searchContainer.classList.add('hidden');
+            }
+            
             // Fetch enrolled students
             fetch('<?= base_url('enrollment/getEnrolledStudentsByProgram') ?>', {
                 method: 'GET',
@@ -4219,6 +4267,8 @@ $(document).ready(function() {
                 if (data.success && data.data) {
                     renderEnrolledStudentsByProgram(data.data);
                     document.getElementById('enrolledStudentsByProgramContent').classList.remove('hidden');
+                    // Show search bar when content is loaded
+                    document.getElementById('enrolledStudentsSearchContainer').classList.remove('hidden');
                 } else {
                     document.getElementById('enrolledStudentsByProgramError').classList.remove('hidden');
                     document.getElementById('enrolledStudentsByProgramError').textContent = data.message || 'No enrolled students found.';
@@ -4234,7 +4284,107 @@ $(document).ready(function() {
         
         function closeEnrolledStudentsByProgramModal() {
             document.getElementById('enrolledStudentsByProgramModal').classList.add('hidden');
+            // Clear search when closing
+            const searchInput = document.getElementById('searchEnrolledStudentsInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            filterEnrolledStudents();
         }
+        
+        // Filter enrolled students - requires at least 2 letters
+        window.filterEnrolledStudents = function() {
+            try {
+                const searchInputEl = document.getElementById('searchEnrolledStudentsInput');
+                if (!searchInputEl) {
+                    return;
+                }
+                
+                const searchTerm = searchInputEl.value ? searchInputEl.value.toLowerCase().trim() : '';
+                const programItems = document.querySelectorAll('.enrolled-program-item');
+                const noResultsMsg = document.getElementById('noEnrolledStudentsFound');
+                
+                // If search term is less than 2 letters, show all items
+                if (searchTerm.length < 2) {
+                    programItems.forEach(programItem => {
+                        programItem.style.display = 'block';
+                        const studentItems = programItem.querySelectorAll('.enrolled-student-item');
+                        studentItems.forEach(student => {
+                            student.style.display = 'flex';
+                        });
+                        // Update student count
+                        const visibleStudents = programItem.querySelectorAll('.enrolled-student-item:not([style*="display: none"])');
+                        const countEl = programItem.querySelector('.program-student-count');
+                        if (countEl) {
+                            countEl.textContent = visibleStudents.length;
+                        }
+                    });
+                    
+                    // Hide no results message
+                    if (noResultsMsg) {
+                        noResultsMsg.classList.add('hidden');
+                    }
+                    return;
+                }
+                
+                // Search with at least 2 letters
+                let totalVisibleStudents = 0;
+                let hasVisiblePrograms = false;
+                
+                programItems.forEach(programItem => {
+                    const programCode = programItem.getAttribute('data-program-code') || '';
+                    const programName = programItem.getAttribute('data-program-name') || '';
+                    const studentItems = programItem.querySelectorAll('.enrolled-student-item');
+                    let visibleStudentsInProgram = 0;
+                    
+                    // Check if program matches search
+                    const programMatches = programCode.includes(searchTerm) || programName.includes(searchTerm);
+                    
+                    // Filter students
+                    studentItems.forEach(student => {
+                        const studentName = student.getAttribute('data-student-name') || '';
+                        const studentEmail = student.getAttribute('data-student-email') || '';
+                        
+                        const studentMatches = studentName.includes(searchTerm) || studentEmail.includes(searchTerm);
+                        const shouldShow = programMatches || studentMatches;
+                        
+                        if (shouldShow) {
+                            student.style.display = 'flex';
+                            visibleStudentsInProgram++;
+                            totalVisibleStudents++;
+                        } else {
+                            student.style.display = 'none';
+                        }
+                    });
+                    
+                    // Show/hide program based on visible students
+                    if (visibleStudentsInProgram > 0) {
+                        programItem.style.display = 'block';
+                        hasVisiblePrograms = true;
+                        // Update student count
+                        const countEl = programItem.querySelector('.program-student-count');
+                        if (countEl) {
+                            countEl.textContent = visibleStudentsInProgram;
+                        }
+                    } else {
+                        programItem.style.display = 'none';
+                    }
+                });
+                
+                // Show/hide no results message
+                if (noResultsMsg) {
+                    if (totalVisibleStudents === 0 && searchTerm.length >= 2) {
+                        noResultsMsg.classList.remove('hidden');
+                        noResultsMsg.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important;';
+                    } else {
+                        noResultsMsg.classList.add('hidden');
+                        noResultsMsg.style.cssText = 'display: none !important;';
+                    }
+                }
+            } catch (error) {
+                console.error('Error in filterEnrolledStudents:', error);
+            }
+        };
         
         function renderEnrolledStudentsByProgram(groupedData) {
             const container = document.getElementById('enrolledStudentsByProgramList');
@@ -4253,7 +4403,9 @@ $(document).ready(function() {
                 const studentCount = students.length;
                 
                 html += `
-                    <div class="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                    <div class="border border-gray-200 rounded-lg shadow-sm overflow-hidden enrolled-program-item" 
+                         data-program-code="${programCode.toLowerCase()}" 
+                         data-program-name="${programName.toLowerCase()}">
                         <div class="bg-indigo-50 px-4 py-3 border-b border-indigo-200">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -4263,7 +4415,7 @@ $(document).ready(function() {
                                     </h4>
                                     <p class="text-sm text-indigo-700 mt-1">
                                         <i class="fas fa-user-graduate mr-1"></i>
-                                        ${studentCount} ${studentCount === 1 ? 'Student' : 'Students'} Enrolled
+                                        <span class="program-student-count">${studentCount}</span> ${studentCount === 1 ? 'Student' : 'Students'} Enrolled
                                     </p>
                                 </div>
                             </div>
@@ -4271,7 +4423,9 @@ $(document).ready(function() {
                         <div class="bg-white p-4">
                             <div class="space-y-2">
                                 ${students.map((student, index) => `
-                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors enrolled-student-item"
+                                         data-student-name="${(student.student_name || '').toLowerCase()}"
+                                         data-student-email="${(student.student_email || '').toLowerCase()}">
                                         <div class="flex items-center flex-1">
                                             <div class="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
                                                 <span class="text-indigo-600 font-semibold text-sm">${index + 1}</span>
@@ -4318,22 +4472,55 @@ $(document).ready(function() {
                 return;
             }
             
+            // Get CSRF token from meta tag or form input
+            const csrfTokenName = '<?= csrf_token() ?>';
+            let csrfToken = '';
+            
+            // Try to get from meta tag first
+            const csrfMeta = document.querySelector('meta[name="' + csrfTokenName + '"]');
+            if (csrfMeta) {
+                csrfToken = csrfMeta.getAttribute('content');
+            } else {
+                // Try to get from form input
+                const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+                if (csrfInput) {
+                    csrfToken = csrfInput.value;
+                } else {
+                    // Fallback to PHP value
+                    csrfToken = '<?= csrf_hash() ?>';
+                }
+            }
+            
             const data = {
                 user_id: userId,
-                program_id: programId,
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                program_id: programId
             };
+            
+            // Add CSRF token to data
+            data[csrfTokenName] = csrfToken;
             
             fetch('<?= base_url('enrollment/removeStudentFromProgram') ?>', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
                 },
                 body: JSON.stringify(data)
             })
             .then(response => response.json())
             .then(data => {
+                // Update CSRF token if provided
+                if (data.csrf_hash) {
+                    if (csrfMeta) {
+                        csrfMeta.setAttribute('content', data.csrf_hash);
+                    }
+                    const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+                    if (csrfInput) {
+                        csrfInput.value = data.csrf_hash;
+                    }
+                }
+                
                 if (data.success) {
                     alert('✅ SUCCESS: ' + data.message);
                     // Reload the modal to refresh the list
@@ -4424,23 +4611,56 @@ $(document).ready(function() {
                 return;
             }
             
+            // Get CSRF token from meta tag or form input
+            const csrfTokenName = '<?= csrf_token() ?>';
+            let csrfToken = '';
+            
+            // Try to get from meta tag first
+            const csrfMeta = document.querySelector('meta[name="' + csrfTokenName + '"]');
+            if (csrfMeta) {
+                csrfToken = csrfMeta.getAttribute('content');
+            } else {
+                // Try to get from form input
+                const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+                if (csrfInput) {
+                    csrfToken = csrfInput.value;
+                } else {
+                    // Fallback to PHP value
+                    csrfToken = '<?= csrf_hash() ?>';
+                }
+            }
+            
             const data = {
                 user_id: userId,
                 current_program_id: currentProgramId,
-                new_program_id: newProgramId,
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                new_program_id: newProgramId
             };
+            
+            // Add CSRF token to data
+            data[csrfTokenName] = csrfToken;
             
             fetch('<?= base_url('enrollment/forwardStudentToProgram') ?>', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
                 },
                 body: JSON.stringify(data)
             })
             .then(response => response.json())
             .then(data => {
+                // Update CSRF token if provided
+                if (data.csrf_hash) {
+                    if (csrfMeta) {
+                        csrfMeta.setAttribute('content', data.csrf_hash);
+                    }
+                    const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+                    if (csrfInput) {
+                        csrfInput.value = data.csrf_hash;
+                    }
+                }
+                
                 // Close forward modal
                 document.querySelector('.fixed.inset-0.z-50').remove();
                 

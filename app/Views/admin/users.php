@@ -447,6 +447,43 @@
             </div>
         <?php endif; ?>
 
+        <!-- Search Bar -->
+        <div class="page-header" style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #333; font-size: 14px;">Search Users</label>
+            <div style="display: flex; gap: 10px;">
+                <div style="position: relative; flex: 1;">
+                    <input type="text" 
+                           id="searchUsersInput" 
+                           placeholder="Type at least 2 letters to search by name, email, or role..." 
+                           style="width: 100%; padding: 12px 12px 12px 40px; border: 2px solid #999; border-radius: 3px; font-size: 14px;"
+                           autocomplete="off"
+                           oninput="if(typeof window.filterUsers === 'function') { window.filterUsers(); }"
+                           onkeyup="if(typeof window.filterUsers === 'function') { window.filterUsers(); }"
+                           onkeypress="if(event.key === 'Enter') { if(typeof window.filterUsers === 'function') { window.filterUsers(); } }">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                </div>
+                <button type="button" 
+                        onclick="if(typeof window.filterUsers === 'function') { window.filterUsers(); }"
+                        style="padding: 12px 24px; background: #1976d2; color: white; border: 2px solid #1565c0; border-radius: 3px; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                </button>
+            </div>
+            <!-- No results message -->
+            <div id="noUsersFound" class="hidden" style="margin-top: 15px; padding: 15px; border-radius: 3px; border-left: 4px solid #ff9800; background: #fff3cd; border: 2px solid #ffc107;">
+                <div style="display: flex; align-items: center;">
+                    <i class="fas fa-exclamation-triangle" style="color: #ff9800; font-size: 20px; margin-right: 12px;"></i>
+                    <div style="flex: 1;">
+                        <p style="font-size: 14px; font-weight: 600; color: #856404; margin: 0;">No users found matching your search.</p>
+                        <p style="font-size: 12px; color: #856404; margin: 5px 0 0 0;">Try adjusting your search terms.</p>
+                    </div>
+                    <button type="button" onclick="document.getElementById('searchUsersInput').value=''; filterUsers();" style="margin-left: auto; color: #856404; padding: 5px 10px; border: none; background: transparent; cursor: pointer; font-size: 18px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Users Table -->
         <div class="users-table">
             <table>
@@ -464,7 +501,11 @@
                 <tbody>
                     <?php if (!empty($users)): ?>
                         <?php foreach ($users as $u): ?>
-                            <tr>
+                            <tr class="user-row" 
+                                data-user-name="<?= strtolower(esc($u['name'])) ?>"
+                                data-user-email="<?= strtolower(esc($u['email'])) ?>"
+                                data-user-role="<?= strtolower(esc($u['role'])) ?>"
+                                data-user-id="<?= esc($u['id']) ?>">
                                 <td><?= esc($u['id']) ?></td>
                                 <td><?= esc($u['name']) ?></td>
                                 <td><?= esc($u['email']) ?></td>
@@ -543,7 +584,12 @@
                         </thead>
                         <tbody>
                             <?php foreach ($deletedUsers as $du): ?>
-                                <tr style="background: #fff9e6;">
+                                <tr class="deleted-user-row" 
+                                    style="background: #fff9e6;"
+                                    data-user-name="<?= strtolower(esc($du['name'])) ?>"
+                                    data-user-email="<?= strtolower(esc($du['email'])) ?>"
+                                    data-user-role="<?= strtolower(esc($du['role'])) ?>"
+                                    data-user-id="<?= esc($du['id']) ?>">
                                     <td><?= esc($du['id']) ?></td>
                                     <td><?= esc($du['name']) ?></td>
                                     <td><?= esc($du['email']) ?></td>
@@ -818,6 +864,67 @@
                 closeRecoverModal();
             }
         }
+
+        // Filter users - requires at least 2 letters
+        window.filterUsers = function() {
+            try {
+                const searchInputEl = document.getElementById('searchUsersInput');
+                if (!searchInputEl) {
+                    return;
+                }
+                
+                const searchTerm = searchInputEl.value ? searchInputEl.value.toLowerCase().trim() : '';
+                const userRows = document.querySelectorAll('.user-row');
+                const noResultsMsg = document.getElementById('noUsersFound');
+                
+                // If search term is less than 2 letters, show all items
+                if (searchTerm.length < 2) {
+                    userRows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    
+                    // Hide no results message
+                    if (noResultsMsg) {
+                        noResultsMsg.classList.add('hidden');
+                        noResultsMsg.style.display = 'none';
+                    }
+                    return;
+                }
+                
+                // Search with at least 2 letters
+                let visibleCount = 0;
+                
+                userRows.forEach(row => {
+                    const userName = row.getAttribute('data-user-name') || '';
+                    const userEmail = row.getAttribute('data-user-email') || '';
+                    const userRole = row.getAttribute('data-user-role') || '';
+                    
+                    const matches = userName.includes(searchTerm) || 
+                                  userEmail.includes(searchTerm) || 
+                                  userRole.includes(searchTerm);
+                    
+                    if (matches) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Show/hide no results message
+                if (noResultsMsg) {
+                    if (visibleCount === 0 && searchTerm.length >= 2) {
+                        noResultsMsg.classList.remove('hidden');
+                        noResultsMsg.style.display = 'block';
+                    } else {
+                        noResultsMsg.classList.add('hidden');
+                        noResultsMsg.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error in filterUsers:', error);
+            }
+        };
     </script>
                 </div>
             </main>
