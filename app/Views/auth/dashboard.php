@@ -573,11 +573,20 @@
                             </div>
 
                             <?php if (!empty($enrolled)): ?>
-                                <!-- No courses found message (hidden by default) -->
-                                <div id="noCoursesFoundStudent" class="mb-6 p-8 text-center bg-white rounded-lg shadow border-2 border-gray-200 hidden" style="display: none;">
-                                    <i class="mx-auto text-5xl text-gray-300 fas fa-search"></i>
-                                    <h3 class="mt-4 text-lg font-medium text-gray-900">No courses found</h3>
-                                    <p class="mt-2 text-sm text-gray-500">No courses found matching your search.</p>
+                                <!-- No courses found message - Flash Message Style (hidden by default) -->
+                                <div id="noCoursesFoundStudent" class="mb-6 p-4 rounded-lg border-l-4 border-orange-500 bg-orange-100 shadow-lg hidden" style="display: none;">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-exclamation-circle text-3xl text-orange-600"></i>
+                                        </div>
+                                        <div class="ml-4">
+                                            <h3 class="text-xl font-bold text-orange-800">⚠️ No courses found</h3>
+                                            <p class="text-base text-orange-700 mt-1">No courses found matching your search. Try a different keyword.</p>
+                                        </div>
+                                        <button type="button" onclick="this.parentElement.parentElement.style.display='none'; document.getElementById('searchCourseInput').value=''; filterCourses();" class="ml-auto text-orange-600 hover:text-orange-800 p-2">
+                                            <i class="fas fa-times text-xl"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="enrolledCoursesContainer">
@@ -632,58 +641,51 @@
                                                         <?php 
                                                         $startTime = $enrollment['schedule_time_start'] ?? $enrollment['schedule_time'] ?? '';
                                                         $endTime = $enrollment['schedule_time_end'] ?? '';
-                                                        if ($startTime || !empty($enrollment['schedule_date'])): 
+                                                        $scheduleDate = $enrollment['schedule_date'] ?? '';
+                                                        if ($startTime || $endTime || $scheduleDate): 
                                                         ?>
                                                         <div class="flex items-center text-xs text-gray-700">
                                                             <i class="fas fa-clock mr-2 text-gray-500 w-3"></i>
                                                             <span class="font-medium">Schedule:</span>
                                                             <span class="ml-2">
-                                                                <?php if ($startTime): ?>
+                                                                <?php if ($startTime && $endTime): ?>
                                                                     <?php 
                                                                     $startFormatted = date('g:i A', strtotime($startTime));
-                                                                    if ($endTime) {
-                                                                        $endFormatted = date('g:i A', strtotime($endTime));
-                                                                        echo esc($startFormatted) . ' - ' . esc($endFormatted);
-                                                                    } else {
-                                                                        echo esc($startFormatted);
-                                                                    }
+                                                                    $endFormatted = date('g:i A', strtotime($endTime));
+                                                                    echo esc($startFormatted) . ' - ' . esc($endFormatted);
                                                                     ?>
+                                                                <?php elseif ($startTime): ?>
+                                                                    <?= date('g:i A', strtotime($startTime)) ?>
                                                                 <?php endif; ?>
-                                                                <?php if (!empty($enrollment['schedule_date'])): ?>
-                                                                    <?php if ($startTime): ?>, <?php endif; ?>
-                                                                    <?= date('M d, Y', strtotime($enrollment['schedule_date'])) ?>
+                                                                <?php if ($scheduleDate): ?>
+                                                                    <?php if ($startTime || $endTime): ?>, <?php endif; ?>
+                                                                    <?= date('M d, Y', strtotime($scheduleDate)) ?>
                                                                 <?php endif; ?>
                                                             </span>
                                                         </div>
                                                         <?php endif; ?>
 
                                                         <?php 
-                                                        // Calculate exact duration from start and end times
-                                                        $startTime = $enrollment['schedule_time_start'] ?? $enrollment['schedule_time'] ?? '';
-                                                        $endTime = $enrollment['schedule_time_end'] ?? '';
-                                                        if ($startTime && $endTime): 
-                                                            $startTimestamp = strtotime($startTime);
-                                                            $endTimestamp = strtotime($endTime);
-                                                            $diffMinutes = round(($endTimestamp - $startTimestamp) / 60);
-                                                            $hours = floor($diffMinutes / 60);
-                                                            $minutes = $diffMinutes % 60;
+                                                        $dateStart = $enrollment['schedule_date_start'] ?? '';
+                                                        $dateEnd = $enrollment['schedule_date_end'] ?? '';
+                                                        if ($dateStart || $dateEnd): 
                                                         ?>
                                                         <div class="flex items-center text-xs text-gray-700">
-                                                            <i class="fas fa-hourglass-half mr-2 text-gray-500 w-3"></i>
-                                                            <span class="font-medium">Duration:</span>
+                                                            <i class="fas fa-calendar-check mr-2 text-gray-500 w-3"></i>
+                                                            <span class="font-medium">Schedule Period:</span>
                                                             <span class="ml-2">
-                                                                <?php 
-                                                                if ($hours > 0 && $minutes > 0) {
-                                                                    echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '') . ' ' . esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
-                                                                } else if ($hours > 0) {
-                                                                    echo esc($hours) . ' hour' . ($hours > 1 ? 's' : '');
-                                                                } else {
-                                                                    echo esc($minutes) . ' minute' . ($minutes > 1 ? 's' : '');
-                                                                }
-                                                                ?>
+                                                                <?php if ($dateStart && $dateEnd): ?>
+                                                                    <?= date('M d, Y', strtotime($dateStart)) ?> - <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                                <?php elseif ($dateStart): ?>
+                                                                    Start: <?= date('M d, Y', strtotime($dateStart)) ?>
+                                                                <?php elseif ($dateEnd): ?>
+                                                                    End: <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                                <?php endif; ?>
                                                             </span>
                                                         </div>
-                                                        <?php elseif (!empty($enrollment['duration'])): ?>
+                                                        <?php endif; ?>
+                                                        
+                                                        <?php if (!empty($enrollment['duration'])): ?>
                                                         <div class="flex items-center text-xs text-gray-700">
                                                             <i class="fas fa-hourglass-half mr-2 text-gray-500 w-3"></i>
                                                             <span class="font-medium">Duration:</span>
@@ -743,6 +745,17 @@
                                                                 $materialsWithTerm[(int)$materialTermId][] = $material;
                                                             }
                                                         }
+                                                        
+                                                        // Create mapping: hardcoded term IDs (1,2,3) to database term IDs by term_order
+                                                        $termOrderMapping = [];
+                                                        foreach ($terms as $term) {
+                                                            $termOrder = isset($term['term_order']) ? (int)$term['term_order'] : null;
+                                                            $termDbId = isset($term['id']) ? (int)$term['id'] : null;
+                                                            if ($termOrder !== null && $termDbId !== null) {
+                                                                // Map hardcoded term_id (1,2,3) to database term_id by order
+                                                                $termOrderMapping[$termOrder] = $termDbId;
+                                                            }
+                                                        }
                                                         ?>
                                                         
                                                         <?php foreach ($terms as $index => $term): ?>
@@ -750,11 +763,22 @@
                                                             $termId = 'term-' . $enrollment['course_id'] . '-' . ($term['id'] ?? $term['term_order']);
                                                             $termName = strtoupper($term['term_name']);
                                                             $termDbId = isset($term['id']) ? (int)$term['id'] : null;
+                                                            $termOrder = isset($term['term_order']) ? (int)$term['term_order'] : null;
                                                             
                                                             // Get materials for this term
                                                             $termMaterials = [];
                                                             if ($termDbId !== null) {
+                                                                // First, try to get materials by database term_id
                                                                 $termMaterials = $materialsWithTerm[$termDbId] ?? [];
+                                                                
+                                                                // Fallback: If no materials found and term_order matches hardcoded IDs (1,2,3),
+                                                                // try to get materials with hardcoded term_id
+                                                                if (empty($termMaterials) && $termOrder !== null && $termOrder >= 1 && $termOrder <= 3) {
+                                                                    $hardcodedTermId = $termOrder; // 1, 2, or 3
+                                                                    if (isset($materialsWithTerm[$hardcodedTermId])) {
+                                                                        $termMaterials = $materialsWithTerm[$hardcodedTermId];
+                                                                    }
+                                                                }
                                                             }
                                                             
                                                             // Also include materials without term_id in the first term (PRELIM) as fallback
@@ -1100,11 +1124,20 @@
                 </div>
 
                 <?php if (!empty($myCourses)): ?>
-                    <!-- No courses found message (hidden by default) -->
-                    <div id="noCoursesFoundTeacher" class="mb-6 p-8 text-center bg-white rounded-lg shadow border-2 border-gray-200 hidden" style="display: none;">
-                        <i class="mx-auto text-5xl text-gray-300 fas fa-search"></i>
-                        <h3 class="mt-4 text-lg font-medium text-gray-900">No courses found</h3>
-                        <p class="mt-2 text-sm text-gray-500">No courses found matching your search.</p>
+                    <!-- No courses found message - Flash Message Style (hidden by default) -->
+                    <div id="noCoursesFoundTeacher" class="mb-6 p-4 rounded-lg border-l-4 border-orange-500 bg-orange-100 shadow-lg hidden" style="display: none;">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-3xl text-orange-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-xl font-bold text-orange-800">⚠️ No courses found</h3>
+                                <p class="text-base text-orange-700 mt-1">No courses found matching your search. Try a different keyword.</p>
+                            </div>
+                            <button type="button" onclick="this.parentElement.parentElement.style.display='none'; document.getElementById('searchCourseInputTeacher').value=''; filterCoursesTeacher();" class="ml-auto text-orange-600 hover:text-orange-800 p-2">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="teacherCoursesContainer">
@@ -1231,6 +1264,26 @@
                                                     <span class="font-medium">Date:</span>
                                                     <span class="ml-1"><?= date('M j, Y', strtotime($course['schedule_date'])) ?></span>
                                                 </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php 
+                                            $dateStart = $course['schedule_date_start'] ?? '';
+                                            $dateEnd = $course['schedule_date_end'] ?? '';
+                                            if ($dateStart || $dateEnd): 
+                                            ?>
+                                            <div class="flex items-center text-gray-700">
+                                                <i class="mr-2 w-4 text-gray-500 fas fa-calendar-check"></i>
+                                                <span class="font-medium">Schedule Period:</span>
+                                                <span class="ml-1">
+                                                    <?php if ($dateStart && $dateEnd): ?>
+                                                        <?= date('M d, Y', strtotime($dateStart)) ?> - <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                    <?php elseif ($dateStart): ?>
+                                                        Start: <?= date('M d, Y', strtotime($dateStart)) ?>
+                                                    <?php elseif ($dateEnd): ?>
+                                                        End: <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </div>
                                             <?php endif; ?>
                                             
                                             <?php if (!empty($course['created_at'])): ?>
@@ -1573,11 +1626,20 @@
                     </div>
                 </div>
 
-                <!-- No courses found message (hidden by default) -->
-                <div id="noCoursesFoundAdmin" class="mb-6 p-8 text-center bg-white rounded-lg shadow border-2 border-gray-200 hidden" style="display: none;">
-                    <i class="mx-auto text-5xl text-gray-300 fas fa-search"></i>
-                    <h3 class="mt-4 text-lg font-medium text-gray-900">No courses found</h3>
-                    <p class="mt-2 text-sm text-gray-500">No courses found matching your search.</p>
+                <!-- No courses found message - Flash Message Style (hidden by default) -->
+                <div id="noCoursesFoundAdmin" class="mb-6 p-4 rounded-lg border-l-4 border-orange-500 bg-orange-100 shadow-lg hidden" style="display: none;">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-3xl text-orange-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-xl font-bold text-orange-800">⚠️ No courses found</h3>
+                            <p class="text-base text-orange-700 mt-1">No courses found matching your search. Try a different keyword.</p>
+                        </div>
+                        <button type="button" onclick="this.parentElement.parentElement.style.display='none'; document.getElementById('searchCourseInputAdmin').value=''; filterCoursesAdmin();" class="ml-auto text-orange-600 hover:text-orange-800 p-2">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <?php foreach ($groupedCoursesByProgram as $programKey => $programData): ?>
@@ -1643,6 +1705,26 @@
                                                         <span class="ml-1"><?= esc($course['teacher_name']) ?></span>
                                                     </div>
                                                 <?php endif; ?>
+                                                
+                                                <?php 
+                                                $dateStart = $course['schedule_date_start'] ?? '';
+                                                $dateEnd = $course['schedule_date_end'] ?? '';
+                                                if ($dateStart || $dateEnd): 
+                                                ?>
+                                                <div class="flex items-center text-gray-700">
+                                                    <i class="mr-2 w-4 text-gray-500 fas fa-calendar-check"></i>
+                                                    <span class="font-medium">Schedule Period:</span>
+                                                    <span class="ml-1">
+                                                        <?php if ($dateStart && $dateEnd): ?>
+                                                            <?= date('M d, Y', strtotime($dateStart)) ?> - <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                        <?php elseif ($dateStart): ?>
+                                                            Start: <?= date('M d, Y', strtotime($dateStart)) ?>
+                                                        <?php elseif ($dateEnd): ?>
+                                                            End: <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                         
@@ -1666,6 +1748,21 @@
                         </div>
                     </div>
                 <?php endforeach; ?>
+            </div>
+            <?php else: ?>
+            <!-- Empty state when no courses exist in database -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Courses by Program</h3>
+                </div>
+                <div class="p-8 text-center bg-white rounded-lg shadow border-2 border-gray-200">
+                    <i class="mx-auto text-5xl text-gray-300 fas fa-graduation-cap"></i>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900">No Courses Available</h3>
+                    <p class="mt-2 text-sm text-gray-500">No courses have been created yet. Create a new course to get started.</p>
+                    <a href="<?= base_url('courses/create') ?>" class="inline-flex items-center px-4 py-2 mt-4 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">
+                        <i class="fas fa-plus mr-2"></i> Create Course
+                    </a>
+                </div>
             </div>
             <?php endif; ?>
 
@@ -1766,15 +1863,7 @@
             const courses = document.querySelectorAll('.course-item-teacher');
             let visibleCount = 0;
 
-            console.log('🔍 filterCoursesTeacher called', {
-                searchTerm: searchTerm,
-                coursesFound: courses.length,
-                schoolYear: schoolYear,
-                semester: semester
-            });
-
             if (courses.length === 0) {
-                console.warn('⚠️ No courses found with class .course-item-teacher');
                 return;
             }
 
@@ -1832,16 +1921,6 @@
                 
                 const shouldShow = matchSchoolYear && matchSemester && matchSearch;
                 
-                console.log(`Course ${index + 1}: "${titleText}"`, {
-                    searchTerm: searchTerm,
-                    titleText: titleText,
-                    courseCode: courseCode.toLowerCase(),
-                    matchSearch: matchSearch,
-                    matchSchoolYear: matchSchoolYear,
-                    matchSemester: matchSemester,
-                    shouldShow: shouldShow
-                });
-                
                 if (shouldShow) {
                     // Show course - remove all hiding styles and classes
                     course.style.display = 'block';
@@ -1875,45 +1954,21 @@
             const noCoursesFoundMsg = document.getElementById('noCoursesFoundTeacher');
             const shouldShowMessage = visibleCount === 0 && searchTerm && searchTerm.length > 0;
             
-            console.log('🔍 Teacher message display check:', {
-                messageElement: noCoursesFoundMsg ? 'FOUND' : 'NOT FOUND',
-                visibleCount: visibleCount,
-                searchTerm: searchTerm,
-                searchTermLength: searchTerm.length,
-                shouldShowMessage: shouldShowMessage
-            });
-            
             if (noCoursesFoundMsg) {
                 if (shouldShowMessage) {
-                    // Show message - use multiple methods to ensure visibility
+                    // Show message - use cssText to force all styles at once
                     noCoursesFoundMsg.removeAttribute('hidden');
-                    noCoursesFoundMsg.removeAttribute('style');
                     noCoursesFoundMsg.classList.remove('hidden');
-                    noCoursesFoundMsg.style.display = 'block';
-                    noCoursesFoundMsg.style.visibility = 'visible';
-                    noCoursesFoundMsg.style.opacity = '1';
-                    noCoursesFoundMsg.style.position = 'relative';
-                    noCoursesFoundMsg.style.zIndex = '10';
+                    noCoursesFoundMsg.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; position: relative !important; z-index: 100 !important; margin-bottom: 1.5rem !important;';
                     // Force a reflow to ensure the browser applies the styles
                     noCoursesFoundMsg.offsetHeight;
-                    console.log('✅ MESSAGE SHOWN - Teacher');
                 } else {
                     // Hide message
                     noCoursesFoundMsg.setAttribute('hidden', 'hidden');
                     noCoursesFoundMsg.classList.add('hidden');
-                    noCoursesFoundMsg.style.display = 'none';
-                    noCoursesFoundMsg.style.visibility = 'hidden';
-                    noCoursesFoundMsg.style.opacity = '0';
+                    noCoursesFoundMsg.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
                 }
-            } else {
-                console.error('❌ noCoursesFoundTeacher element NOT FOUND in DOM');
             }
-            
-            console.log('✅ Filter complete', { 
-                visibleCount: visibleCount, 
-                totalCourses: courses.length,
-                searchTerm: searchTerm
-            });
         } catch (error) {
             console.error('❌ Error in filterCoursesTeacher:', error);
         }
@@ -1927,11 +1982,6 @@
             const searchTerm = searchInputEl ? searchInputEl.value.toLowerCase().trim() : '';
             const courses = document.querySelectorAll('.course-item-admin');
             let visibleCount = 0;
-
-            console.log('🔍 filterCoursesAdmin called', {
-                searchTerm: searchTerm,
-                coursesFound: courses.length
-            });
 
             // If no courses at all and there's a search term, show "no courses found" message
             if (courses.length === 0) {
@@ -2055,39 +2105,40 @@
             const noCoursesFoundMsg = document.getElementById('noCoursesFoundAdmin');
             const shouldShowMessage = (totalVisibleCoursesInAllSections === 0 || visibleCount === 0) && searchTerm && searchTerm.length > 0;
             
-            console.log('🔍 Message display check:', {
-                messageElement: noCoursesFoundMsg ? 'FOUND' : 'NOT FOUND',
-                totalVisibleCoursesInAllSections: totalVisibleCoursesInAllSections,
-                visibleCount: visibleCount,
-                searchTerm: searchTerm,
-                searchTermLength: searchTerm.length,
-                shouldShowMessage: shouldShowMessage
-            });
-            
             if (noCoursesFoundMsg) {
                 if (shouldShowMessage) {
-                    // Show message - use multiple methods to ensure visibility
+                    // Show message - use cssText to force all styles at once
                     noCoursesFoundMsg.removeAttribute('hidden');
-                    noCoursesFoundMsg.removeAttribute('style');
                     noCoursesFoundMsg.classList.remove('hidden');
-                    noCoursesFoundMsg.style.display = 'block';
-                    noCoursesFoundMsg.style.visibility = 'visible';
-                    noCoursesFoundMsg.style.opacity = '1';
-                    noCoursesFoundMsg.style.position = 'relative';
-                    noCoursesFoundMsg.style.zIndex = '10';
+                    noCoursesFoundMsg.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; position: relative !important; z-index: 100 !important; margin-bottom: 1.5rem !important;';
                     // Force a reflow to ensure the browser applies the styles
                     noCoursesFoundMsg.offsetHeight;
-                    console.log('✅ MESSAGE SHOWN - Admin');
                 } else {
                     // Hide message
                     noCoursesFoundMsg.setAttribute('hidden', 'hidden');
                     noCoursesFoundMsg.classList.add('hidden');
-                    noCoursesFoundMsg.style.display = 'none';
-                    noCoursesFoundMsg.style.visibility = 'hidden';
-                    noCoursesFoundMsg.style.opacity = '0';
+                    noCoursesFoundMsg.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
                 }
             } else {
-                console.error('❌ noCoursesFoundAdmin element NOT FOUND in DOM');
+                // Fallback: create the message dynamically
+                const searchContainer = document.querySelector('.mb-6.bg-white.rounded-lg.shadow.p-4');
+                if (searchContainer) {
+                    const fallbackMsg = document.createElement('div');
+                    fallbackMsg.id = 'noCoursesFoundAdminFallback';
+                    fallbackMsg.className = 'mb-6 p-4 rounded-lg border-l-4 border-yellow-500 bg-yellow-50 shadow-md';
+                    fallbackMsg.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-2xl text-yellow-500"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-yellow-800">No courses found</h3>
+                                <p class="text-sm text-yellow-700 mt-1">No courses found matching your search. Try a different keyword.</p>
+                            </div>
+                        </div>
+                    `;
+                    searchContainer.parentNode.insertBefore(fallbackMsg, searchContainer.nextSibling);
+                }
             }
         } catch (error) {
             console.error('❌ Error in filterCoursesAdmin:', error);
@@ -2095,8 +2146,6 @@
     };
     
     // Make sure functions are available immediately
-    console.log('filterCoursesTeacher function defined:', typeof window.filterCoursesTeacher);
-    console.log('filterCoursesAdmin function defined:', typeof window.filterCoursesAdmin);
 $(document).ready(function() {
     // Toggle user dropdown
     $('#user-menu-button').click(function(e) {
@@ -2226,7 +2275,6 @@ $(document).ready(function() {
             contentType: false,
             dataType: 'json',
             success: function(response) {
-                console.log('Upload response:', response);
                 
                 // Update CSRF token if provided
                 if (response.csrf_hash && csrfInput.length) {
@@ -2601,16 +2649,14 @@ $(document).ready(function() {
 
             // If no courses at all and there's a search term, show "no courses found" message
             if (courses.length === 0) {
-                const noCoursesFoundMsg = document.getElementById('noCoursesFoundAdmin');
+                const noCoursesFoundMsg = document.getElementById('noCoursesFoundStudent');
                 if (noCoursesFoundMsg) {
                     if (searchTerm) {
                         noCoursesFoundMsg.classList.remove('hidden');
-                        noCoursesFoundMsg.style.display = 'block';
-                        noCoursesFoundMsg.style.visibility = 'visible';
-                        noCoursesFoundMsg.style.opacity = '1';
+                        noCoursesFoundMsg.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important;';
                     } else {
                         noCoursesFoundMsg.classList.add('hidden');
-                        noCoursesFoundMsg.style.display = 'none';
+                        noCoursesFoundMsg.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
                     }
                 }
                 return;
@@ -2770,31 +2816,21 @@ $(document).ready(function() {
         const filterSchoolYearTeacher = document.getElementById('filterSchoolYearTeacher');
         const filterSemesterTeacher = document.getElementById('filterSemesterTeacher');
 
-        console.log('Initializing filters...', {
-            filterSchoolYear: !!filterSchoolYear,
-            filterSemester: !!filterSemester,
-            searchCourseInput: !!searchCourseInput
-        });
-
         if (filterSchoolYear) {
             filterSchoolYear.addEventListener('change', function() {
-                console.log('School year changed');
                 if (typeof filterCourses === 'function') filterCourses();
             });
         }
         if (filterSemester) {
             filterSemester.addEventListener('change', function() {
-                console.log('Semester changed');
                 if (typeof filterCourses === 'function') filterCourses();
             });
         }
         if (searchCourseInput) {
             searchCourseInput.addEventListener('input', function(e) {
-                console.log('Search input:', e.target.value);
                 if (typeof filterCourses === 'function') filterCourses();
             });
             searchCourseInput.addEventListener('keyup', function(e) {
-                console.log('Search keyup:', e.target.value);
                 if (typeof filterCourses === 'function') filterCourses();
             });
             searchCourseInput.addEventListener('paste', function() {
@@ -2816,35 +2852,25 @@ $(document).ready(function() {
         
         const searchCourseInputTeacher = document.getElementById('searchCourseInputTeacher');
         if (searchCourseInputTeacher) {
-            console.log('Attaching event listeners to teacher search input');
             
             // Immediate search on any input - no delay, triggers on every keystroke
             searchCourseInputTeacher.addEventListener('input', function(e) {
-                console.log('Teacher search input event:', e.target.value);
                 if (typeof window.filterCoursesTeacher === 'function') {
                     window.filterCoursesTeacher();
-                } else {
-                    console.error('filterCoursesTeacher function not found!');
                 }
             }, false);
             
             searchCourseInputTeacher.addEventListener('keyup', function(e) {
-                console.log('Teacher search keyup event:', e.target.value);
                 if (typeof window.filterCoursesTeacher === 'function') {
                     window.filterCoursesTeacher();
-                } else {
-                    console.error('filterCoursesTeacher function not found!');
                 }
             }, false);
             
             searchCourseInputTeacher.addEventListener('paste', function(e) {
                 // Trigger search immediately after paste
                 setTimeout(function() {
-                    console.log('Teacher search paste event:', searchCourseInputTeacher.value);
                     if (typeof window.filterCoursesTeacher === 'function') {
                         window.filterCoursesTeacher();
-                    } else {
-                        console.error('filterCoursesTeacher function not found!');
                     }
                 }, 0);
             }, false);
@@ -2892,7 +2918,6 @@ $(document).ready(function() {
                     }
                 });
                 
-                console.log('Search input listeners attached');
             }
         }
         
@@ -2932,7 +2957,6 @@ $(document).ready(function() {
                     }, 0);
                 }, false);
                 
-                console.log('Teacher search input listeners attached');
             }
         }
         
@@ -2962,7 +2986,6 @@ $(document).ready(function() {
                     }, 0);
                 }, false);
                 
-                console.log('Admin search input listeners attached');
             }
         }
         
@@ -3010,37 +3033,26 @@ $(document).ready(function() {
                 
                 // Immediate search on input - no delays, triggers on every keystroke
                 searchInput.addEventListener('input', function(e) {
-                    console.log('Teacher search INPUT event:', e.target.value);
                     if (typeof window.filterCoursesTeacher === 'function') {
                         window.filterCoursesTeacher();
-                    } else {
-                        console.error('filterCoursesTeacher function not available!');
                     }
                 }, false);
                 
                 searchInput.addEventListener('keyup', function(e) {
-                    console.log('Teacher search KEYUP event:', e.target.value);
                     if (typeof window.filterCoursesTeacher === 'function') {
                         window.filterCoursesTeacher();
-                    } else {
-                        console.error('filterCoursesTeacher function not available!');
                     }
                 }, false);
                 
                 searchInput.addEventListener('paste', function(e) {
                     setTimeout(function() {
-                        console.log('Teacher search PASTE event:', searchInput.value);
                         if (typeof window.filterCoursesTeacher === 'function') {
                             window.filterCoursesTeacher();
-                        } else {
-                            console.error('filterCoursesTeacher function not available!');
                         }
                     }, 0);
                 }, false);
                 
-                console.log('✅ Teacher search input listeners attached successfully');
             } else {
-                console.warn('⚠️ searchCourseInputTeacher element not found yet');
             }
         }
         

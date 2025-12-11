@@ -277,6 +277,26 @@
                                                     <span class="ml-2"><?= esc($course['duration']) ?> <?= $course['duration'] == 1 ? 'Hour' : 'Hours' ?></span>
                                                 </div>
                                                 <?php endif; ?>
+                                                
+                                                <?php 
+                                                $dateStart = $course['schedule_date_start'] ?? '';
+                                                $dateEnd = $course['schedule_date_end'] ?? '';
+                                                if ($dateStart || $dateEnd): 
+                                                ?>
+                                                <div class="flex items-center text-sm text-gray-700">
+                                                    <i class="fas fa-calendar-check mr-2 text-gray-500 w-4"></i>
+                                                    <span class="font-medium">Schedule Period:</span>
+                                                    <span class="ml-2">
+                                                        <?php if ($dateStart && $dateEnd): ?>
+                                                            <?= date('M d, Y', strtotime($dateStart)) ?> - <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                        <?php elseif ($dateStart): ?>
+                                                            Start: <?= date('M d, Y', strtotime($dateStart)) ?>
+                                                        <?php elseif ($dateEnd): ?>
+                                                            End: <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
 

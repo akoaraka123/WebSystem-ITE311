@@ -8,7 +8,7 @@ class CourseModel extends Model
 {
     protected $table = 'courses'; // ✅ dapat plural
     protected $primaryKey = 'id';
-    protected $allowedFields = ['title', 'description', 'teacher_id', 'program_id', 'acad_year_id', 'semester_id', 'term_id', 'course_number', 'schedule_time', 'schedule_time_start', 'schedule_time_end', 'duration', 'schedule_date', 'created_at', 'updated_at'];
+    protected $allowedFields = ['title', 'description', 'teacher_id', 'program_id', 'acad_year_id', 'semester_id', 'term_id', 'course_number', 'schedule_time', 'schedule_time_start', 'schedule_time_end', 'schedule_date_start', 'schedule_date_end', 'duration', 'schedule_date', 'created_at', 'updated_at'];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
@@ -23,6 +23,8 @@ class CourseModel extends Model
                             courses.schedule_time,
                             courses.schedule_time_start,
                             courses.schedule_time_end,
+                            courses.schedule_date_start,
+                            courses.schedule_date_end,
                             courses.schedule_date,
                             courses.course_number,
                             courses.duration,
@@ -57,6 +59,8 @@ class CourseModel extends Model
                             courses.schedule_time,
                             courses.schedule_time_start,
                             courses.schedule_time_end,
+                            courses.schedule_date_start,
+                            courses.schedule_date_end,
                             courses.schedule_date,
                             courses.course_number,
                             courses.duration,
@@ -86,6 +90,8 @@ class CourseModel extends Model
                             courses.schedule_time,
                             courses.schedule_time_start,
                             courses.schedule_time_end,
+                            courses.schedule_date_start,
+                            courses.schedule_date_end,
                             courses.schedule_date,
                             courses.course_number,
                             courses.duration,

@@ -411,6 +411,26 @@
                                             </div>
                                             <?php endif; ?>
                                             
+                                            <?php // Display Start and End Schedule Dates ?>
+                                            <?php 
+                                            $dateStart = $course['schedule_date_start'] ?? '';
+                                            $dateEnd = $course['schedule_date_end'] ?? '';
+                                            if ($dateStart || $dateEnd): 
+                                            ?>
+                                            <div class="text-muted small mb-3">
+                                                <i class="fas fa-calendar-alt me-2"></i>
+                                                <span>
+                                                    <?php if ($dateStart && $dateEnd): ?>
+                                                        <strong>Schedule:</strong> <?= date('M d, Y', strtotime($dateStart)) ?> - <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                    <?php elseif ($dateStart): ?>
+                                                        <strong>Start Date:</strong> <?= date('M d, Y', strtotime($dateStart)) ?>
+                                                    <?php elseif ($dateEnd): ?>
+                                                        <strong>End Date:</strong> <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </div>
+                                            <?php endif; ?>
+                                            
                                             <?php if (!empty($course['teacher_id'])): ?>
                                             <div class="text-muted small mb-3">
                                                 <i class="fas fa-user-tie me-2"></i>

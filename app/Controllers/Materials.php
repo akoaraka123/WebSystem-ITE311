@@ -14,9 +14,54 @@ class Materials extends Controller
     {
         helper(['form', 'url']);
         $session = session();
+        
+        // Access control: Only admin and teacher can upload materials
+        if (!$session->get('isLoggedIn')) {
+            $session->setFlashdata('error', '❌ Please log in to upload materials.');
+            return redirect()->to(base_url('login'));
+        }
+        
+        $role = $session->get('role');
+        if ($role !== 'admin' && $role !== 'teacher') {
+            $session->setFlashdata('error', '❌ Access denied. Only administrators and teachers can upload materials.');
+            return redirect()->to(base_url('dashboard'));
+        }
+        
+        // For teachers: verify they can only upload to their own courses
+        if ($role === 'teacher') {
+            $courseModel = new \App\Models\CourseModel();
+            $course = $courseModel->find($course_id);
+            if (!$course || $course['teacher_id'] != $session->get('userID')) {
+                $session->setFlashdata('error', '❌ Access denied. You can only upload materials to your own courses.');
+                return redirect()->to(base_url('dashboard'));
+            }
+        }
+        // Admins can upload to any course
+        
         $materialModel = new MaterialModel();
+        
+        // Get course to find semester_id
+        $courseModel = new \App\Models\CourseModel();
+        $course = $courseModel->find($course_id);
+        
+        // Get terms for this course's semester
+        $terms = [];
+        if ($course && !empty($course['semester_id'])) {
+            $termModel = new \App\Models\TermModel();
+            $terms = $termModel->getTermsBySemester($course['semester_id']);
+        }
+        
+        // If no terms found, use default terms (fallback)
+        if (empty($terms)) {
+            $terms = [
+                ['id' => 1, 'term_name' => 'Prelim', 'term_order' => 1],
+                ['id' => 2, 'term_name' => 'Midterm', 'term_order' => 2],
+                ['id' => 3, 'term_name' => 'Finals', 'term_order' => 3]
+            ];
+        }
 
-        if ($this->request->getMethod() === 'post') {
+        // Check for POST request (case-insensitive)
+        if (strtolower($this->request->getMethod()) === 'post') {
             $file = $this->request->getFile('material');
 
             
@@ -27,7 +72,7 @@ class Materials extends Controller
             }
 
             $allowedTypes = [
-                'pdf', 'ppt', 'pptx'
+                'pdf', 'ppt', 'pptx', 'doc', 'docx'
             ];
             $ext = strtolower($file->getClientExtension());
             if (!in_array($ext, $allowedTypes)) {
@@ -44,7 +89,18 @@ class Materials extends Controller
 
             $uploadPath = WRITEPATH . 'uploads/materials/';
             if (!is_dir($uploadPath)) {
-                mkdir($uploadPath, 0777, true);
+                if (!mkdir($uploadPath, 0777, true)) {
+                    log_message('error', 'Failed to create upload directory: ' . $uploadPath);
+                    $session->setFlashdata('error', '❌ Failed to create upload directory. Please contact administrator.');
+                    return redirect()->back()->withInput();
+                }
+            }
+            
+            // Check if directory is writable
+            if (!is_writable($uploadPath)) {
+                log_message('error', 'Upload directory is not writable: ' . $uploadPath);
+                $session->setFlashdata('error', '❌ Upload directory is not writable. Please contact administrator.');
+                return redirect()->back()->withInput();
             }
 
             $originalName = $file->getClientName();
@@ -53,17 +109,20 @@ class Materials extends Controller
 
             try {
                 if ($file->move($uploadPath, $newName)) {
+                    
                     // Get term_id from request - REQUIRED
                     $term_id = $this->request->getPost('term_id');
                     if (empty($term_id) || $term_id === '' || $term_id === '0') {
                         // Delete the uploaded file since validation failed
                         @unlink($uploadPath . $newName);
+                        log_message('error', 'Term validation failed - deleting uploaded file');
                         $session->setFlashdata('error', '❌ Please select a term (PRELIM, MIDTERM, or FINAL)');
                         return redirect()->back()->withInput();
                     }
                     $term_id = (int)$term_id;
                     
-                    $materialModel->insertMaterial([
+                    // Insert material record
+                    $insertResult = $materialModel->insertMaterial([
                         'course_id' => $course_id,
                         'term_id' => $term_id,
                         'file_name' => $originalName,
@@ -71,37 +130,56 @@ class Materials extends Controller
                         'created_at'=> date('Y-m-d H:i:s'),
                     ]);
                     
-                    // Create notifications for enrolled students
-                    $notif = new \App\Models\NotificationModel();
-                    $enrollmentModel = new \App\Models\EnrollmentModel();
-                    $courseModel = new \App\Models\CourseModel();
+                    if (!$insertResult) {
+                        // Delete file if database insert failed
+                        @unlink($uploadPath . $newName);
+                        log_message('error', 'Database insert failed for material');
+                        $session->setFlashdata('error', '❌ Failed to save material record. Please try again.');
+                        return redirect()->back()->withInput();
+                    }
                     
-                    // Get course details
-                    $course = $courseModel->find($course_id);
-                    if ($course) {
-                        // Get all enrolled students
-                        $enrolledStudents = $enrollmentModel->where('course_id', $course_id)->findAll();
+                    // Create notifications for enrolled students
+                    try {
+                        $notif = new \App\Models\NotificationModel();
+                        $enrollmentModel = new \App\Models\EnrollmentModel();
+                        $courseModel = new \App\Models\CourseModel();
                         
-                        // Notify each enrolled student
-                        foreach ($enrolledStudents as $enrollment) {
-                            $notif->add($enrollment['user_id'], 
-                                'New material uploaded: ' . $originalName . ' in ' . $course['title']);
+                        // Get course details
+                        $course = $courseModel->find($course_id);
+                        if ($course) {
+                            // Get all enrolled students
+                            $enrolledStudents = $enrollmentModel->where('course_id', $course_id)->findAll();
+                            
+                            // Notify each enrolled student
+                            foreach ($enrolledStudents as $enrollment) {
+                                $notif->add($enrollment['user_id'], 
+                                    'New material uploaded: ' . $originalName . ' in ' . $course['title']);
+                            }
                         }
+                    } catch (\Exception $notifError) {
+                        // Don't fail upload if notification fails
+                        log_message('error', 'Notification error: ' . $notifError->getMessage());
                     }
                     
                     $session->setFlashdata('success', '✅ Material uploaded successfully!');
                     return redirect()->to(base_url('dashboard'));
                 } else {
-                    $session->setFlashdata('error', '❌ Upload failed: ' . $file->getErrorString());
+                    $errorMsg = $file->getErrorString();
+                    log_message('error', 'File move failed: ' . $errorMsg);
+                    $session->setFlashdata('error', '❌ Upload failed: ' . $errorMsg);
                     return redirect()->back()->withInput();
                 }
             } catch (\Exception $e) {
+                log_message('error', 'Upload exception: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
                 $session->setFlashdata('error', '❌ Upload error: ' . $e->getMessage());
                 return redirect()->back()->withInput();
             }
         }
 
-        return view('materials/upload', ['course_id' => $course_id]);
+        return view('materials/upload', [
+            'course_id' => $course_id,
+            'terms' => $terms
+        ]);
     }
 
     // ==============================
@@ -110,12 +188,34 @@ class Materials extends Controller
     public function upload_ajax($course_id)
     {
         helper(['form', 'url']);
-        $materialModel = new MaterialModel();
-
+        $session = session();
+        
         $response = ['success' => false, 'message' => '', 'csrf_hash' => csrf_hash()];
-
-        // Debug: Log the course_id
-        log_message('info', 'Upload AJAX called for course_id: ' . $course_id);
+        
+        // Access control: Only admin and teacher can upload materials
+        if (!$session->get('isLoggedIn')) {
+            $response['message'] = 'Please log in to upload materials.';
+            return $this->response->setJSON($response);
+        }
+        
+        $role = $session->get('role');
+        if ($role !== 'admin' && $role !== 'teacher') {
+            $response['message'] = 'Access denied. Only administrators and teachers can upload materials.';
+            return $this->response->setJSON($response);
+        }
+        
+        // For teachers: verify they can only upload to their own courses
+        if ($role === 'teacher') {
+            $courseModel = new \App\Models\CourseModel();
+            $course = $courseModel->find($course_id);
+            if (!$course || $course['teacher_id'] != $session->get('userID')) {
+                $response['message'] = 'Access denied. You can only upload materials to your own courses.';
+                return $this->response->setJSON($response);
+            }
+        }
+        // Admins can upload to any course
+        
+        $materialModel = new MaterialModel();
 
         // Process as long as a file is provided, regardless of request method quirks
         $file = $this->request->getFile('material');
@@ -128,7 +228,7 @@ class Materials extends Controller
             return $this->response->setJSON($response);
         }
 
-        $allowedTypes = ['pdf', 'ppt', 'pptx'];
+        $allowedTypes = ['pdf', 'ppt', 'pptx', 'doc', 'docx'];
         $ext = strtolower($file->getClientExtension());
 
         if (!in_array($ext, $allowedTypes)) {
@@ -149,22 +249,13 @@ class Materials extends Controller
         if (!is_dir($uploadPath)) {
             mkdir($uploadPath, 0777, true);
         }
-        
-        log_message('info', 'Upload path: ' . $uploadPath);
-        log_message('info', 'File size: ' . $file->getSize() . ' bytes');
-        log_message('info', 'File mime type: ' . $file->getMimeType());
 
         $originalName = $file->getClientName();
         $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $originalName);
         $newName = time() . '_' . $safeName;
-        
-        log_message('info', 'Original name: ' . $originalName);
-        log_message('info', 'New name: ' . $newName);
-        log_message('info', 'Full path: ' . $uploadPath . $newName);
 
             try {
                 if ($file->move($uploadPath, $newName)) {
-                    log_message('info', 'File moved successfully');
                     
                     // Get term_id from request - REQUIRED
                     $term_id = $this->request->getPost('term_id');
@@ -184,8 +275,6 @@ class Materials extends Controller
                         'file_path' => 'uploads/materials/' . $newName,
                         'created_at' => date('Y-m-d H:i:s'),
                     ]);
-                
-                log_message('info', 'Material inserted with ID: ' . $insertID);
 
                 // Create notifications for enrolled students
                 $notif = new \App\Models\NotificationModel();

@@ -116,6 +116,8 @@ class Course extends BaseController
                             courses.schedule_time,
                             courses.schedule_time_start,
                             courses.schedule_time_end,
+                            courses.schedule_date_start,
+                            courses.schedule_date_end,
                             courses.schedule_date,
                             courses.course_number,
                             courses.duration')
@@ -216,8 +218,10 @@ class Course extends BaseController
             'course_number' => 'required|max_length[50]|alpha_numeric_space',
             'schedule_time_start' => 'required',
             'schedule_time_end' => 'required',
+            'schedule_date_start' => 'required|valid_date',
+            'schedule_date_end' => 'required|valid_date',
             'duration' => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[8]',
-            'schedule_date' => 'required|valid_date'
+            'schedule_date' => 'permit_empty|valid_date'
         ];
         
         // Custom error messages
@@ -247,11 +251,12 @@ class Course extends BaseController
             // Check for time conflict - REQUIRED validation
             $scheduleTimeStart = $this->request->getPost('schedule_time_start');
             $scheduleTimeEnd = $this->request->getPost('schedule_time_end');
-            $scheduleDate = $this->request->getPost('schedule_date');
+            $scheduleDateStart = $this->request->getPost('schedule_date_start');
+            $scheduleDateEnd = $this->request->getPost('schedule_date_end');
             
             // Validate that all schedule fields are provided
-            if (empty($scheduleTimeStart) || empty($scheduleDate)) {
-                $session->setFlashdata('error', 'Schedule time and date are required.');
+            if (empty($scheduleTimeStart) || empty($scheduleTimeEnd) || empty($scheduleDateStart) || empty($scheduleDateEnd)) {
+                $session->setFlashdata('error', 'Schedule time and dates are required.');
                 return redirect()->to(base_url('create-course'))->withInput();
             }
             
@@ -260,11 +265,12 @@ class Course extends BaseController
             $acadYearId = !empty($acadYearId) ? (int) $acadYearId : null;
             
             // Check for time conflict with same teacher, same date, same academic year, and same/overlapping time
+            // Use schedule_date_start for conflict checking
             $conflict = $this->courseModel->checkTeacherTimeConflict(
                 $teacherId, 
                 $scheduleTimeStart, 
                 $scheduleTimeEnd, 
-                $scheduleDate,
+                $scheduleDateStart,
                 null, // No course to exclude (creating new)
                 $acadYearId // Only check conflicts within same academic year
             );
@@ -347,6 +353,16 @@ class Course extends BaseController
             $scheduleDate = $this->request->getPost('schedule_date');
             if (!empty($scheduleDate)) {
                 $data['schedule_date'] = $scheduleDate;
+            }
+
+            $scheduleDateStart = $this->request->getPost('schedule_date_start');
+            if (!empty($scheduleDateStart)) {
+                $data['schedule_date_start'] = $scheduleDateStart;
+            }
+
+            $scheduleDateEnd = $this->request->getPost('schedule_date_end');
+            if (!empty($scheduleDateEnd)) {
+                $data['schedule_date_end'] = $scheduleDateEnd;
             }
 
             $this->courseModel->insert($data);
@@ -450,8 +466,10 @@ class Course extends BaseController
             'course_number' => 'required|max_length[50]|alpha_numeric_space',
             'schedule_time_start' => 'required',
             'schedule_time_end' => 'required',
+            'schedule_date_start' => 'required|valid_date',
+            'schedule_date_end' => 'required|valid_date',
             'duration' => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[8]',
-            'schedule_date' => 'required|valid_date'
+            'schedule_date' => 'permit_empty|valid_date'
         ];
         
         // Custom error messages
@@ -480,11 +498,12 @@ class Course extends BaseController
             // Check for time conflict before updating - REQUIRED validation
             $scheduleTimeStart = $this->request->getPost('schedule_time_start');
             $scheduleTimeEnd = $this->request->getPost('schedule_time_end');
-            $scheduleDate = $this->request->getPost('schedule_date');
+            $scheduleDateStart = $this->request->getPost('schedule_date_start');
+            $scheduleDateEnd = $this->request->getPost('schedule_date_end');
             
             // Validate that all schedule fields are provided
-            if (empty($scheduleTimeStart) || empty($scheduleDate)) {
-                $session->setFlashdata('error', 'Schedule time and date are required.');
+            if (empty($scheduleTimeStart) || empty($scheduleTimeEnd) || empty($scheduleDateStart) || empty($scheduleDateEnd)) {
+                $session->setFlashdata('error', 'Schedule time and dates are required.');
                 return redirect()->to(base_url('edit-course/' . $id))->withInput();
             }
             
@@ -493,11 +512,13 @@ class Course extends BaseController
             $acadYearId = !empty($acadYearId) ? (int) $acadYearId : null;
             
             // Check for time conflict with same teacher, same date, same academic year, and same/overlapping time
+            // Use schedule_date_start for conflict checking (or schedule_date if available for backward compatibility)
+            $conflictDate = $scheduleDateStart ?? $this->request->getPost('schedule_date') ?? null;
             $conflict = $this->courseModel->checkTeacherTimeConflict(
                 $teacherId, 
                 $scheduleTimeStart, 
                 $scheduleTimeEnd, 
-                $scheduleDate,
+                $conflictDate,
                 $id, // Exclude current course from conflict check
                 $acadYearId // Only check conflicts within same academic year
             );
@@ -577,6 +598,12 @@ class Course extends BaseController
             $scheduleDate = $this->request->getPost('schedule_date');
             $data['schedule_date'] = !empty($scheduleDate) ? $scheduleDate : null;
 
+            $scheduleDateStart = $this->request->getPost('schedule_date_start');
+            $data['schedule_date_start'] = !empty($scheduleDateStart) ? $scheduleDateStart : null;
+
+            $scheduleDateEnd = $this->request->getPost('schedule_date_end');
+            $data['schedule_date_end'] = !empty($scheduleDateEnd) ? $scheduleDateEnd : null;
+
             $this->courseModel->update($id, $data);
             $session->setFlashdata('success', 'Course updated successfully!');
             
@@ -602,7 +629,11 @@ class Course extends BaseController
                             semesters.name as semester_name,
                             terms.term_name,
                             courses.schedule_time,
+                            courses.schedule_time_start,
+                            courses.schedule_time_end,
                             courses.schedule_date,
+                            courses.schedule_date_start,
+                            courses.schedule_date_end,
                             courses.course_number')
                     ->join('academic_years', 'academic_years.id = courses.acad_year_id', 'left')
                     ->join('semesters', 'semesters.id = courses.semester_id', 'left')

@@ -6,6 +6,10 @@
     <title>Create Course - Learning Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -322,14 +326,27 @@
                                         <p class="mt-1 text-xs text-gray-500">Automatically calculated from time range</p>
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                     <div>
-                                        <label for="schedule_date" class="block text-sm font-medium text-gray-700">Schedule Date *</label>
-                                        <input type="date" id="schedule_date" name="schedule_date" required
-                                               value="<?= old('schedule_date') ?>"
-                                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
-                                        <?php if (isset($validation) && $validation->getError('schedule_date')): ?>
-                                            <p class="mt-1 text-sm text-red-600"><?= $validation->getError('schedule_date') ?></p>
+                                        <label for="schedule_date_start" class="block text-sm font-medium text-gray-700">Start Schedule Date *</label>
+                                        <input type="text" id="schedule_date_start" name="schedule_date_start" required
+                                               value="<?= old('schedule_date_start') ?>"
+                                               placeholder="Click to select start date"
+                                               readonly
+                                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary cursor-pointer bg-white">
+                                        <?php if (isset($validation) && $validation->getError('schedule_date_start')): ?>
+                                            <p class="mt-1 text-sm text-red-600"><?= $validation->getError('schedule_date_start') ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div>
+                                        <label for="schedule_date_end" class="block text-sm font-medium text-gray-700">End Schedule Date *</label>
+                                        <input type="text" id="schedule_date_end" name="schedule_date_end" required
+                                               value="<?= old('schedule_date_end') ?>"
+                                               placeholder="Click to select end date"
+                                               readonly
+                                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary cursor-pointer bg-white">
+                                        <?php if (isset($validation) && $validation->getError('schedule_date_end')): ?>
+                                            <p class="mt-1 text-sm text-red-600"><?= $validation->getError('schedule_date_end') ?></p>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -435,8 +452,6 @@
                             return response.json();
                         })
                         .then(data => {
-                            console.log('Semesters response:', data);
-                            
                             // Update CSRF token if provided
                             if (data.csrf_hash) {
                                 const csrfInput = document.querySelector('input[name="<?= csrf_token() ?>"]');
@@ -449,7 +464,6 @@
                             semesterSelect.disabled = false;
                             
                             if (data.success && data.semesters && data.semesters.length > 0) {
-                                console.log('Found semesters:', data.semesters.length);
                                 data.semesters.forEach(semester => {
                                     const option = document.createElement('option');
                                     option.value = semester.id;
@@ -458,7 +472,6 @@
                                 });
                             } else {
                                 semesterSelect.innerHTML = '<option value="">No semesters available</option>';
-                                console.log('No semesters found for academic year:', acadYearId, 'Response:', data);
                             }
                         })
                         .catch(error => {
@@ -668,6 +681,36 @@
             if (endTimeInput) {
                 endTimeInput.addEventListener('change', calculateDuration);
                 endTimeInput.addEventListener('input', calculateDuration);
+            }
+            
+            // Initialize Flatpickr for date inputs
+            if (typeof flatpickr !== 'undefined') {
+                const startDateInput = document.getElementById('schedule_date_start');
+                const endDateInput = document.getElementById('schedule_date_end');
+                
+                if (startDateInput) {
+                    flatpickr(startDateInput, {
+                        dateFormat: "Y-m-d",
+                        altInput: true,
+                        altFormat: "F j, Y",
+                        allowInput: false,
+                        clickOpens: true,
+                        minDate: "today",
+                        defaultDate: startDateInput.value || null
+                    });
+                }
+                
+                if (endDateInput) {
+                    flatpickr(endDateInput, {
+                        dateFormat: "Y-m-d",
+                        altInput: true,
+                        altFormat: "F j, Y",
+                        allowInput: false,
+                        clickOpens: true,
+                        minDate: "today",
+                        defaultDate: endDateInput.value || null
+                    });
+                }
             }
         });
     </script>

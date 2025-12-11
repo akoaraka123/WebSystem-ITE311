@@ -187,6 +187,33 @@
                     </div>
                     <?php endif; ?>
 
+                    <?php 
+                    $dateStart = $course['schedule_date_start'] ?? '';
+                    $dateEnd = $course['schedule_date_end'] ?? '';
+                    if ($dateStart || $dateEnd): 
+                    ?>
+                    <div class="bg-purple-50 rounded-xl p-5 info-card">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-xs uppercase text-purple-400 font-semibold">Schedule Period</p>
+                                <p class="text-lg font-semibold text-gray-800">
+                                    <?php if ($dateStart && $dateEnd): ?>
+                                        <?= date('M d, Y', strtotime($dateStart)) ?> - <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                    <?php elseif ($dateStart): ?>
+                                        Start: <?= date('M d, Y', strtotime($dateStart)) ?>
+                                    <?php elseif ($dateEnd): ?>
+                                        End: <?= date('M d, Y', strtotime($dateEnd)) ?>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600">Start and end dates for this course schedule.</p>
+                    </div>
+                    <?php endif; ?>
+
                     <div class="bg-blue-50 rounded-xl p-5 info-card">
                         <div class="flex items-center mb-3">
                             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
@@ -249,7 +276,7 @@
                             <p class="text-sm uppercase tracking-widest text-blue-500 font-semibold mb-2">Course Materials</p>
                             <h2 class="text-2xl font-bold text-gray-900">Shared Files</h2>
                         </div>
-                        <?php if (!empty($user['role']) && $user['role'] === 'teacher' && ($course['teacher_id'] ?? null) == ($user['userID'] ?? null)): ?>
+                        <?php if ((!empty($user['role']) && $user['role'] === 'admin') || (!empty($user['role']) && $user['role'] === 'teacher' && ($course['teacher_id'] ?? null) == ($user['userID'] ?? null))): ?>
                             <a href="<?= base_url('materials/upload/' . ($course['id'] ?? 0)) ?>" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-semibold">
                                 <i class="fas fa-upload mr-2"></i>Upload Material
                             </a>

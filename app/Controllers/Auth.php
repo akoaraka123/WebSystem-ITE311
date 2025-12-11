@@ -165,13 +165,6 @@ public function login()
             'last_activity' => time() // Track last activity for session timeout
         ]);
         
-        // Debug: log session set
-        log_message('debug', 'Session set for user: ' . json_encode([
-            'userID' => $user['id'],
-            'name' => $user['name'],
-            'role' => $user['role']
-        ]));
-
         $session->setFlashdata('success', 'Welcome back, ' . $user['name'] . '!');
 
         // Redirect to unified dashboard
@@ -347,18 +340,12 @@ public function dashboard()
 
     // Redirect kung hindi naka-login
     if (!$session->get('isLoggedIn')) {
-        log_message('debug', 'User not logged in, redirecting to login');
         return redirect()->to(base_url('login'));
     }
 
     // 🔹 Get user info from session
     $role   = $session->get('role');
     $userID = $session->get('userID');
-    
-    // Debug: log session data
-    log_message('debug', 'Session data: ' . json_encode([
-        'isLoggedIn' => $session->get('isLoggedIn'),
-        'role' => $role,
         'userID' => $userID,
         'name' => $session->get('name'),
         'email' => $session->get('email')
@@ -395,7 +382,6 @@ public function dashboard()
     ];
 
     // ROLE-BASED CONTENT LOGIC
-    log_message('debug', 'User role: ' . $role);
     switch ($role) {
 
         case 'admin':
@@ -482,6 +468,8 @@ public function dashboard()
                             programs.name as program_name,
                             courses.schedule_time_start,
                             courses.schedule_time_end,
+                            courses.schedule_date_start,
+                            courses.schedule_date_end,
                             courses.schedule_date,
                             courses.course_number,
                             courses.duration,
@@ -548,10 +536,8 @@ public function dashboard()
 
         case 'student':
             // Student: show enrolled courses
-            log_message('debug', 'Fetching enrollments for userID: ' . $userID);
             $data['enrolled'] = $enrollmentModel->getUserEnrollments($userID);
             $enrolledIDs = array_column($data['enrolled'], 'course_id');
-            log_message('debug', 'Enrolled courses count: ' . count($data['enrolled']));
 
             // Get pending enrollment requests
             $data['pending_enrollments'] = $enrollmentModel->getPendingEnrollments($userID);
@@ -571,13 +557,6 @@ public function dashboard()
     }
 
     // ✅ Render dashboard for all roles
-    // Debug: log what we're passing to the view
-    log_message('debug', 'Passing to view: ' . json_encode([
-        'user_id' => $data['user']['id'] ?? 'N/A',
-        'user_role' => $data['user']['role'] ?? 'N/A',
-        'enrolled_count' => count($data['enrolled'] ?? []),
-        'available_count' => count($data['available'] ?? [])
-    ]));
     return view('auth/dashboard', $data);
 }
 
@@ -595,8 +574,6 @@ public function enroll($course_id = null)
         $course_id = $this->request->getPost('course_id');
     }
     
-    // Debug: log the course_id
-    log_message('debug', 'Enrollment attempt for course_id: ' . $course_id);
 
     // Security: redirect kung hindi naka-login o hindi student
     if (!$session->get('isLoggedIn') || $session->get('role') !== 'student') {
@@ -642,7 +619,6 @@ public function enroll($course_id = null)
             'enrollment_date' => date('Y-m-d H:i:s')
         ]);
         
-        log_message('debug', 'Enrollment successful for user_id: ' . $userID . ', course_id: ' . $course_id);
         
         // Create notifications
         $notif = new \App\Models\NotificationModel();
@@ -660,7 +636,6 @@ public function enroll($course_id = null)
                 $notif->add((int)$course['teacher_id'], 'A student enrolled in your course: ' . $course['title']);
             }
             
-            log_message('debug', 'Notifications created for enrollment');
         }
         
     } catch (\Exception $e) {
@@ -698,8 +673,6 @@ public function unenroll($course_id = null)
         $course_id = $this->request->getPost('course_id');
     }
     
-    // Debug: log the course_id
-    log_message('debug', 'Unenrollment attempt for course_id: ' . $course_id);
 
     // Security: redirect kung hindi naka-login o hindi student
     if (!$session->get('isLoggedIn') || $session->get('role') !== 'student') {
@@ -741,7 +714,6 @@ public function unenroll($course_id = null)
     try {
         $enrollmentModel->unenroll($userID, $course_id);
         
-        log_message('debug', 'Unenrollment successful for user_id: ' . $userID . ', course_id: ' . $course_id);
         
         // Create notifications
         $notif = new \App\Models\NotificationModel();
@@ -759,7 +731,6 @@ public function unenroll($course_id = null)
                 $notif->add((int)$course['teacher_id'], 'A student unenrolled from your course: ' . $course['title']);
             }
             
-            log_message('debug', 'Notifications created for unenrollment');
         }
         
     } catch (\Exception $e) {

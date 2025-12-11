@@ -7,6 +7,10 @@
     <title>Edit Course - Learning Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -370,14 +374,27 @@
                                     <p style="margin-top: 5px; font-size: 12px; color: #666;">Automatically calculated from time range</p>
                                 </div>
                             </div>
-                            <div style="margin-bottom: 18px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 18px;">
                                 <div class="form-group">
-                                    <label for="schedule_date" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Schedule Date *</label>
-                                    <input type="date" id="schedule_date" name="schedule_date" required
-                                           value="<?= esc($course['schedule_date'] ?? old('schedule_date')) ?>"
-                                           style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;">
-                                    <?php if (isset($validation) && $validation->getError('schedule_date')): ?>
-                                        <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('schedule_date') ?></p>
+                                    <label for="schedule_date_start" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">Start Schedule Date *</label>
+                                    <input type="text" id="schedule_date_start" name="schedule_date_start" required
+                                           value="<?= esc($course['schedule_date_start'] ?? old('schedule_date_start')) ?>"
+                                           placeholder="Click to select start date"
+                                           readonly
+                                           style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px; cursor: pointer; background-color: #fff;">
+                                    <?php if (isset($validation) && $validation->getError('schedule_date_start')): ?>
+                                        <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('schedule_date_start') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="form-group">
+                                    <label for="schedule_date_end" style="display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px;">End Schedule Date *</label>
+                                    <input type="text" id="schedule_date_end" name="schedule_date_end" required
+                                           value="<?= esc($course['schedule_date_end'] ?? old('schedule_date_end')) ?>"
+                                           placeholder="Click to select end date"
+                                           readonly
+                                           style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px; cursor: pointer; background-color: #fff;">
+                                    <?php if (isset($validation) && $validation->getError('schedule_date_end')): ?>
+                                        <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('schedule_date_end') ?></p>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -711,6 +728,36 @@
                         csrfInput.value = csrfToken;
                     }
                 });
+            }
+            
+            // Initialize Flatpickr for date inputs
+            if (typeof flatpickr !== 'undefined') {
+                const startDateInput = document.getElementById('schedule_date_start');
+                const endDateInput = document.getElementById('schedule_date_end');
+                
+                if (startDateInput) {
+                    flatpickr(startDateInput, {
+                        dateFormat: "Y-m-d",
+                        altInput: true,
+                        altFormat: "F j, Y",
+                        allowInput: false,
+                        clickOpens: true,
+                        minDate: "today",
+                        defaultDate: startDateInput.value || null
+                    });
+                }
+                
+                if (endDateInput) {
+                    flatpickr(endDateInput, {
+                        dateFormat: "Y-m-d",
+                        altInput: true,
+                        altFormat: "F j, Y",
+                        allowInput: false,
+                        clickOpens: true,
+                        minDate: "today",
+                        defaultDate: endDateInput.value || null
+                    });
+                }
             }
         });
     </script>

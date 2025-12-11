@@ -746,7 +746,6 @@
         // Program Modal Functions (defined globally so they're available immediately)
         function openAddProgramModal() {
             try {
-                console.log('openAddProgramModal called');
                 const modal = document.getElementById('programModal');
                 const title = document.getElementById('programModalTitle');
                 const form = document.getElementById('programForm');
@@ -755,7 +754,6 @@
                 
                 if (!modal) {
                     alert('Error: Program modal not found. Please refresh the page.');
-                    console.error('programModal element not found');
                     return;
                 }
                 
@@ -764,7 +762,6 @@
                 if (programId) programId.value = '';
                 if (isActive) isActive.checked = true;
                 modal.style.display = 'block';
-                console.log('Program modal opened');
             } catch (error) {
                 console.error('Error opening program modal:', error);
                 alert('Error opening program modal. Please check console for details.');
@@ -811,7 +808,6 @@
         // Academic Year Modal Functions (defined globally so they're available immediately)
         function openAddAcademicYearModal() {
             try {
-                console.log('openAddAcademicYearModal called');
                 const modal = document.getElementById('academicYearModal');
                 const title = document.getElementById('academicYearModalTitle');
                 const form = document.getElementById('academicYearForm');
@@ -820,7 +816,6 @@
                 
                 if (!modal) {
                     alert('Error: Academic Year modal not found. Please refresh the page.');
-                    console.error('academicYearModal element not found');
                     return;
                 }
                 
@@ -829,7 +824,6 @@
                 if (acadYearId) acadYearId.value = '';
                 if (isActive) isActive.checked = true;
                 modal.style.display = 'block';
-                console.log('Academic Year modal opened');
             } catch (error) {
                 console.error('Error opening academic year modal:', error);
                 alert('Error opening academic year modal. Please check console for details.');
@@ -875,7 +869,6 @@
         // Semester Modal Functions (defined globally)
         function openAddSemesterModal() {
             try {
-                console.log('openAddSemesterModal called');
                 const modal = document.getElementById('semesterModal');
                 const title = document.getElementById('semesterModalTitle');
                 const form = document.getElementById('semesterForm');
@@ -884,7 +877,6 @@
                 
                 if (!modal) {
                     alert('Error: Semester modal not found. Please refresh the page.');
-                    console.error('semesterModal element not found');
                     return;
                 }
                 
@@ -893,7 +885,6 @@
                 if (semesterId) semesterId.value = '';
                 if (isActive) isActive.checked = true;
                 modal.style.display = 'block';
-                console.log('Semester modal opened');
             } catch (error) {
                 console.error('Error opening semester modal:', error);
                 alert('Error opening semester modal. Please check console for details.');
@@ -938,8 +929,7 @@
         window.openEditSemesterModal = openEditSemesterModal;
         window.closeSemesterModal = closeSemesterModal;
 
-        // Debug: Log that functions are defined
-        console.log('Modal functions defined:', {
+        // Modal functions are now available globally
             openAddProgramModal: typeof window.openAddProgramModal,
             openAddAcademicYearModal: typeof window.openAddAcademicYearModal,
             openAddSemesterModal: typeof window.openAddSemesterModal

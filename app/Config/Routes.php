@@ -89,9 +89,13 @@ $routes->post('auth/unenroll/(:num)', 'Auth::unenroll/$1');
 // ========================================
 // MATERIALS MANAGEMENT
 // ========================================
+$routes->get('materials/upload/(:num)', 'Materials::upload/$1');
 $routes->post('materials/upload/(:num)', 'Materials::upload/$1');
+$routes->get('admin/course/(:num)/upload', 'Materials::upload/$1');
+$routes->post('admin/course/(:num)/upload', 'Materials::upload/$1');
 $routes->post('materials/upload_ajax/(:num)', 'Materials::upload_ajax/$1');
 $routes->get('materials/download/(:num)', 'Materials::download/$1');
+$routes->get('materials/delete/(:num)', 'Materials::delete/$1');
 $routes->post('materials/delete/(:num)', 'Materials::delete/$1');
 
 // ========================================
