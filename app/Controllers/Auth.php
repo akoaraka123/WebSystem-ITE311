@@ -478,6 +478,31 @@ public function dashboard()
                         ->join('users', 'users.id = courses.teacher_id', 'left')
                         ->where('courses.teacher_id', $userID)
                         ->findAll();
+            
+            // Get pending teacher assignments for this teacher
+            $pendingAssignments = $courseModel->select('courses.*, 
+                            academic_years.display_name as acad_year_name,
+                            semesters.name as semester_name,
+                            terms.term_name,
+                            programs.code as program_code,
+                            programs.name as program_name,
+                            courses.schedule_time_start,
+                            courses.schedule_time_end,
+                            courses.schedule_date_start,
+                            courses.schedule_date_end,
+                            courses.schedule_date,
+                            courses.course_number,
+                            courses.duration,
+                            courses.pending_teacher_id,
+                            courses.teacher_assignment_status,
+                            courses.teacher_assignment_requested_at')
+                        ->join('academic_years', 'academic_years.id = courses.acad_year_id', 'left')
+                        ->join('semesters', 'semesters.id = courses.semester_id', 'left')
+                        ->join('terms', 'terms.id = courses.term_id', 'left')
+                        ->join('programs', 'programs.id = courses.program_id', 'left')
+                        ->where('courses.pending_teacher_id', $userID)
+                        ->where('courses.teacher_assignment_status', 'pending')
+                        ->findAll();
             $enrollments = [];
             $enrollmentStats = []; // For detailed stats (accepted, pending)
             $materials = [];
@@ -523,6 +548,7 @@ public function dashboard()
             sort($uniqueSemesters);
             
             $data['myCourses'] = $myCourses;
+            $data['pendingAssignments'] = $pendingAssignments ?? [];
             $data['enrollments'] = $enrollments;
             $data['enrollmentStats'] = $enrollmentStats; // Add detailed stats
             $data['materials'] = $materials;

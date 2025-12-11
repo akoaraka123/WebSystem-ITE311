@@ -878,22 +878,43 @@
                         // Use dropdownParent to ensure dropdown appears above modal
                         select.select2({
                             theme: 'bootstrap-5',
-                            placeholder: 'Search for a student...',
+                            placeholder: 'Type at least 2 letters to search...',
                             allowClear: true,
                             width: '100%',
                             dropdownParent: $('#enrollStudentModal'),
                             minimumResultsForSearch: 0, // Always show search box
                             language: {
                                 noResults: function() {
+                                    const searchField = $('.select2-search__field');
+                                    const searchTerm = searchField.length ? searchField.val() : '';
+                                    if (!searchTerm || searchTerm.length < 2) {
+                                        return "Type at least 2 letters to search for students";
+                                    }
                                     return "No students found";
                                 },
                                 searching: function() {
                                     return "Searching...";
                                 }
+                            },
+                            matcher: function(params, data) {
+                                // If no search term or less than 2 characters, hide all options
+                                if (!params.term || params.term.trim().length < 2) {
+                                    return null;
+                                }
+                                
+                                // Search in student name and email (case-insensitive)
+                                const term = params.term.toLowerCase().trim();
+                                const text = data.text.toLowerCase();
+                                
+                                if (text.indexOf(term) > -1) {
+                                    return data;
+                                }
+                                
+                                return null;
                             }
                         });
                         
-                        // Ensure search field is focusable and clickable
+                        // Handle dropdown open to focus search field
                         select.on('select2:open', function() {
                             setTimeout(function() {
                                 $('.select2-search__field').focus();

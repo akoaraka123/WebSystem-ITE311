@@ -365,7 +365,15 @@ class Course extends BaseController
                 $data['schedule_date_end'] = $scheduleDateEnd;
             }
 
-            $this->courseModel->insert($data);
+            $courseId = $this->courseModel->insert($data);
+            
+            // Notify the teacher that they have been assigned to a new course
+            if ($courseId && $teacherId) {
+                $notificationModel = new \App\Models\NotificationModel();
+                $courseTitle = $this->request->getPost('title');
+                $notificationModel->add($teacherId, '📚 You have been assigned to teach the course: ' . esc($courseTitle) . '. Please check your courses to view details.');
+            }
+            
             $session->setFlashdata('success', 'Course created successfully and assigned to teacher!');
             
             return redirect()->to(base_url('courses'));
@@ -604,7 +612,29 @@ class Course extends BaseController
             $scheduleDateEnd = $this->request->getPost('schedule_date_end');
             $data['schedule_date_end'] = !empty($scheduleDateEnd) ? $scheduleDateEnd : null;
 
+            // Check if teacher was changed (admin only)
+            $oldTeacherId = $course['teacher_id'] ?? null;
+            $newTeacherId = null;
+            if ($session->get('role') === 'admin' && !empty($teacherId)) {
+                $newTeacherId = $teacherId;
+            }
+            
             $this->courseModel->update($id, $data);
+            
+            // Notify teacher if assignment changed (admin only)
+            if ($session->get('role') === 'admin' && !empty($newTeacherId) && $newTeacherId != $oldTeacherId) {
+                $notificationModel = new \App\Models\NotificationModel();
+                $courseTitle = $this->request->getPost('title') ?? $course['title'] ?? 'a course';
+                
+                // Notify new teacher
+                $notificationModel->add($newTeacherId, '📚 You have been assigned to teach the course: ' . esc($courseTitle) . '. Please check your courses to view details.');
+                
+                // Notify old teacher if different
+                if (!empty($oldTeacherId) && $oldTeacherId != $newTeacherId) {
+                    $notificationModel->add((int)$oldTeacherId, '⚠️ You have been unassigned from the course: ' . esc($courseTitle) . '.');
+                }
+            }
+            
             $session->setFlashdata('success', 'Course updated successfully!');
             
             $redirectTo = $session->get('role') === 'admin' ? base_url('courses') : base_url('my-courses');
@@ -1123,17 +1153,52 @@ class Course extends BaseController
         }
 
         try {
+            // Get enrollment info BEFORE updating to check admin_approved status
+            $enrollment = $this->enrollmentModel->find($enrollmentId);
+            if (!$enrollment) {
+                return $this->response->setStatusCode(404)
+                    ->setJSON([
+                        'success' => false,
+                        'message' => 'Enrollment not found',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+            }
+            
+            // Check if enrollment was admin-initiated BEFORE updating
+            // Check for both integer 1 and string "1" to be safe
+            $isAdminInitiated = !empty($enrollment['admin_approved']) && 
+                               ($enrollment['admin_approved'] == 1 || $enrollment['admin_approved'] === '1' || (int)$enrollment['admin_approved'] === 1);
+            
+            // Get course and student info for notifications
+            $course = $this->courseModel->find($enrollment['course_id']);
+            $userModel = new \App\Models\UserModel();
+            $student = $userModel->find($enrollment['user_id']);
+            
+            // Now update the enrollment
             $updated = $this->enrollmentModel->acceptEnrollment($enrollmentId, $userID);
             
             if ($updated) {
-                // Get course info for notification
-                $enrollment = $this->enrollmentModel->find($enrollmentId);
-                if ($enrollment) {
-                    $course = $this->courseModel->find($enrollment['course_id']);
-                    if ($course) {
-                        // Notify the teacher
-                        $notif = new \App\Models\NotificationModel();
-                        $notif->add((int)$course['teacher_id'], 'A student accepted enrollment in your course: ' . ($course['title'] ?? ''));
+                $notificationModel = new \App\Models\NotificationModel();
+                $courseTitle = $course['title'] ?? 'a course';
+                $studentName = $student['name'] ?? 'A student';
+                
+                // Notify the teacher
+                if (!empty($course['teacher_id'])) {
+                    $notificationModel->add((int)$course['teacher_id'], 'A student accepted enrollment in your course: ' . esc($courseTitle));
+                }
+                
+                // Notify admin if enrollment was admin-initiated
+                if ($isAdminInitiated) {
+                    // Get all admin users
+                    $admins = $userModel->where('role', 'admin')
+                                       ->select('id')
+                                       ->findAll();
+                    
+                    // Send notification to all admins
+                    if (!empty($admins)) {
+                        foreach ($admins as $admin) {
+                            $notificationModel->add((int)$admin['id'], '✅ Student "' . esc($studentName) . '" has accepted enrollment in the course: ' . esc($courseTitle) . '.');
+                        }
                     }
                 }
 
@@ -1719,24 +1784,27 @@ class Course extends BaseController
         }
 
         try {
-            // Update course teacher
+            // Create pending teacher assignment (requires teacher approval)
             $this->courseModel->update($courseId, [
-                'teacher_id' => $teacherId,
+                'pending_teacher_id' => $teacherId,
+                'teacher_assignment_status' => 'pending',
+                'teacher_assignment_requested_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
 
-            // Notify the new teacher
-            $notif = new \App\Models\NotificationModel();
-            $notif->add($teacherId, 'You have been assigned to teach: ' . ($course['title'] ?? 'a course'));
+            // Notify the teacher about pending assignment
+            $notificationModel = new \App\Models\NotificationModel();
+            $courseTitle = $course['title'] ?? 'a course';
+            $notificationModel->add($teacherId, '📚 You have been assigned to teach the course: ' . esc($courseTitle) . '. Please accept or reject this assignment.');
 
-            // Notify old teacher if different
+            // Notify old teacher if different and was already assigned
             if (!empty($course['teacher_id']) && $course['teacher_id'] != $teacherId) {
-                $notif->add((int)$course['teacher_id'], 'You have been unassigned from: ' . ($course['title'] ?? 'a course'));
+                $notificationModel->add((int)$course['teacher_id'], '⚠️ You have been unassigned from the course: ' . esc($courseTitle) . '.');
             }
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Teacher assigned successfully',
+                'message' => 'Teacher assignment request sent. The teacher needs to accept or reject it.',
                 'csrf_hash' => csrf_hash()
             ]);
         } catch (\Exception $e) {
@@ -1744,6 +1812,175 @@ class Course extends BaseController
                 ->setJSON([
                     'success' => false,
                     'message' => 'Failed to assign teacher: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
+    }
+
+    /**
+     * Teacher: Accept teacher assignment
+     */
+    public function acceptTeacherAssignment()
+    {
+        $session = session();
+        
+        // Security: only teachers can accept assignments
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Get data from JSON body
+        $input = json_decode($this->request->getBody(), true);
+        $courseId = (int) ($input['course_id'] ?? 0);
+        $teacherId = $session->get('userID');
+
+        if ($courseId <= 0) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Invalid course ID', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Verify course exists and has pending assignment for this teacher
+        $course = $this->courseModel->find($courseId);
+        if (!$course) {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Course not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Check if this teacher has a pending assignment
+        if (empty($course['pending_teacher_id']) || $course['pending_teacher_id'] != $teacherId) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'No pending assignment found for this teacher', 'csrf_hash' => csrf_hash()]);
+        }
+
+        if ($course['teacher_assignment_status'] !== 'pending') {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Assignment is not pending', 'csrf_hash' => csrf_hash()]);
+        }
+
+        try {
+            // Accept the assignment - set teacher_id and clear pending fields
+            $this->courseModel->update($courseId, [
+                'teacher_id' => $teacherId,
+                'pending_teacher_id' => null,
+                'teacher_assignment_status' => 'accepted',
+                'teacher_assignment_requested_at' => null,
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+
+            // Notify all admins
+            $notificationModel = new \App\Models\NotificationModel();
+            $courseTitle = $course['title'] ?? 'a course';
+            $userModel = new \App\Models\UserModel();
+            $teacher = $userModel->find($teacherId);
+            $teacherName = $teacher['name'] ?? 'Teacher';
+            
+            // Get all admin users
+            $admins = $userModel->where('role', 'admin')
+                               ->select('id')
+                               ->findAll();
+            
+            // Send notification to all admins
+            if (!empty($admins)) {
+                foreach ($admins as $admin) {
+                    $notificationModel->add((int)$admin['id'], '✅ Teacher "' . esc($teacherName) . '" has accepted assignment to teach the course: ' . esc($courseTitle) . '.');
+                }
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Assignment accepted successfully',
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to accept assignment: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
+    }
+
+    /**
+     * Teacher: Reject teacher assignment
+     */
+    public function rejectTeacherAssignment()
+    {
+        $session = session();
+        
+        // Security: only teachers can reject assignments
+        if (!$session->get('isLoggedIn') || $session->get('role') !== 'teacher') {
+            return $this->response->setStatusCode(401)
+                ->setJSON(['success' => false, 'message' => 'Unauthorized', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Get data from JSON body
+        $input = json_decode($this->request->getBody(), true);
+        $courseId = (int) ($input['course_id'] ?? 0);
+        $teacherId = $session->get('userID');
+
+        if ($courseId <= 0) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Invalid course ID', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Verify course exists and has pending assignment for this teacher
+        $course = $this->courseModel->find($courseId);
+        if (!$course) {
+            return $this->response->setStatusCode(404)
+                ->setJSON(['success' => false, 'message' => 'Course not found', 'csrf_hash' => csrf_hash()]);
+        }
+
+        // Check if this teacher has a pending assignment
+        if (empty($course['pending_teacher_id']) || $course['pending_teacher_id'] != $teacherId) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'No pending assignment found for this teacher', 'csrf_hash' => csrf_hash()]);
+        }
+
+        if ($course['teacher_assignment_status'] !== 'pending') {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Assignment is not pending', 'csrf_hash' => csrf_hash()]);
+        }
+
+        try {
+            // Reject the assignment - clear pending fields
+            $this->courseModel->update($courseId, [
+                'pending_teacher_id' => null,
+                'teacher_assignment_status' => 'rejected',
+                'teacher_assignment_requested_at' => null,
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+
+            // Notify all admins
+            $notificationModel = new \App\Models\NotificationModel();
+            $courseTitle = $course['title'] ?? 'a course';
+            $userModel = new \App\Models\UserModel();
+            $teacher = $userModel->find($teacherId);
+            $teacherName = $teacher['name'] ?? 'Teacher';
+            
+            // Get all admin users
+            $admins = $userModel->where('role', 'admin')
+                               ->select('id')
+                               ->findAll();
+            
+            // Send notification to all admins
+            if (!empty($admins)) {
+                foreach ($admins as $admin) {
+                    $notificationModel->add((int)$admin['id'], '❌ Teacher "' . esc($teacherName) . '" has rejected assignment to teach the course: ' . esc($courseTitle) . '.');
+                }
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Assignment rejected successfully',
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to reject assignment: ' . $e->getMessage(),
                     'csrf_hash' => csrf_hash()
                 ]);
         }

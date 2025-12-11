@@ -70,6 +70,8 @@ $routes->get('courses/getAllTeachers', 'Course::getAllTeachers');
 $routes->post('courses/adminEnrollStudent', 'Course::adminEnrollStudent');
 $routes->post('course/admin-remove-student', 'Course::adminRemoveStudent');
 $routes->post('courses/assignTeacher', 'Course::assignTeacher');
+$routes->post('courses/acceptTeacherAssignment', 'Course::acceptTeacherAssignment');
+$routes->post('courses/rejectTeacherAssignment', 'Course::rejectTeacherAssignment');
 $routes->post('course/get-semesters-by-academic-year', 'Course::getSemestersByAcademicYear');
 $routes->post('course/get-terms-by-semester', 'Course::getTermsBySemester');
 $routes->post('course/teacher-approve-enrollment', 'Course::teacherApproveEnrollment');

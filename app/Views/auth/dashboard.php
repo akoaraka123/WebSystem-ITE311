@@ -1124,6 +1124,56 @@
                     </p>
                 </div>
 
+                <!-- Pending Teacher Assignments Section -->
+                <?php if (!empty($pendingAssignments)): ?>
+                    <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-yellow-800">
+                                <i class="fas fa-clock mr-2"></i>
+                                Pending Course Assignments
+                            </h3>
+                        </div>
+                        <div class="space-y-3">
+                            <?php foreach ($pendingAssignments as $assignment): ?>
+                                <div class="bg-white rounded-lg p-4 border border-yellow-200">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold text-gray-900"><?= esc($assignment['title'] ?? 'Untitled Course') ?></h4>
+                                            <p class="text-sm text-gray-600 mt-1">
+                                                <?php if (!empty($assignment['acad_year_name'])): ?>
+                                                    <i class="far fa-calendar mr-1"></i><?= esc($assignment['acad_year_name']) ?>
+                                                <?php endif; ?>
+                                                <?php if (!empty($assignment['semester_name'])): ?>
+                                                    • <?= esc($assignment['semester_name']) ?>
+                                                <?php endif; ?>
+                                                <?php if (!empty($assignment['program_code'])): ?>
+                                                    • <?= esc($assignment['program_code']) ?>
+                                                <?php endif; ?>
+                                            </p>
+                                            <?php if (!empty($assignment['teacher_assignment_requested_at'])): ?>
+                                                <p class="text-xs text-gray-500 mt-1">
+                                                    <i class="far fa-clock mr-1"></i>
+                                                    Requested: <?= date('M j, Y g:i A', strtotime($assignment['teacher_assignment_requested_at'])) ?>
+                                                </p>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="flex items-center gap-2 ml-4">
+                                            <button onclick="acceptTeacherAssignment(<?= $assignment['id'] ?>, '<?= esc($assignment['title'], 'attr') ?>')" 
+                                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
+                                                <i class="fas fa-check mr-1"></i> Accept
+                                            </button>
+                                            <button onclick="rejectTeacherAssignment(<?= $assignment['id'] ?>, '<?= esc($assignment['title'], 'attr') ?>')" 
+                                                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
+                                                <i class="fas fa-times mr-1"></i> Reject
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <?php if (!empty($myCourses)): ?>
                     <!-- No courses found message - Flash Message Style (hidden by default) -->
                     <div id="noCoursesFoundTeacher" class="mb-6 p-4 rounded-lg border-l-4 border-orange-500 bg-orange-100 shadow-lg hidden" style="display: none;">
@@ -4679,6 +4729,130 @@ $(document).ready(function() {
         }
     </script>
     <?php endif; ?>
+
+    <!-- Global Teacher Assignment Functions (accessible to all roles) -->
+    <script>
+        // Teacher Assignment Functions
+        function acceptTeacherAssignment(courseId, courseTitle) {
+            if (!confirm(`Are you sure you want to accept the assignment to teach "${courseTitle}"?\n\nThis will assign you as the teacher for this course.`)) {
+                return;
+            }
+            
+            // Get CSRF token
+            const csrfTokenName = '<?= csrf_token() ?>';
+            let csrfToken = '';
+            const csrfMeta = document.querySelector('meta[name="' + csrfTokenName + '"]');
+            if (csrfMeta) {
+                csrfToken = csrfMeta.getAttribute('content');
+            } else {
+                const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+                if (csrfInput) {
+                    csrfToken = csrfInput.value;
+                } else {
+                    csrfToken = '<?= csrf_hash() ?>';
+                }
+            }
+            
+            const data = {
+                course_id: courseId
+            };
+            data[csrfTokenName] = csrfToken;
+            
+            fetch('<?= base_url('courses/acceptTeacherAssignment') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update CSRF token if provided
+                if (data.csrf_hash) {
+                    if (csrfMeta) {
+                        csrfMeta.setAttribute('content', data.csrf_hash);
+                    }
+                    const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+                    if (csrfInput) {
+                        csrfInput.value = data.csrf_hash;
+                    }
+                }
+                
+                if (data.success) {
+                    alert('✅ SUCCESS: ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ERROR: ' + (data.message || 'Failed to accept assignment'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ An error occurred. Please try again.');
+            });
+        }
+
+        function rejectTeacherAssignment(courseId, courseTitle) {
+            if (!confirm(`Are you sure you want to reject the assignment to teach "${courseTitle}"?\n\nThis will decline the assignment request.`)) {
+                return;
+            }
+            
+            // Get CSRF token
+            const csrfTokenName = '<?= csrf_token() ?>';
+            let csrfToken = '';
+            const csrfMeta = document.querySelector('meta[name="' + csrfTokenName + '"]');
+            if (csrfMeta) {
+                csrfToken = csrfMeta.getAttribute('content');
+            } else {
+                const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+                if (csrfInput) {
+                    csrfToken = csrfInput.value;
+                } else {
+                    csrfToken = '<?= csrf_hash() ?>';
+                }
+            }
+            
+            const data = {
+                course_id: courseId
+            };
+            data[csrfTokenName] = csrfToken;
+            
+            fetch('<?= base_url('courses/rejectTeacherAssignment') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update CSRF token if provided
+                if (data.csrf_hash) {
+                    if (csrfMeta) {
+                        csrfMeta.setAttribute('content', data.csrf_hash);
+                    }
+                    const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+                    if (csrfInput) {
+                        csrfInput.value = data.csrf_hash;
+                    }
+                }
+                
+                if (data.success) {
+                    alert('✅ SUCCESS: ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ERROR: ' + (data.message || 'Failed to reject assignment'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ An error occurred. Please try again.');
+            });
+        }
+    </script>
 
 </body>
 </html>
