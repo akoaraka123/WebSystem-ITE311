@@ -111,6 +111,29 @@ if (form) {
         // Check file
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
             errors.push('Please select a file to upload');
+        } else {
+            // Validate file type (client-side)
+            var file = fileInput.files[0];
+            var fileName = file.name.toLowerCase();
+            var fileExt = fileName.split('.').pop();
+            
+            // Allowed types: PDF, PPT, PPTX, DOC, DOCX
+            var allowedTypes = ['pdf', 'ppt', 'pptx', 'doc', 'docx'];
+            
+            // Blocked types: Images, Videos, Audio
+            var imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'];
+            var videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', 'm4v'];
+            var audioTypes = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a'];
+            
+            if (imageTypes.indexOf(fileExt) !== -1) {
+                errors.push('❌ ERROR: Image files (photos) are not allowed. Only PPT, PDF, and DOCS files are permitted.');
+            } else if (videoTypes.indexOf(fileExt) !== -1) {
+                errors.push('❌ ERROR: Video files are not allowed. Only PPT, PDF, and DOCS files are permitted.');
+            } else if (audioTypes.indexOf(fileExt) !== -1) {
+                errors.push('❌ ERROR: Audio files (music) are not allowed. Only PPT, PDF, and DOCS files are permitted.');
+            } else if (allowedTypes.indexOf(fileExt) === -1) {
+                errors.push('❌ ERROR: Invalid file type. Only PPT (.ppt, .pptx), PDF (.pdf), and DOCS (.doc, .docx) files are allowed.');
+            }
         }
         
         // Check term

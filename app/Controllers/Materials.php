@@ -71,12 +71,40 @@ class Materials extends Controller
                 return redirect()->back()->withInput();
             }
 
+            // Only allow: PDF, PPT, PPTX, DOC, DOCX
             $allowedTypes = [
                 'pdf', 'ppt', 'pptx', 'doc', 'docx'
             ];
+            
+            // Block common image, video, and audio extensions
+            $blockedTypes = [
+                'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', // Images
+                'mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', 'm4v', // Videos
+                'mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a', // Audio
+                'zip', 'rar', '7z', 'tar', 'gz' // Archives (optional, but good to block)
+            ];
+            
             $ext = strtolower($file->getClientExtension());
+            
+            // Check if file type is blocked
+            if (in_array($ext, $blockedTypes)) {
+                $fileTypeCategory = '';
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'])) {
+                    $fileTypeCategory = 'Image files (photos)';
+                } elseif (in_array($ext, ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', 'm4v'])) {
+                    $fileTypeCategory = 'Video files';
+                } elseif (in_array($ext, ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a'])) {
+                    $fileTypeCategory = 'Audio files (music)';
+                } else {
+                    $fileTypeCategory = 'This file type';
+                }
+                $session->setFlashdata('error', '❌ ERROR: ' . $fileTypeCategory . ' are not allowed. Only PPT, PDF, and DOCS files are permitted.');
+                return redirect()->back()->withInput();
+            }
+            
+            // Check if file type is allowed
             if (!in_array($ext, $allowedTypes)) {
-                $session->setFlashdata('error', '❌ Invalid file type. Allowed: ' . implode(', ', $allowedTypes));
+                $session->setFlashdata('error', '❌ ERROR: Invalid file type. Only PPT (.ppt, .pptx), PDF (.pdf), and DOCS (.doc, .docx) files are allowed.');
                 return redirect()->back()->withInput();
             }
 
@@ -228,11 +256,39 @@ class Materials extends Controller
             return $this->response->setJSON($response);
         }
 
+        // Only allow: PDF, PPT, PPTX, DOC, DOCX
         $allowedTypes = ['pdf', 'ppt', 'pptx', 'doc', 'docx'];
+        
+        // Block common image, video, and audio extensions
+        $blockedTypes = [
+            'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', // Images
+            'mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', 'm4v', // Videos
+            'mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a', // Audio
+            'zip', 'rar', '7z', 'tar', 'gz' // Archives (optional, but good to block)
+        ];
+        
         $ext = strtolower($file->getClientExtension());
-
+        
+        // Check if file type is blocked
+        if (in_array($ext, $blockedTypes)) {
+            $fileTypeCategory = '';
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'])) {
+                $fileTypeCategory = 'Image files (photos)';
+            } elseif (in_array($ext, ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', 'm4v'])) {
+                $fileTypeCategory = 'Video files';
+            } elseif (in_array($ext, ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a'])) {
+                $fileTypeCategory = 'Audio files (music)';
+            } else {
+                $fileTypeCategory = 'This file type';
+            }
+            $response['message'] = '❌ ERROR: ' . $fileTypeCategory . ' are not allowed. Only PPT, PDF, and DOCS files are permitted.';
+            $response['csrf_hash'] = csrf_hash();
+            return $this->response->setJSON($response);
+        }
+        
+        // Check if file type is allowed
         if (!in_array($ext, $allowedTypes)) {
-            $response['message'] = 'Invalid file type. Allowed: ' . implode(', ', $allowedTypes);
+            $response['message'] = '❌ ERROR: Invalid file type. Only PPT (.ppt, .pptx), PDF (.pdf), and DOCS (.doc, .docx) files are allowed.';
             $response['csrf_hash'] = csrf_hash();
             return $this->response->setJSON($response);
         }

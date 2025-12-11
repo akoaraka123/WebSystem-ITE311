@@ -1370,6 +1370,7 @@
                                         <div class="mb-2">
                                             <label class="block mb-1 text-sm font-medium text-gray-700">Upload Material</label>
                                             <input type="file" name="material" required
+                                                accept=".pdf,.ppt,.pptx,.doc,.docx"
                                                 class="block w-full text-sm text-gray-500
                                                        file:mr-4 file:py-2 file:px-4
                                                        file:rounded-md file:border-0
@@ -1803,7 +1804,7 @@
                                         <?php endif; ?>
                                         
                                         <div class="flex gap-2 mt-4">
-                                            <a href="<?= base_url('courses/view/' . $course['id']) ?>" 
+                                            <a href="<?= base_url('course/' . $course['id']) ?>" 
                                                class="flex-1 text-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors">
                                                 <i class="fas fa-eye mr-2"></i> View
                                             </a>
@@ -2306,6 +2307,41 @@ $(document).ready(function() {
             } else {
                 alert('Please select a file to upload');
             }
+            return;
+        }
+        
+        // Validate file type (client-side)
+        var file = fileInput[0].files[0];
+        var fileName = file.name.toLowerCase();
+        var fileExt = fileName.split('.').pop();
+        
+        // Allowed types: PDF, PPT, PPTX, DOC, DOCX
+        var allowedTypes = ['pdf', 'ppt', 'pptx', 'doc', 'docx'];
+        
+        // Blocked types: Images, Videos, Audio
+        var imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'];
+        var videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', 'm4v'];
+        var audioTypes = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a'];
+        
+        var errorMessage = '';
+        
+        if (imageTypes.indexOf(fileExt) !== -1) {
+            errorMessage = '❌ ERROR: Image files (photos) are not allowed. Only PPT, PDF, and DOCS files are permitted.';
+        } else if (videoTypes.indexOf(fileExt) !== -1) {
+            errorMessage = '❌ ERROR: Video files are not allowed. Only PPT, PDF, and DOCS files are permitted.';
+        } else if (audioTypes.indexOf(fileExt) !== -1) {
+            errorMessage = '❌ ERROR: Audio files (music) are not allowed. Only PPT, PDF, and DOCS files are permitted.';
+        } else if (allowedTypes.indexOf(fileExt) === -1) {
+            errorMessage = '❌ ERROR: Invalid file type. Only PPT (.ppt, .pptx), PDF (.pdf), and DOCS (.doc, .docx) files are allowed.';
+        }
+        
+        if (errorMessage) {
+            if (messageDiv.length) {
+                messageDiv.text(errorMessage).css('color', 'red');
+            } else {
+                alert(errorMessage);
+            }
+            fileInput.val(''); // Clear the file input
             return;
         }
         
