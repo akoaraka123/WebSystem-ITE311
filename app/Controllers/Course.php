@@ -294,7 +294,7 @@ class Course extends BaseController
                 
                 $session->setFlashdata('error', 
                     '❌ Time Conflict Detected! The teacher is already assigned to course "' . esc($conflict['title']) . 
-                    '" at ' . esc($conflictTime) . ' on ' . date('M d, Y', strtotime($scheduleDate)) . 
+                    '" at ' . esc($conflictTime) . ' on ' . date('M d, Y', strtotime($scheduleDateStart)) . 
                     '. Please choose a different time or date.');
                 return redirect()->to(base_url('create-course'))->withInput();
             }
@@ -542,7 +542,7 @@ class Course extends BaseController
                 
                 $session->setFlashdata('error', 
                     '❌ Time Conflict Detected! The teacher is already assigned to course "' . esc($conflict['title']) . 
-                    '" at ' . esc($conflictTime) . ' on ' . date('M d, Y', strtotime($scheduleDate)) . 
+                    '" at ' . esc($conflictTime) . ' on ' . date('M d, Y', strtotime($conflictDate)) . 
                     '. Please choose a different time or date.');
                 return redirect()->to(base_url('edit-course/' . $id))->withInput();
             }

@@ -346,10 +346,6 @@ public function dashboard()
     // 🔹 Get user info from session
     $role   = $session->get('role');
     $userID = $session->get('userID');
-        'userID' => $userID,
-        'name' => $session->get('name'),
-        'email' => $session->get('email')
-    ]));
 
     // Load models
     $userModel       = new \App\Models\UserModel();
