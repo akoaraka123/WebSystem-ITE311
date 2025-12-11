@@ -962,11 +962,35 @@
                     }
                     
                     if (response.success) {
-                        alert('Student enrolled successfully!');
+                        alert('✅ SUCCESS: Student enrolled successfully!');
                         $('#enrollStudentModal').modal('hide');
                         location.reload();
                     } else {
-                        alert('Error: ' + (response.message || 'Failed to enroll student'));
+                        // Show prominent error message
+                        const errorMsg = response.message || 'Failed to enroll student';
+                        alert('⚠️ ' + errorMsg);
+                        
+                        // Show flash message for program restriction errors
+                        if (errorMsg.includes('NOT enrolled') || errorMsg.includes('enrolled in') || errorMsg.includes('ENROLLMENT FAILED')) {
+                            // Create flash message
+                            const flashHtml = `
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                    <strong><i class="fas fa-exclamation-triangle mr-2"></i>Enrollment Failed!</strong><br>
+                                    <span>${errorMsg}</span>
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                            `;
+                            $('body').append(flashHtml);
+                            
+                            // Auto-remove after 10 seconds
+                            setTimeout(function() {
+                                $('.alert-danger').fadeOut(function() {
+                                    $(this).remove();
+                                });
+                            }, 10000);
+                        }
                     }
                 },
                 error: function(xhr) {

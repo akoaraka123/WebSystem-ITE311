@@ -743,31 +743,34 @@ class Course extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'You are already enrolled in this course or have a pending enrollment request.', 'csrf_hash' => csrf_hash()]);
         }
 
-        // Check program restriction - student can only enroll in courses from the same program
+        // Check if student is enrolled in a program first
+        $studentProgramModel = new \App\Models\StudentProgramModel();
+        $studentProgram = $studentProgramModel->getStudentProgram($userID);
+        
         if (!empty($course['program_id'])) {
-            $studentPrograms = $this->enrollmentModel->getStudentProgramIds($userID);
-            
-            if (!empty($studentPrograms)) {
-                // Student has existing enrollments - check if program matches
-                $studentProgramIds = array_filter(array_column($studentPrograms, 'program_id'));
+            // Check if student is enrolled in the program
+            if (!$studentProgram || $studentProgram['program_id'] != $course['program_id']) {
+                $programModel = new \App\Models\ProgramModel();
+                $requiredProgram = $programModel->find($course['program_id']);
+                $programName = $requiredProgram ? $requiredProgram['code'] : 'Unknown';
                 
-                if (!empty($studentProgramIds) && !in_array($course['program_id'], $studentProgramIds)) {
-                    // Get program names for error message
-                    $programModel = new \App\Models\ProgramModel();
-                    $currentProgram = $programModel->find($studentProgramIds[0]);
-                    $newProgram = $programModel->find($course['program_id']);
-                    
+                if (!$studentProgram) {
+                    return $this->response->setJSON([
+                        'success' => false, 
+                        'message' => 'You must be enrolled in ' . esc($programName) . ' program first before enrolling in courses. Please contact administrator to enroll you in the program.', 
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                } else {
+                    $currentProgram = $programModel->find($studentProgram['program_id']);
                     $currentProgramName = $currentProgram ? $currentProgram['code'] : 'Unknown';
-                    $newProgramName = $newProgram ? $newProgram['code'] : 'Unknown';
                     
                     return $this->response->setJSON([
                         'success' => false, 
-                        'message' => 'Program restriction: You are enrolled in ' . esc($currentProgramName) . ' program. Cannot enroll in ' . esc($newProgramName) . ' program courses. You can only enroll in courses from the same program.', 
+                        'message' => 'Program restriction: You are enrolled in ' . esc($currentProgramName) . ' program. Cannot enroll in ' . esc($programName) . ' program courses. You can only enroll in courses from the same program.', 
                         'csrf_hash' => csrf_hash()
                     ]);
                 }
             }
-            // If student has no enrollments yet, allow enrollment (first enrollment)
         }
 
         // Create pending enrollment (requires teacher approval)
@@ -1016,31 +1019,34 @@ class Course extends BaseController
             ]);
         }
 
-        // Check program restriction - student can only enroll in courses from the same program
+        // Check if student is enrolled in a program first
+        $studentProgramModel = new \App\Models\StudentProgramModel();
+        $studentProgram = $studentProgramModel->getStudentProgram($studentId);
+        
         if (!empty($course['program_id'])) {
-            $studentPrograms = $this->enrollmentModel->getStudentProgramIds($studentId);
-            
-            if (!empty($studentPrograms)) {
-                // Student has existing enrollments - check if program matches
-                $studentProgramIds = array_filter(array_column($studentPrograms, 'program_id'));
+            // Check if student is enrolled in the program
+            if (!$studentProgram || $studentProgram['program_id'] != $course['program_id']) {
+                $programModel = new \App\Models\ProgramModel();
+                $requiredProgram = $programModel->find($course['program_id']);
+                $programName = $requiredProgram ? $requiredProgram['code'] . ' - ' . $requiredProgram['name'] : 'Unknown';
                 
-                if (!empty($studentProgramIds) && !in_array($course['program_id'], $studentProgramIds)) {
-                    // Get program names for error message
-                    $programModel = new \App\Models\ProgramModel();
-                    $currentProgram = $programModel->find($studentProgramIds[0]);
-                    $newProgram = $programModel->find($course['program_id']);
-                    
-                    $currentProgramName = $currentProgram ? $currentProgram['code'] : 'Unknown';
-                    $newProgramName = $newProgram ? $newProgram['code'] : 'Unknown';
+                if (!$studentProgram) {
+                    return $this->response->setJSON([
+                        'success' => false, 
+                        'message' => '❌ ENROLLMENT FAILED: Student is NOT enrolled in any program. The student must be enrolled in ' . esc($programName) . ' program FIRST before they can be added to this course. Please contact administrator to enroll the student in the program first.', 
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                } else {
+                    $currentProgram = $programModel->find($studentProgram['program_id']);
+                    $currentProgramName = $currentProgram ? $currentProgram['code'] . ' - ' . $currentProgram['name'] : 'Unknown';
                     
                     return $this->response->setJSON([
                         'success' => false, 
-                        'message' => 'Program restriction: Student is enrolled in ' . esc($currentProgramName) . ' program. Cannot enroll in ' . esc($newProgramName) . ' program courses. Students can only enroll in courses from the same program.', 
+                        'message' => '❌ ENROLLMENT FAILED: Student is enrolled in ' . esc($currentProgramName) . ' program. Cannot add student to ' . esc($programName) . ' program course. Students can ONLY enroll in courses from the SAME program they are enrolled in.', 
                         'csrf_hash' => csrf_hash()
                     ]);
                 }
             }
-            // If student has no enrollments yet, allow enrollment (first enrollment)
         }
 
         // Check if there's a rejected enrollment - if so, update it to accepted instead of creating new
@@ -1384,31 +1390,34 @@ class Course extends BaseController
             ]);
         }
 
-        // Check program restriction - student can only enroll in courses from the same program
+        // Check if student is enrolled in a program first
+        $studentProgramModel = new \App\Models\StudentProgramModel();
+        $studentProgram = $studentProgramModel->getStudentProgram($studentId);
+        
         if (!empty($course['program_id'])) {
-            $studentPrograms = $this->enrollmentModel->getStudentProgramIds($studentId);
-            
-            if (!empty($studentPrograms)) {
-                // Student has existing enrollments - check if program matches
-                $studentProgramIds = array_filter(array_column($studentPrograms, 'program_id'));
+            // Check if student is enrolled in the program
+            if (!$studentProgram || $studentProgram['program_id'] != $course['program_id']) {
+                $programModel = new \App\Models\ProgramModel();
+                $requiredProgram = $programModel->find($course['program_id']);
+                $programName = $requiredProgram ? $requiredProgram['code'] . ' - ' . $requiredProgram['name'] : 'Unknown';
                 
-                if (!empty($studentProgramIds) && !in_array($course['program_id'], $studentProgramIds)) {
-                    // Get program names for error message
-                    $programModel = new \App\Models\ProgramModel();
-                    $currentProgram = $programModel->find($studentProgramIds[0]);
-                    $newProgram = $programModel->find($course['program_id']);
-                    
-                    $currentProgramName = $currentProgram ? $currentProgram['code'] : 'Unknown';
-                    $newProgramName = $newProgram ? $newProgram['code'] : 'Unknown';
+                if (!$studentProgram) {
+                    return $this->response->setJSON([
+                        'success' => false, 
+                        'message' => '❌ ENROLLMENT FAILED: Student is NOT enrolled in any program. The student must be enrolled in ' . esc($programName) . ' program FIRST before they can be added to this course. Please enroll the student in the program first using "Enroll Student Program" feature.', 
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                } else {
+                    $currentProgram = $programModel->find($studentProgram['program_id']);
+                    $currentProgramName = $currentProgram ? $currentProgram['code'] . ' - ' . $currentProgram['name'] : 'Unknown';
                     
                     return $this->response->setJSON([
                         'success' => false, 
-                        'message' => 'Program restriction: Student is enrolled in ' . esc($currentProgramName) . ' program. Cannot enroll in ' . esc($newProgramName) . ' program courses. Students can only enroll in courses from the same program.', 
+                        'message' => '❌ ENROLLMENT FAILED: Student is enrolled in ' . esc($currentProgramName) . ' program. Cannot add student to ' . esc($programName) . ' program course. Students can ONLY enroll in courses from the SAME program they are enrolled in.', 
                         'csrf_hash' => csrf_hash()
                     ]);
                 }
             }
-            // If student has no enrollments yet, allow enrollment (first enrollment)
         }
 
         // Admin enrolls student - creates pending enrollment, student needs to accept/reject

@@ -1571,6 +1571,25 @@
                         </div>
                     </a>
 
+                    <button type="button" onclick="openEnrollmentModal()" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-green-500 text-left w-full">
+                        <div class="flex-shrink-0 p-3 bg-green-100 rounded-lg">
+                            <i class="text-2xl text-green-600 fas fa-user-graduate"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">Enroll Student Program</p>
+                            <p class="text-xs text-gray-500">Program & Course</p>
+                        </div>
+                    </button>
+
+                    <button type="button" onclick="openEnrolledStudentsModal()" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-indigo-500 text-left w-full">
+                        <div class="flex-shrink-0 p-3 bg-indigo-100 rounded-lg">
+                            <i class="text-2xl text-indigo-600 fas fa-users"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">View Enrolled Students</p>
+                            <p class="text-xs text-gray-500">By Program</p>
+                        </div>
+                    </button>
 
                     <a href="<?= base_url('school-setup') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-purple-500">
                         <div class="flex-shrink-0 p-3 bg-purple-100 rounded-lg">
@@ -3257,16 +3276,42 @@ $(document).ready(function() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Enrollment request sent to student!');
+                        alert('✅ SUCCESS: Enrollment request sent to student!');
                         // Reload the page to update student count
                         location.reload();
                     } else {
-                        alert(data.message || 'Failed to add student');
+                        // Show prominent error message
+                        const errorMsg = data.message || 'Failed to add student';
+                        alert('⚠️ ' + errorMsg);
+                        
+                        // Also show flash message if available
+                        if (errorMsg.includes('NOT enrolled') || errorMsg.includes('enrolled in') || errorMsg.includes('ENROLLMENT FAILED')) {
+                            // Create a flash message element
+                            const flashDiv = document.createElement('div');
+                            flashDiv.className = 'fixed top-4 right-4 z-50 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg max-w-md';
+                            flashDiv.innerHTML = `
+                                <div class="flex items-center">
+                                    <i class="fas fa-exclamation-triangle text-2xl mr-3"></i>
+                                    <div>
+                                        <p class="font-bold">Enrollment Failed</p>
+                                        <p class="text-sm mt-1">${errorMsg}</p>
+                                    </div>
+                                </div>
+                            `;
+                            document.body.appendChild(flashDiv);
+                            
+                            // Remove after 8 seconds
+                            setTimeout(() => {
+                                flashDiv.style.transition = 'opacity 0.5s';
+                                flashDiv.style.opacity = '0';
+                                setTimeout(() => flashDiv.remove(), 500);
+                            }, 8000);
+                        }
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
+                    alert('❌ An error occurred. Please try again.');
                 });
         }
 
@@ -3778,6 +3823,642 @@ $(document).ready(function() {
             </div>
         </div>
     </div>
+
+    <!-- Enrollment Modal (Admin Only) -->
+    <?php if ($user['role'] === 'admin'): ?>
+    <div id="enrollmentModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="enrollment-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true" onclick="closeEnrollmentModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4" id="enrollment-modal-title">
+                                <i class="fas fa-user-graduate mr-2 text-green-600"></i>
+                                Enroll Student Program
+                            </h3>
+                            
+                            <form id="enrollmentForm">
+                                <?= csrf_field() ?>
+                                
+                                <!-- Step 1: Select Student -->
+                                <div id="enrollmentStep1" class="mb-6">
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Step 1: Select Student</h4>
+                                    <div class="form-group mb-3">
+                                        <label for="search_student" class="block text-sm font-medium text-gray-700 mb-2">Search Student</label>
+                                        <div class="relative">
+                                            <input type="text" id="search_student" placeholder="Type to search students..." class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="enrollment_student_id" class="block text-sm font-medium text-gray-700 mb-2">Student *</label>
+                                        <select id="enrollment_student_id" name="student_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" size="8">
+                                            <option value="" disabled selected style="display:none;">Start typing in the search bar to see students...</option>
+                                            <?php 
+                                            $userModel = new \App\Models\UserModel();
+                                            $students = $userModel->where('role', 'student')->findAll();
+                                            foreach ($students as $student): 
+                                            ?>
+                                                <option value="<?= $student['id'] ?>" data-name="<?= esc(strtolower($student['name'])) ?>" data-email="<?= esc(strtolower($student['email'])) ?>" style="display:none;"><?= esc($student['name']) ?> (<?= esc($student['email']) ?>)</option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <p class="text-xs text-gray-500 mt-1">Type in the search bar above to find and select a student</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Step 2: Select Program -->
+                                <div id="enrollmentStep2" class="mb-6">
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Step 2: Enroll in Program</h4>
+                                    <div class="form-group mb-3">
+                                        <label for="search_program" class="block text-sm font-medium text-gray-700 mb-2">Search Program</label>
+                                        <div class="relative">
+                                            <input type="text" id="search_program" placeholder="Type to search programs..." class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                        </div>
+                                    </div>
+                                    <div class="form-group mb-4">
+                                        <label for="enrollment_program_id" class="block text-sm font-medium text-gray-700 mb-2">Program *</label>
+                                        <select id="enrollment_program_id" name="program_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" size="8">
+                                            <option value="" disabled selected style="display:none;">Start typing in the search bar to see programs...</option>
+                                            <?php 
+                                            $programModel = new \App\Models\ProgramModel();
+                                            $programs = $programModel->where('is_active', 1)->findAll();
+                                            foreach ($programs as $program): 
+                                            ?>
+                                                <option value="<?= $program['id'] ?>" data-code="<?= esc(strtolower($program['code'])) ?>" data-name="<?= esc(strtolower($program['name'])) ?>" style="display:none;"><?= esc($program['code']) ?> - <?= esc($program['name']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <p class="text-xs text-gray-500 mt-1">Type in the search bar above to find and select a program</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Error/Success Messages -->
+                                <div id="enrollmentMessage" class="hidden mb-4 p-3 rounded-md"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="submitEnrollment()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <i class="fas fa-check mr-2"></i>
+                        Enroll Student Program
+                    </button>
+                    <button type="button" onclick="closeEnrollmentModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Enrollment Modal Functions
+        function openEnrollmentModal() {
+            document.getElementById('enrollmentModal').classList.remove('hidden');
+            document.getElementById('enrollmentForm').reset();
+            document.getElementById('enrollmentMessage').classList.add('hidden');
+            
+            // Reset search bars
+            document.getElementById('search_student').value = '';
+            document.getElementById('search_program').value = '';
+            
+            // Show all options
+            filterStudents('');
+            filterPrograms('');
+        }
+        
+        function closeEnrollmentModal() {
+            document.getElementById('enrollmentModal').classList.add('hidden');
+        }
+        
+        // Filter students based on search
+        function filterStudents(searchTerm) {
+            const select = document.getElementById('enrollment_student_id');
+            const options = select.querySelectorAll('option');
+            const term = searchTerm.toLowerCase().trim();
+            
+            // If no search term, hide all options except placeholder
+            if (term === '') {
+                options.forEach(option => {
+                    if (option.value === '' || option.hasAttribute('disabled')) {
+                        option.style.display = 'block';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+                return;
+            }
+            
+            // Hide placeholder and show matching options
+            options.forEach(option => {
+                if (option.hasAttribute('disabled')) {
+                    option.style.display = 'none';
+                    return;
+                }
+                
+                if (option.value === '') {
+                    option.style.display = 'none';
+                    return;
+                }
+                
+                const name = option.getAttribute('data-name') || '';
+                const email = option.getAttribute('data-email') || '';
+                const text = option.textContent.toLowerCase();
+                
+                if (name.includes(term) || email.includes(term) || text.includes(term)) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        }
+        
+        // Filter programs based on search
+        function filterPrograms(searchTerm) {
+            const select = document.getElementById('enrollment_program_id');
+            const options = select.querySelectorAll('option');
+            const term = searchTerm.toLowerCase().trim();
+            
+            // If no search term, hide all options except placeholder
+            if (term === '') {
+                options.forEach(option => {
+                    if (option.value === '' || option.hasAttribute('disabled')) {
+                        option.style.display = 'block';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+                return;
+            }
+            
+            // Hide placeholder and show matching options
+            options.forEach(option => {
+                if (option.hasAttribute('disabled')) {
+                    option.style.display = 'none';
+                    return;
+                }
+                
+                if (option.value === '') {
+                    option.style.display = 'none';
+                    return;
+                }
+                
+                const code = option.getAttribute('data-code') || '';
+                const name = option.getAttribute('data-name') || '';
+                const text = option.textContent.toLowerCase();
+                
+                if (code.includes(term) || name.includes(term) || text.includes(term)) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        }
+        
+        // Add event listeners for search
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchStudent = document.getElementById('search_student');
+            const searchProgram = document.getElementById('search_program');
+            const studentSelect = document.getElementById('enrollment_student_id');
+            const programSelect = document.getElementById('enrollment_program_id');
+            
+            if (searchStudent) {
+                searchStudent.addEventListener('input', function() {
+                    filterStudents(this.value);
+                });
+            }
+            
+            if (searchProgram) {
+                searchProgram.addEventListener('input', function() {
+                    filterPrograms(this.value);
+                });
+            }
+            
+            // When student is selected, remove it from the list
+            if (studentSelect) {
+                studentSelect.addEventListener('change', function(e) {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (selectedOption && selectedOption.value && !selectedOption.hasAttribute('disabled')) {
+                        // Hide the selected option
+                        selectedOption.style.display = 'none';
+                        
+                        // Extract name from option text (format: "Name (email)")
+                        const optionText = selectedOption.textContent;
+                        const nameMatch = optionText.match(/^([^(]+)/);
+                        if (nameMatch) {
+                            const name = nameMatch[1].trim();
+                            searchStudent.value = name;
+                        }
+                    }
+                });
+                
+                // Double-click on student option to fill search
+                studentSelect.addEventListener('dblclick', function(e) {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (selectedOption && selectedOption.value && !selectedOption.hasAttribute('disabled')) {
+                        // Extract name from option text (format: "Name (email)")
+                        const optionText = selectedOption.textContent;
+                        const nameMatch = optionText.match(/^([^(]+)/);
+                        if (nameMatch) {
+                            const name = nameMatch[1].trim();
+                            searchStudent.value = name;
+                            filterStudents(name);
+                        }
+                    }
+                });
+            }
+            
+            // When program is selected, remove it from the list
+            if (programSelect) {
+                programSelect.addEventListener('change', function(e) {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (selectedOption && selectedOption.value && !selectedOption.hasAttribute('disabled')) {
+                        // Hide the selected option
+                        selectedOption.style.display = 'none';
+                        
+                        // Extract program code or name from option text
+                        const optionText = selectedOption.textContent;
+                        searchProgram.value = optionText;
+                    }
+                });
+                
+                // Double-click on program option to fill search
+                programSelect.addEventListener('dblclick', function(e) {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (selectedOption && selectedOption.value && !selectedOption.hasAttribute('disabled')) {
+                        // Extract program code or name from option text
+                        const optionText = selectedOption.textContent;
+                        searchProgram.value = optionText;
+                        filterPrograms(optionText);
+                    }
+                });
+            }
+        });
+        
+        function submitEnrollment() {
+            const form = document.getElementById('enrollmentForm');
+            const formData = new FormData(form);
+            const messageDiv = document.getElementById('enrollmentMessage');
+            
+            // Validate required fields
+            const studentId = formData.get('student_id');
+            const programId = formData.get('program_id');
+            
+            if (!studentId || !programId) {
+                messageDiv.className = 'mb-4 p-3 rounded-md bg-red-50 border border-red-200';
+                messageDiv.innerHTML = '<p class="text-sm text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>Please fill in all required fields.</p>';
+                messageDiv.classList.remove('hidden');
+                return;
+            }
+            
+            // Show loading
+            messageDiv.className = 'mb-4 p-3 rounded-md bg-blue-50 border border-blue-200';
+            messageDiv.innerHTML = '<p class="text-sm text-blue-800"><i class="fas fa-spinner fa-spin mr-2"></i>Enrolling student...</p>';
+            messageDiv.classList.remove('hidden');
+            
+            // Prepare data
+            const data = {
+                student_id: studentId,
+                program_id: programId,
+                course_ids: [],
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+            };
+            
+            // Submit enrollment
+            fetch('<?= base_url('enrollment/enrollStudent') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageDiv.className = 'mb-4 p-3 rounded-md bg-green-50 border border-green-200';
+                    messageDiv.innerHTML = '<p class="text-sm text-green-800"><i class="fas fa-check-circle mr-2"></i>' + data.message + '</p>';
+                    
+                    // Reload page after 2 seconds
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    messageDiv.className = 'mb-4 p-3 rounded-md bg-red-50 border border-red-200';
+                    messageDiv.innerHTML = '<p class="text-sm text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>' + (data.message || 'Error enrolling student.') + '</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                messageDiv.className = 'mb-4 p-3 rounded-md bg-red-50 border border-red-200';
+                messageDiv.innerHTML = '<p class="text-sm text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>An error occurred. Please try again.</p>';
+            });
+        }
+    </script>
+    
+    <!-- Enrolled Students by Program Modal -->
+    <div id="enrolledStudentsByProgramModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="enrolled-students-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true" onclick="closeEnrolledStudentsByProgramModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4" id="enrolled-students-modal-title">
+                                <i class="fas fa-users mr-2 text-indigo-600"></i>
+                                Enrolled Students by Program
+                            </h3>
+                            
+                            <!-- Loading State -->
+                            <div id="enrolledStudentsByProgramLoading" class="text-center py-8">
+                                <i class="fas fa-spinner fa-spin text-indigo-500 text-2xl"></i>
+                                <p class="text-sm text-gray-500 mt-2">Loading enrolled students...</p>
+                            </div>
+                            
+                            <!-- Error State -->
+                            <div id="enrolledStudentsByProgramError" class="hidden text-center py-4 text-red-600"></div>
+                            
+                            <!-- Content -->
+                            <div id="enrolledStudentsByProgramContent" class="hidden">
+                                <div id="enrolledStudentsByProgramList" class="space-y-6"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeEnrolledStudentsByProgramModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Enrolled Students by Program Modal Functions
+        function openEnrolledStudentsModal() {
+            document.getElementById('enrolledStudentsByProgramModal').classList.remove('hidden');
+            document.getElementById('enrolledStudentsByProgramLoading').classList.remove('hidden');
+            document.getElementById('enrolledStudentsByProgramContent').classList.add('hidden');
+            document.getElementById('enrolledStudentsByProgramError').classList.add('hidden');
+            
+            // Fetch enrolled students
+            fetch('<?= base_url('enrollment/getEnrolledStudentsByProgram') ?>', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('enrolledStudentsByProgramLoading').classList.add('hidden');
+                
+                if (data.success && data.data) {
+                    renderEnrolledStudentsByProgram(data.data);
+                    document.getElementById('enrolledStudentsByProgramContent').classList.remove('hidden');
+                } else {
+                    document.getElementById('enrolledStudentsByProgramError').classList.remove('hidden');
+                    document.getElementById('enrolledStudentsByProgramError').textContent = data.message || 'No enrolled students found.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('enrolledStudentsByProgramLoading').classList.add('hidden');
+                document.getElementById('enrolledStudentsByProgramError').classList.remove('hidden');
+                document.getElementById('enrolledStudentsByProgramError').textContent = 'Error loading enrolled students. Please try again.';
+            });
+        }
+        
+        function closeEnrolledStudentsByProgramModal() {
+            document.getElementById('enrolledStudentsByProgramModal').classList.add('hidden');
+        }
+        
+        function renderEnrolledStudentsByProgram(groupedData) {
+            const container = document.getElementById('enrolledStudentsByProgramList');
+            
+            if (Object.keys(groupedData).length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-8">No enrolled students found.</p>';
+                return;
+            }
+            
+            let html = '';
+            
+            for (const [programKey, programData] of Object.entries(groupedData)) {
+                const programCode = programData.program_code || 'N/A';
+                const programName = programData.program_name || 'Unknown Program';
+                const students = programData.students || [];
+                const studentCount = students.length;
+                
+                html += `
+                    <div class="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                        <div class="bg-indigo-50 px-4 py-3 border-b border-indigo-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-lg font-semibold text-indigo-900">
+                                        <i class="fas fa-graduation-cap mr-2"></i>
+                                        ${programCode} - ${programName}
+                                    </h4>
+                                    <p class="text-sm text-indigo-700 mt-1">
+                                        <i class="fas fa-user-graduate mr-1"></i>
+                                        ${studentCount} ${studentCount === 1 ? 'Student' : 'Students'} Enrolled
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4">
+                            <div class="space-y-2">
+                                ${students.map((student, index) => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                        <div class="flex items-center flex-1">
+                                            <div class="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                                <span class="text-indigo-600 font-semibold text-sm">${index + 1}</span>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-gray-900">${student.student_name}</p>
+                                                <p class="text-xs text-gray-500">${student.student_email}</p>
+                                                <p class="text-xs text-gray-400 mt-1">
+                                                    <i class="far fa-calendar mr-1"></i>
+                                                    Enrolled: ${new Date(student.enrollment_date).toLocaleDateString()}
+                                                    ${student.acad_year_name && student.acad_year_name !== 'N/A' ? ' • ' + student.acad_year_name : ''}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-3 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                                                <i class="fas fa-check-circle mr-1"></i>Active
+                                            </span>
+                                            <button onclick="forwardStudentToProgram(${student.user_id}, ${programData.program_id}, '${student.student_name}', '${programCode}')" 
+                                                    class="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                                                    title="Transfer to another program">
+                                                <i class="fas fa-forward mr-1"></i> Forward
+                                            </button>
+                                            <button onclick="removeStudentFromProgram(${student.user_id}, ${programData.program_id}, '${student.student_name}', '${programCode}')" 
+                                                    class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
+                                                    title="Remove from program">
+                                                <i class="fas fa-times mr-1"></i> Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // Remove student from program
+        function removeStudentFromProgram(userId, programId, studentName, programCode) {
+            if (!confirm(`Are you sure you want to remove "${studentName}" from ${programCode} program?\n\nThis will remove the student from the program enrollment.`)) {
+                return;
+            }
+            
+            const data = {
+                user_id: userId,
+                program_id: programId,
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+            };
+            
+            fetch('<?= base_url('enrollment/removeStudentFromProgram') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ SUCCESS: ' + data.message);
+                    // Reload the modal to refresh the list
+                    openEnrolledStudentsModal();
+                } else {
+                    alert('❌ ERROR: ' + (data.message || 'Failed to remove student from program'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ An error occurred. Please try again.');
+            });
+        }
+        
+        // Forward student to another program
+        function forwardStudentToProgram(userId, currentProgramId, studentName, currentProgramCode) {
+            // Get programs list
+            const programs = <?= json_encode(array_map(function($p) { return ['id' => $p['id'], 'code' => $p['code'], 'name' => $p['name']]; }, (new \App\Models\ProgramModel())->where('is_active', 1)->findAll())) ?>;
+            
+            // Show modal to select new program
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-50 overflow-y-auto';
+            
+            let optionsHtml = '<option value="">Select a program...</option>';
+            programs.forEach(program => {
+                const disabled = program.id == currentProgramId ? 'disabled' : '';
+                optionsHtml += `<option value="${program.id}" data-code="${program.code}" ${disabled}>${program.code} - ${program.name}</option>`;
+            });
+            
+            modal.innerHTML = `
+                <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                    <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="this.closest('.fixed').remove()"></div>
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">
+                                <i class="fas fa-forward mr-2 text-blue-600"></i>
+                                Forward Student to Another Program
+                            </h3>
+                            <p class="text-sm text-gray-600 mb-4">
+                                Student: <strong>${studentName}</strong><br>
+                                Current Program: <strong>${currentProgramCode}</strong>
+                            </p>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select New Program *</label>
+                                <select id="forwardProgramSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                    ${optionsHtml}
+                                </select>
+                            </div>
+                            <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                                <p class="text-xs text-yellow-800">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    <strong>Note:</strong> This will transfer the student from ${currentProgramCode} to the selected program. The student will be removed from the current program.
+                                </p>
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                    Cancel
+                                </button>
+                                <button onclick="confirmForwardStudent(${userId}, ${currentProgramId}, '${studentName}')" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                    <i class="fas fa-forward mr-2"></i> Forward
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        // Confirm forward student
+        function confirmForwardStudent(userId, currentProgramId, studentName) {
+            const newProgramId = document.getElementById('forwardProgramSelect').value;
+            const newProgramOption = document.getElementById('forwardProgramSelect').options[document.getElementById('forwardProgramSelect').selectedIndex];
+            const newProgramCode = newProgramOption ? newProgramOption.getAttribute('data-code') : '';
+            
+            if (!newProgramId) {
+                alert('Please select a program to forward the student to.');
+                return;
+            }
+            
+            if (newProgramId == currentProgramId) {
+                alert('Student is already enrolled in this program. Please select a different program.');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to forward "${studentName}" to ${newProgramCode} program?\n\nThis will remove the student from the current program and enroll them in the new program.`)) {
+                return;
+            }
+            
+            const data = {
+                user_id: userId,
+                current_program_id: currentProgramId,
+                new_program_id: newProgramId,
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+            };
+            
+            fetch('<?= base_url('enrollment/forwardStudentToProgram') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Close forward modal
+                document.querySelector('.fixed.inset-0.z-50').remove();
+                
+                if (data.success) {
+                    alert('✅ SUCCESS: ' + data.message);
+                    // Reload the enrolled students modal to refresh the list
+                    openEnrolledStudentsModal();
+                } else {
+                    alert('❌ ERROR: ' + (data.message || 'Failed to forward student to program'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ An error occurred. Please try again.');
+            });
+        }
+    </script>
+    <?php endif; ?>
 
 </body>
 </html>

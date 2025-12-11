@@ -127,6 +127,15 @@ $routes->get('school-setup/getAcademicYear/(:num)', 'SchoolSetup::getAcademicYea
 $routes->get('school-setup/getSemester/(:num)', 'SchoolSetup::getSemester/$1');
 
 // ========================================
+// ENROLLMENT (Admin Only)
+// ========================================
+$routes->post('enrollment/getCoursesByProgram', 'Enrollment::getCoursesByProgram');
+$routes->post('enrollment/enrollStudent', 'Enrollment::enrollStudent');
+$routes->get('enrollment/getEnrolledStudentsByProgram', 'Enrollment::getEnrolledStudentsByProgram');
+$routes->post('enrollment/removeStudentFromProgram', 'Enrollment::removeStudentFromProgram');
+$routes->post('enrollment/forwardStudentToProgram', 'Enrollment::forwardStudentToProgram');
+
+// ========================================
 // SEEDER (for testing)
 // ========================================
 $routes->get('seed', 'Seed::index');
