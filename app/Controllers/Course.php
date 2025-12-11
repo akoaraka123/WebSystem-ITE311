@@ -1164,10 +1164,12 @@ class Course extends BaseController
                     ]);
             }
             
-            // Check if enrollment was admin-initiated BEFORE updating
+            // Check if enrollment was admin-initiated or teacher-initiated BEFORE updating
             // Check for both integer 1 and string "1" to be safe
             $isAdminInitiated = !empty($enrollment['admin_approved']) && 
                                ($enrollment['admin_approved'] == 1 || $enrollment['admin_approved'] === '1' || (int)$enrollment['admin_approved'] === 1);
+            $isTeacherInitiated = !empty($enrollment['teacher_approved']) && 
+                                 ($enrollment['teacher_approved'] == 1 || $enrollment['teacher_approved'] === '1' || (int)$enrollment['teacher_approved'] === 1);
             
             // Get course and student info for notifications
             $course = $this->courseModel->find($enrollment['course_id']);
@@ -1182,23 +1184,20 @@ class Course extends BaseController
                 $courseTitle = $course['title'] ?? 'a course';
                 $studentName = $student['name'] ?? 'A student';
                 
-                // Notify the teacher
+                // Notify the teacher (if course has a teacher assigned)
                 if (!empty($course['teacher_id'])) {
-                    $notificationModel->add((int)$course['teacher_id'], 'A student accepted enrollment in your course: ' . esc($courseTitle));
+                    $notificationModel->add((int)$course['teacher_id'], '✅ Student "' . esc($studentName) . '" has accepted enrollment in your course: ' . esc($courseTitle) . '.');
                 }
                 
-                // Notify admin if enrollment was admin-initiated
-                if ($isAdminInitiated) {
-                    // Get all admin users
-                    $admins = $userModel->where('role', 'admin')
-                                       ->select('id')
-                                       ->findAll();
-                    
-                    // Send notification to all admins
-                    if (!empty($admins)) {
-                        foreach ($admins as $admin) {
-                            $notificationModel->add((int)$admin['id'], '✅ Student "' . esc($studentName) . '" has accepted enrollment in the course: ' . esc($courseTitle) . '.');
-                        }
+                // Notify all admins (always notify admins when student accepts enrollment)
+                $admins = $userModel->where('role', 'admin')
+                                   ->select('id')
+                                   ->findAll();
+                
+                // Send notification to all admins
+                if (!empty($admins)) {
+                    foreach ($admins as $admin) {
+                        $notificationModel->add((int)$admin['id'], '✅ Student "' . esc($studentName) . '" has accepted enrollment in the course: ' . esc($courseTitle) . '.');
                     }
                 }
 
