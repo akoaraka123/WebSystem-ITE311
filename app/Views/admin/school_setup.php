@@ -929,42 +929,81 @@
         window.openEditSemesterModal = openEditSemesterModal;
         window.closeSemesterModal = closeSemesterModal;
 
-        // Modal functions are now available globally
-            openAddProgramModal: typeof window.openAddProgramModal,
-            openAddAcademicYearModal: typeof window.openAddAcademicYearModal,
-            openAddSemesterModal: typeof window.openAddSemesterModal
-        });
-
         // Wait for DOM to be ready
         $(document).ready(function() {
+            // Debug: Check if jQuery is loaded
+            if (typeof $ === 'undefined') {
+                console.error('jQuery is not loaded!');
+                alert('Error: jQuery is not loaded. Please refresh the page.');
+                return;
+            }
+            
+            // Debug: Check if forms exist
+            if ($('#programForm').length === 0) {
+                console.warn('Program form not found');
+            }
+            if ($('#academicYearForm').length === 0) {
+                console.warn('Academic Year form not found');
+            }
+            if ($('#semesterForm').length === 0) {
+                console.warn('Semester form not found');
+            }
+            
             // Get CSRF token from meta tag
             function getCSRFToken() {
-                return $('meta[name="<?= csrf_token() ?>"]').attr('content');
+                const tokenName = '<?= csrf_token() ?>';
+                const token = $('meta[name="' + tokenName + '"]').attr('content') || 
+                             $('input[name="' + tokenName + '"]').val();
+                if (!token) {
+                    console.warn('CSRF token not found!');
+                }
+                return token;
             }
             
             function getCSRFTokenName() {
                 return '<?= csrf_token() ?>';
             }
             
+            console.log('School Setup page initialized');
+            console.log('CSRF Token Name:', getCSRFTokenName());
+            console.log('CSRF Token:', getCSRFToken() ? 'Found' : 'Not Found');
 
             // Program modal functions are already defined globally above
             // Save Program
             $('#programForm').on('submit', function(e) {
                 e.preventDefault();
                 
+                // Validate required fields
+                const code = $('#program_code').val().trim();
+                const name = $('#program_name').val().trim();
+                
+                if (!code || !name) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+                
                 // Serialize form data including CSRF token
                 let formData = $('#programForm').serialize();
                 
+                // Ensure CSRF token is included
+                const csrfTokenName = getCSRFTokenName();
+                const csrfToken = getCSRFToken();
+                if (!formData.includes(csrfTokenName + '=') && csrfToken) {
+                    formData += (formData ? '&' : '') + csrfTokenName + '=' + encodeURIComponent(csrfToken);
+                }
+                
                 // Update code to uppercase and is_active
-                const code = $('#program_code').val().toUpperCase().trim();
+                const codeUpper = code.toUpperCase();
                 const isActive = $('#program_is_active').is(':checked') ? '1' : '0';
                 
                 // Replace code and is_active in serialized data
-                formData = formData.replace(/code=[^&]*/, 'code=' + encodeURIComponent(code));
+                formData = formData.replace(/code=[^&]*/, 'code=' + encodeURIComponent(codeUpper));
                 formData = formData.replace(/is_active=[^&]*/, 'is_active=' + isActive);
                 if (!formData.includes('is_active=')) {
                     formData += '&is_active=' + isActive;
                 }
+
+                console.log('Submitting program form:', formData);
 
                 $.ajax({
                 url: '<?= base_url('school-setup/saveProgram') ?>',
@@ -975,6 +1014,7 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 success: function(response) {
+                    console.log('Program response:', response);
                     // Update CSRF token if provided
                     if (response.csrf_hash) {
                         const csrfTokenName = getCSRFTokenName();
@@ -987,15 +1027,37 @@
                         closeProgramModal();
                         location.reload();
                     } else {
-                        alert('Error: ' + response.message);
+                        alert('Error: ' + (response.message || 'Unknown error occurred'));
                     }
                 },
-                error: function(xhr) {
+                error: function(xhr, status, error) {
+                    console.error('Program error:', xhr, status, error);
                     let errorMsg = 'An error occurred. Please try again.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMsg = xhr.responseJSON.message;
+                    
+                    if (xhr.responseJSON) {
+                        if (xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        if (xhr.responseJSON.errors) {
+                            const errorList = Object.values(xhr.responseJSON.errors).join('\n');
+                            errorMsg += '\n\n' + errorList;
+                        }
+                        // Update CSRF token if provided in error response
+                        if (xhr.responseJSON.csrf_hash) {
+                            const csrfTokenName = getCSRFTokenName();
+                            $('meta[name="' + csrfTokenName + '"]').attr('content', xhr.responseJSON.csrf_hash);
+                            $('input[name="' + csrfTokenName + '"]').val(xhr.responseJSON.csrf_hash);
+                        }
                     } else if (xhr.status === 403) {
                         errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                    } else if (xhr.status === 0) {
+                        errorMsg = 'Network error. Please check your connection and try again.';
+                    } else if (xhr.responseText) {
+                        if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
+                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                        } else {
+                            errorMsg = 'Server error: ' + xhr.status + ' ' + xhr.statusText;
+                        }
                     }
                     alert(errorMsg);
                 }
@@ -1170,10 +1232,34 @@
             $('#academicYearForm').on('submit', function(e) {
                 e.preventDefault();
                 
+                // Validate required fields
+                const yearStart = $('#year_start').val();
+                const yearEnd = $('#year_end').val();
+                
+                if (!yearStart || !yearEnd) {
+                    alert('Please fill in both Year Start and Year End.');
+                    return;
+                }
+                
+                if (parseInt(yearEnd) <= parseInt(yearStart)) {
+                    alert('Year End must be greater than Year Start.');
+                    return;
+                }
+                
                 let formData = $('#academicYearForm').serialize();
+                
+                // Ensure CSRF token is included
+                const csrfTokenName = getCSRFTokenName();
+                const csrfToken = getCSRFToken();
+                if (!formData.includes(csrfTokenName + '=') && csrfToken) {
+                    formData += (formData ? '&' : '') + csrfTokenName + '=' + encodeURIComponent(csrfToken);
+                }
+                
                 const isActive = $('#acad_year_is_active').is(':checked') ? '1' : '0';
                 formData = formData.replace(/&?is_active=[^&]*/, '');
                 formData += (formData ? '&' : '') + 'is_active=' + isActive;
+
+                console.log('Submitting academic year form:', formData);
 
                 $.ajax({
                     url: '<?= base_url('school-setup/saveAcademicYear') ?>',
@@ -1184,6 +1270,7 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     success: function(response) {
+                        console.log('Academic year response:', response);
                         if (response.csrf_hash) {
                             const csrfTokenName = getCSRFTokenName();
                             $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
@@ -1195,10 +1282,11 @@
                             closeAcademicYearModal();
                             location.reload();
                         } else {
-                            alert('Error: ' + response.message);
+                            alert('Error: ' + (response.message || 'Unknown error occurred'));
                         }
                     },
-                    error: function(xhr) {
+                    error: function(xhr, status, error) {
+                        console.error('Academic year error:', xhr, status, error);
                         let errorMsg = 'An error occurred. Please try again.';
                         
                         // Update CSRF token if provided in error response
@@ -1208,10 +1296,20 @@
                             $('input[name="' + csrfTokenName + '"]').val(xhr.responseJSON.csrf_hash);
                         }
                         
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMsg = xhr.responseJSON.message;
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            if (xhr.responseJSON.errors) {
+                                const errorList = Object.values(xhr.responseJSON.errors).join('\n');
+                                errorMsg += '\n\n' + errorList;
+                            }
                         } else if (xhr.status === 403 || (xhr.responseText && (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')))) {
                             errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                        } else if (xhr.status === 0) {
+                            errorMsg = 'Network error. Please check your connection and try again.';
+                        } else if (xhr.responseText) {
+                            errorMsg = 'Server error: ' + xhr.status + ' ' + xhr.statusText;
                         }
                         alert(errorMsg);
                     }
@@ -1222,10 +1320,37 @@
             $('#semesterForm').on('submit', function(e) {
                 e.preventDefault();
                 
+                // Validate required fields
+                const acadYearId = $('#semester_acad_year_id').val();
+                const semesterNumber = $('#semester_number').val();
+                
+                if (!acadYearId || !semesterNumber) {
+                    alert('Please select Academic Year and Semester Number.');
+                    return;
+                }
+                
+                // Validate dates if both are provided
+                const startDate = $('#semester_start_date').val();
+                const endDate = $('#semester_end_date').val();
+                if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+                    alert('End date must be after start date.');
+                    return;
+                }
+                
                 let formData = $('#semesterForm').serialize();
+                
+                // Ensure CSRF token is included
+                const csrfTokenName = getCSRFTokenName();
+                const csrfToken = getCSRFToken();
+                if (!formData.includes(csrfTokenName + '=') && csrfToken) {
+                    formData += (formData ? '&' : '') + csrfTokenName + '=' + encodeURIComponent(csrfToken);
+                }
+                
                 const isActive = $('#semester_is_active').is(':checked') ? '1' : '0';
                 formData = formData.replace(/&?is_active=[^&]*/, '');
                 formData += (formData ? '&' : '') + 'is_active=' + isActive;
+
+                console.log('Submitting semester form:', formData);
 
                 $.ajax({
                     url: '<?= base_url('school-setup/saveSemester') ?>',
@@ -1236,6 +1361,7 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     success: function(response) {
+                        console.log('Semester response:', response);
                         if (response.csrf_hash) {
                             const csrfTokenName = getCSRFTokenName();
                             $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
@@ -1247,13 +1373,33 @@
                             closeSemesterModal();
                             location.reload();
                         } else {
-                            alert('Error: ' + response.message);
+                            alert('Error: ' + (response.message || 'Unknown error occurred'));
                         }
                     },
-                    error: function(xhr) {
+                    error: function(xhr, status, error) {
+                        console.error('Semester error:', xhr, status, error);
                         let errorMsg = 'An error occurred. Please try again.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMsg = xhr.responseJSON.message;
+                        
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            if (xhr.responseJSON.errors) {
+                                const errorList = Object.values(xhr.responseJSON.errors).join('\n');
+                                errorMsg += '\n\n' + errorList;
+                            }
+                            // Update CSRF token if provided in error response
+                            if (xhr.responseJSON.csrf_hash) {
+                                const csrfTokenName = getCSRFTokenName();
+                                $('meta[name="' + csrfTokenName + '"]').attr('content', xhr.responseJSON.csrf_hash);
+                                $('input[name="' + csrfTokenName + '"]').val(xhr.responseJSON.csrf_hash);
+                            }
+                        } else if (xhr.status === 403 || (xhr.responseText && (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')))) {
+                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                        } else if (xhr.status === 0) {
+                            errorMsg = 'Network error. Please check your connection and try again.';
+                        } else if (xhr.responseText) {
+                            errorMsg = 'Server error: ' + xhr.status + ' ' + xhr.statusText;
                         }
                         alert(errorMsg);
                     }
