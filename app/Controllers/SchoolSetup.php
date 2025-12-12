@@ -331,11 +331,55 @@ class SchoolSetup extends BaseController
         // Validate that year_end is greater than year_start
         if ($yearEnd <= $yearStart) {
             return $this->response->setStatusCode(400)
-                ->setJSON(['success' => false, 'message' => 'Year End must be greater than Year Start', 'csrf_hash' => csrf_hash()]);
+                ->setJSON(['success' => false, 'message' => 'Bawal ang year start ' . $yearStart . ' to year end ' . $yearEnd . '. Year End must be greater than Year Start.', 'csrf_hash' => csrf_hash()]);
         }
 
         // Auto-generate display name from year_start and year_end
         $displayName = $yearStart . '-' . $yearEnd;
+
+        // Check for duplicate academic year (same year_start and year_end)
+        $acadYearId = $this->request->getPost('acad_year_id');
+        $existingAcadYear = $this->academicYearModel
+            ->where('year_start', $yearStart)
+            ->where('year_end', $yearEnd);
+        
+        // If updating, exclude the current record from duplicate check
+        if ($acadYearId) {
+            $existingAcadYear->where('id !=', $acadYearId);
+        }
+        
+        $duplicate = $existingAcadYear->first();
+        
+        if ($duplicate) {
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Duplicate academic year is not allowed. An academic year ' . $displayName . ' already exists.', 'csrf_hash' => csrf_hash()]);
+        }
+        
+        // Check for overlapping academic years
+        // An overlap occurs if:
+        // 1. New year_start is between existing year_start and year_end
+        // 2. New year_end is between existing year_start and year_end
+        // 3. New range completely contains an existing range
+        // 4. Existing range completely contains the new range
+        $overlappingQuery = $this->academicYearModel
+            ->groupStart()
+                // Case 1 & 2: New range overlaps with existing range
+                ->where('year_start <=', $yearEnd)
+                ->where('year_end >=', $yearStart)
+            ->groupEnd();
+        
+        // If updating, exclude the current record from overlap check
+        if ($acadYearId) {
+            $overlappingQuery->where('id !=', $acadYearId);
+        }
+        
+        $overlapping = $overlappingQuery->first();
+        
+        if ($overlapping) {
+            $overlappingDisplayName = $overlapping['year_start'] . '-' . $overlapping['year_end'];
+            return $this->response->setStatusCode(400)
+                ->setJSON(['success' => false, 'message' => 'Overlapping academic year is not allowed. The academic year ' . $displayName . ' overlaps with existing academic year ' . $overlappingDisplayName . '.', 'csrf_hash' => csrf_hash()]);
+        }
 
         try {
             $data = [
@@ -344,8 +388,6 @@ class SchoolSetup extends BaseController
                 'display_name' => $displayName,
                 'is_active' => $this->request->getPost('is_active') == '1' ? 1 : 0
             ];
-
-            $acadYearId = $this->request->getPost('acad_year_id');
             
             if ($acadYearId) {
                 // Update existing - don't auto-generate semesters/terms for updates

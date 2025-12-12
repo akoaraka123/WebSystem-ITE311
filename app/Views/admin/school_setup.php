@@ -949,19 +949,38 @@
                 console.warn('Semester form not found');
             }
             
-            // Get CSRF token from meta tag
+            // Get CSRF token from meta tag or form inputs
             function getCSRFToken() {
                 const tokenName = '<?= csrf_token() ?>';
-                const token = $('meta[name="' + tokenName + '"]').attr('content') || 
-                             $('input[name="' + tokenName + '"]').val();
+                // Try multiple sources for CSRF token
+                let token = $('meta[name="' + tokenName + '"]').attr('content');
                 if (!token) {
-                    console.warn('CSRF token not found!');
+                    // Try to get from any form input
+                    token = $('input[name="' + tokenName + '"]').first().val();
                 }
-                return token;
+                if (!token) {
+                    // Try to get from any form
+                    token = $('form input[name="' + tokenName + '"]').first().val();
+                }
+                if (!token) {
+                    console.error('CSRF token not found! Token name:', tokenName);
+                    console.error('Meta tag:', $('meta[name="' + tokenName + '"]').length);
+                    console.error('Input fields:', $('input[name="' + tokenName + '"]').length);
+                    // Return empty string instead of alert to avoid blocking
+                }
+                console.log('CSRF Token retrieved:', token ? 'Found (' + token.substring(0, 10) + '...)' : 'NOT FOUND');
+                return token || '';
             }
             
             function getCSRFTokenName() {
                 return '<?= csrf_token() ?>';
+            }
+            
+            // Update CSRF token in all places
+            function updateCSRFToken(newToken) {
+                const tokenName = getCSRFTokenName();
+                $('meta[name="' + tokenName + '"]').attr('content', newToken);
+                $('input[name="' + tokenName + '"]').val(newToken);
             }
             
             console.log('School Setup page initialized');
@@ -982,44 +1001,55 @@
                     return;
                 }
                 
-                // Serialize form data including CSRF token
-                let formData = $('#programForm').serialize();
-                
-                // Ensure CSRF token is included
+                // Get fresh CSRF token from meta tag (always use latest)
                 const csrfTokenName = getCSRFTokenName();
-                const csrfToken = getCSRFToken();
-                if (!formData.includes(csrfTokenName + '=') && csrfToken) {
-                    formData += (formData ? '&' : '') + csrfTokenName + '=' + encodeURIComponent(csrfToken);
+                let csrfToken = getCSRFToken();
+                
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    alert('CSRF token not found. Please refresh the page and try again.');
+                    return;
                 }
                 
-                // Update code to uppercase and is_active
+                // Update CSRF token in form to ensure it's fresh
+                const csrfInput = $('#programForm input[name="' + csrfTokenName + '"]');
+                if (csrfInput.length > 0) {
+                    csrfInput.val(csrfToken);
+                } else {
+                    $('#programForm').append('<input type="hidden" name="' + csrfTokenName + '" value="' + csrfToken + '">');
+                }
+                
+                // Use jQuery serialize - it automatically includes CSRF token from form
+                let formData = $('#programForm').serialize();
+                
+                // Update code to uppercase and is_active in serialized string
                 const codeUpper = code.toUpperCase();
                 const isActive = $('#program_is_active').is(':checked') ? '1' : '0';
-                
-                // Replace code and is_active in serialized data
                 formData = formData.replace(/code=[^&]*/, 'code=' + encodeURIComponent(codeUpper));
                 formData = formData.replace(/is_active=[^&]*/, 'is_active=' + isActive);
                 if (!formData.includes('is_active=')) {
                     formData += '&is_active=' + isActive;
                 }
 
-                console.log('Submitting program form:', formData);
+                console.log('Submitting program form with CSRF token:', csrfToken.substring(0, 10) + '...');
 
                 $.ajax({
                 url: '<?= base_url('school-setup/saveProgram') ?>',
                 type: 'POST',
                 data: formData,
                 dataType: 'json',
+                xhrFields: {
+                    withCredentials: true
+                },
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
                 },
                 success: function(response) {
                     console.log('Program response:', response);
                     // Update CSRF token if provided
                     if (response.csrf_hash) {
-                        const csrfTokenName = getCSRFTokenName();
-                        $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
-                        $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                        updateCSRFToken(response.csrf_hash);
                     }
                     
                     if (response.success) {
@@ -1032,6 +1062,25 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('Program error:', xhr, status, error);
+                    
+                    // Check if it's a CSRF error (only 403 status, not validation errors)
+                    if (xhr.status === 403) {
+                        // Double check it's actually a CSRF error by checking response
+                        const isCSRFError = xhr.responseText && (
+                            xhr.responseText.includes('not allowed') || 
+                            xhr.responseText.includes('CSRF') ||
+                            xhr.responseText.includes('The action you requested is not allowed')
+                        );
+                        
+                        // Only refresh if it's actually a CSRF error, not a validation error
+                        if (isCSRFError && !xhr.responseJSON) {
+                            console.log('CSRF error detected, refreshing page to get new token...');
+                            alert('CSRF token expired. Refreshing page...');
+                            location.reload();
+                            return;
+                        }
+                    }
+                    
                     let errorMsg = 'An error occurred. Please try again.';
                     
                     if (xhr.responseJSON) {
@@ -1044,20 +1093,12 @@
                         }
                         // Update CSRF token if provided in error response
                         if (xhr.responseJSON.csrf_hash) {
-                            const csrfTokenName = getCSRFTokenName();
-                            $('meta[name="' + csrfTokenName + '"]').attr('content', xhr.responseJSON.csrf_hash);
-                            $('input[name="' + csrfTokenName + '"]').val(xhr.responseJSON.csrf_hash);
+                            updateCSRFToken(xhr.responseJSON.csrf_hash);
                         }
-                    } else if (xhr.status === 403) {
-                        errorMsg = 'CSRF token expired. Please refresh the page and try again.';
                     } else if (xhr.status === 0) {
                         errorMsg = 'Network error. Please check your connection and try again.';
                     } else if (xhr.responseText) {
-                        if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
-                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                        } else {
-                            errorMsg = 'Server error: ' + xhr.status + ' ' + xhr.statusText;
-                        }
+                        errorMsg = 'Server error: ' + xhr.status + ' ' + xhr.statusText;
                     }
                     alert(errorMsg);
                 }
@@ -1070,25 +1111,40 @@
                     return;
                 }
 
-                const formData = {};
                 const csrfTokenName = getCSRFTokenName();
-                const csrfToken = getCSRFToken() || $('input[name="' + csrfTokenName + '"]').val();
-                formData[csrfTokenName] = csrfToken;
+                let csrfToken = $('input[name="' + csrfTokenName + '"]').first().val();
+                
+                // If still no token, try to get from meta tag
+                if (!csrfToken) {
+                    csrfToken = getCSRFToken();
+                }
+                
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    alert('CSRF token not found. Please refresh the page and try again.');
+                    return;
+                }
+                
+                // Use URL-encoded string format for proper CSRF handling
+                const formData = csrfTokenName + '=' + encodeURIComponent(csrfToken);
 
                 $.ajax({
                     url: '<?= base_url('school-setup/deleteProgram') ?>/' + programId,
                     type: 'POST',
                     data: formData,
                     dataType: 'json',
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                    xhrFields: {
+                        withCredentials: true
+                    },
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     success: function(response) {
                         // Update CSRF token if provided
                         if (response.csrf_hash) {
-                            const csrfTokenName = getCSRFTokenName();
-                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
-                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                            updateCSRFToken(response.csrf_hash);
                         }
                         
                         if (response.success) {
@@ -1099,15 +1155,32 @@
                         }
                     },
                     error: function(xhr) {
+                        // Check if it's a CSRF error (only 403 status, not validation errors)
+                        // Validation errors return 400 with JSON, CSRF errors return 403 without JSON
+                        if (xhr.status === 403) {
+                            // Try to parse as JSON - if it succeeds, it's not a CSRF error
+                            let isJSON = false;
+                            try {
+                                if (xhr.responseText) {
+                                    JSON.parse(xhr.responseText);
+                                    isJSON = true;
+                                }
+                            } catch (e) {
+                                // Not JSON, might be CSRF error
+                            }
+                            
+                            // Only refresh if it's actually a CSRF error (403 with no JSON response)
+                            if (!isJSON && !xhr.responseJSON) {
+                                console.log('CSRF error detected, refreshing page to get new token...');
+                                alert('CSRF token expired. Refreshing page...');
+                                location.reload();
+                                return;
+                            }
+                        }
+                        
                         let errorMsg = 'An error occurred. Please try again.';
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             errorMsg = xhr.responseJSON.message;
-                        } else if (xhr.status === 403) {
-                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                        } else if (xhr.responseText) {
-                            if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
-                                errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                            }
                         }
                         alert(errorMsg);
                     }
@@ -1120,25 +1193,38 @@
                     return;
                 }
 
-                const formData = {};
+                // Get fresh CSRF token from meta tag (always use latest)
                 const csrfTokenName = getCSRFTokenName();
-                const csrfToken = getCSRFToken() || $('input[name="' + csrfTokenName + '"]').val();
-                formData[csrfTokenName] = csrfToken;
+                let csrfToken = getCSRFToken();
+                
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    alert('CSRF token not found. Please refresh the page and try again.');
+                    return;
+                }
+                
+                // Use URL-encoded format for better CSRF compatibility
+                const formData = csrfTokenName + '=' + encodeURIComponent(csrfToken);
+
+                console.log('Deleting academic year with CSRF token:', csrfToken.substring(0, 10) + '...');
 
                 $.ajax({
                     url: '<?= base_url('school-setup/deleteAcademicYear') ?>/' + acadYearId,
                     type: 'POST',
                     data: formData,
                     dataType: 'json',
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                    xhrFields: {
+                        withCredentials: true
+                    },
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     success: function(response) {
                         // Update CSRF token if provided
                         if (response.csrf_hash) {
-                            const csrfTokenName = getCSRFTokenName();
-                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
-                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                            updateCSRFToken(response.csrf_hash);
                         }
                         
                         if (response.success) {
@@ -1149,15 +1235,32 @@
                         }
                     },
                     error: function(xhr) {
+                        // Check if it's a CSRF error (only 403 status, not validation errors)
+                        // Validation errors return 400 with JSON, CSRF errors return 403 without JSON
+                        if (xhr.status === 403) {
+                            // Try to parse as JSON - if it succeeds, it's not a CSRF error
+                            let isJSON = false;
+                            try {
+                                if (xhr.responseText) {
+                                    JSON.parse(xhr.responseText);
+                                    isJSON = true;
+                                }
+                            } catch (e) {
+                                // Not JSON, might be CSRF error
+                            }
+                            
+                            // Only refresh if it's actually a CSRF error (403 with no JSON response)
+                            if (!isJSON && !xhr.responseJSON) {
+                                console.log('CSRF error detected, refreshing page to get new token...');
+                                alert('CSRF token expired. Refreshing page...');
+                                location.reload();
+                                return;
+                            }
+                        }
+                        
                         let errorMsg = 'An error occurred. Please try again.';
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             errorMsg = xhr.responseJSON.message;
-                        } else if (xhr.status === 403) {
-                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                        } else if (xhr.responseText) {
-                            if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
-                                errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                            }
                         }
                         alert(errorMsg);
                     }
@@ -1170,25 +1273,38 @@
                     return;
                 }
 
-                const formData = {};
+                // Get fresh CSRF token from meta tag (always use latest)
                 const csrfTokenName = getCSRFTokenName();
-                const csrfToken = getCSRFToken() || $('input[name="' + csrfTokenName + '"]').val();
-                formData[csrfTokenName] = csrfToken;
+                let csrfToken = getCSRFToken();
+                
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    alert('CSRF token not found. Please refresh the page and try again.');
+                    return;
+                }
+                
+                // Use URL-encoded format for better CSRF compatibility
+                const formData = csrfTokenName + '=' + encodeURIComponent(csrfToken);
+
+                console.log('Deleting semester with CSRF token:', csrfToken.substring(0, 10) + '...');
 
                 $.ajax({
                     url: '<?= base_url('school-setup/deleteSemester') ?>/' + semesterId,
                     type: 'POST',
                     data: formData,
                     dataType: 'json',
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                    xhrFields: {
+                        withCredentials: true
+                    },
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     success: function(response) {
                         // Update CSRF token if provided
                         if (response.csrf_hash) {
-                            const csrfTokenName = getCSRFTokenName();
-                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
-                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                            updateCSRFToken(response.csrf_hash);
                         }
                         
                         if (response.success) {
@@ -1199,15 +1315,32 @@
                         }
                     },
                     error: function(xhr) {
+                        // Check if it's a CSRF error (only 403 status, not validation errors)
+                        // Validation errors return 400 with JSON, CSRF errors return 403 without JSON
+                        if (xhr.status === 403) {
+                            // Try to parse as JSON - if it succeeds, it's not a CSRF error
+                            let isJSON = false;
+                            try {
+                                if (xhr.responseText) {
+                                    JSON.parse(xhr.responseText);
+                                    isJSON = true;
+                                }
+                            } catch (e) {
+                                // Not JSON, might be CSRF error
+                            }
+                            
+                            // Only refresh if it's actually a CSRF error (403 with no JSON response)
+                            if (!isJSON && !xhr.responseJSON) {
+                                console.log('CSRF error detected, refreshing page to get new token...');
+                                alert('CSRF token expired. Refreshing page...');
+                                location.reload();
+                                return;
+                            }
+                        }
+                        
                         let errorMsg = 'An error occurred. Please try again.';
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             errorMsg = xhr.responseJSON.message;
-                        } else if (xhr.status === 403) {
-                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                        } else if (xhr.responseText) {
-                            if (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')) {
-                                errorMsg = 'CSRF token expired. Please refresh the page and try again.';
-                            }
                         }
                         alert(errorMsg);
                     }
@@ -1242,39 +1375,54 @@
                 }
                 
                 if (parseInt(yearEnd) <= parseInt(yearStart)) {
-                    alert('Year End must be greater than Year Start.');
+                    alert('Bawal ang year start ' + yearStart + ' to year end ' + yearEnd + '. Year End must be greater than Year Start.');
                     return;
                 }
                 
-                let formData = $('#academicYearForm').serialize();
-                
-                // Ensure CSRF token is included
+                // Get fresh CSRF token from meta tag (always use latest)
                 const csrfTokenName = getCSRFTokenName();
-                const csrfToken = getCSRFToken();
-                if (!formData.includes(csrfTokenName + '=') && csrfToken) {
-                    formData += (formData ? '&' : '') + csrfTokenName + '=' + encodeURIComponent(csrfToken);
+                let csrfToken = getCSRFToken();
+                
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    alert('CSRF token not found. Please refresh the page and try again.');
+                    return;
                 }
                 
+                // Update CSRF token in form to ensure it's fresh
+                const csrfInput = $('#academicYearForm input[name="' + csrfTokenName + '"]');
+                if (csrfInput.length > 0) {
+                    csrfInput.val(csrfToken);
+                } else {
+                    $('#academicYearForm').append('<input type="hidden" name="' + csrfTokenName + '" value="' + csrfToken + '">');
+                }
+                
+                // Use jQuery serialize - it automatically includes CSRF token from form
+                let formData = $('#academicYearForm').serialize();
+                
+                // Update is_active in serialized string
                 const isActive = $('#acad_year_is_active').is(':checked') ? '1' : '0';
                 formData = formData.replace(/&?is_active=[^&]*/, '');
                 formData += (formData ? '&' : '') + 'is_active=' + isActive;
 
-                console.log('Submitting academic year form:', formData);
+                console.log('Submitting academic year form with CSRF token:', csrfToken.substring(0, 10) + '...');
 
                 $.ajax({
                     url: '<?= base_url('school-setup/saveAcademicYear') ?>',
                     type: 'POST',
                     data: formData,
                     dataType: 'json',
+                    xhrFields: {
+                        withCredentials: true
+                    },
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     success: function(response) {
                         console.log('Academic year response:', response);
                         if (response.csrf_hash) {
-                            const csrfTokenName = getCSRFTokenName();
-                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
-                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                            updateCSRFToken(response.csrf_hash);
                         }
                         
                         if (response.success) {
@@ -1287,13 +1435,35 @@
                     },
                     error: function(xhr, status, error) {
                         console.error('Academic year error:', xhr, status, error);
+                        
+                        // Check if it's a CSRF error (only 403 status, not validation errors)
+                        // Validation errors return 400 with JSON, CSRF errors return 403 without JSON
+                        if (xhr.status === 403) {
+                            // Try to parse as JSON - if it succeeds, it's not a CSRF error
+                            let isJSON = false;
+                            try {
+                                if (xhr.responseText) {
+                                    JSON.parse(xhr.responseText);
+                                    isJSON = true;
+                                }
+                            } catch (e) {
+                                // Not JSON, might be CSRF error
+                            }
+                            
+                            // Only refresh if it's actually a CSRF error (403 with no JSON response)
+                            if (!isJSON && !xhr.responseJSON) {
+                                console.log('CSRF error detected, refreshing page to get new token...');
+                                alert('CSRF token expired. Refreshing page...');
+                                location.reload();
+                                return;
+                            }
+                        }
+                        
                         let errorMsg = 'An error occurred. Please try again.';
                         
                         // Update CSRF token if provided in error response
                         if (xhr.responseJSON && xhr.responseJSON.csrf_hash) {
-                            const csrfTokenName = getCSRFTokenName();
-                            $('meta[name="' + csrfTokenName + '"]').attr('content', xhr.responseJSON.csrf_hash);
-                            $('input[name="' + csrfTokenName + '"]').val(xhr.responseJSON.csrf_hash);
+                            updateCSRFToken(xhr.responseJSON.csrf_hash);
                         }
                         
                         if (xhr.responseJSON) {
@@ -1304,8 +1474,6 @@
                                 const errorList = Object.values(xhr.responseJSON.errors).join('\n');
                                 errorMsg += '\n\n' + errorList;
                             }
-                        } else if (xhr.status === 403 || (xhr.responseText && (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')))) {
-                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
                         } else if (xhr.status === 0) {
                             errorMsg = 'Network error. Please check your connection and try again.';
                         } else if (xhr.responseText) {
@@ -1337,35 +1505,50 @@
                     return;
                 }
                 
-                let formData = $('#semesterForm').serialize();
-                
-                // Ensure CSRF token is included
+                // Get fresh CSRF token from meta tag (always use latest)
                 const csrfTokenName = getCSRFTokenName();
-                const csrfToken = getCSRFToken();
-                if (!formData.includes(csrfTokenName + '=') && csrfToken) {
-                    formData += (formData ? '&' : '') + csrfTokenName + '=' + encodeURIComponent(csrfToken);
+                let csrfToken = getCSRFToken();
+                
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    alert('CSRF token not found. Please refresh the page and try again.');
+                    return;
                 }
                 
+                // Update CSRF token in form to ensure it's fresh
+                const csrfInput = $('#semesterForm input[name="' + csrfTokenName + '"]');
+                if (csrfInput.length > 0) {
+                    csrfInput.val(csrfToken);
+                } else {
+                    $('#semesterForm').append('<input type="hidden" name="' + csrfTokenName + '" value="' + csrfToken + '">');
+                }
+                
+                // Use jQuery serialize - it automatically includes CSRF token from form
+                let formData = $('#semesterForm').serialize();
+                
+                // Update is_active in serialized string
                 const isActive = $('#semester_is_active').is(':checked') ? '1' : '0';
                 formData = formData.replace(/&?is_active=[^&]*/, '');
                 formData += (formData ? '&' : '') + 'is_active=' + isActive;
 
-                console.log('Submitting semester form:', formData);
+                console.log('Submitting semester form with CSRF token:', csrfToken.substring(0, 10) + '...');
 
                 $.ajax({
                     url: '<?= base_url('school-setup/saveSemester') ?>',
                     type: 'POST',
                     data: formData,
                     dataType: 'json',
+                    xhrFields: {
+                        withCredentials: true
+                    },
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     success: function(response) {
                         console.log('Semester response:', response);
                         if (response.csrf_hash) {
-                            const csrfTokenName = getCSRFTokenName();
-                            $('meta[name="' + csrfTokenName + '"]').attr('content', response.csrf_hash);
-                            $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                            updateCSRFToken(response.csrf_hash);
                         }
                         
                         if (response.success) {
@@ -1394,8 +1577,6 @@
                                 $('meta[name="' + csrfTokenName + '"]').attr('content', xhr.responseJSON.csrf_hash);
                                 $('input[name="' + csrfTokenName + '"]').val(xhr.responseJSON.csrf_hash);
                             }
-                        } else if (xhr.status === 403 || (xhr.responseText && (xhr.responseText.includes('not allowed') || xhr.responseText.includes('CSRF')))) {
-                            errorMsg = 'CSRF token expired. Please refresh the page and try again.';
                         } else if (xhr.status === 0) {
                             errorMsg = 'Network error. Please check your connection and try again.';
                         } else if (xhr.responseText) {

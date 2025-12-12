@@ -176,7 +176,8 @@
                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                                            placeholder="e.g., Introduction to Web Development"
                                            onkeypress="return validateAlphanumericSpace(event)"
-                                           oninput="validateInput(this)">
+                                           oninput="validateInput(this)"
+                                           onpaste="handlePaste(event)">
                                     <?php if (isset($validation) && $validation->getError('title')): ?>
                                         <p class="mt-1 text-sm text-red-600"><?= $validation->getError('title') ?></p>
                                     <?php endif; ?>
@@ -712,6 +713,79 @@
                     });
                 }
             }
+            
+            // Validation functions for special characters - PREVENT special characters from being typed
+            window.validateAlphanumericSpace = function(event) {
+                const char = String.fromCharCode(event.which || event.keyCode);
+                // Allow: letters, numbers, spaces, backspace, delete, tab, enter
+                const allowedPattern = /^[a-zA-Z0-9\s]$/;
+                const specialKeys = [8, 9, 13, 27, 46, 37, 38, 39, 40]; // backspace, tab, enter, escape, delete, arrow keys
+                
+                if (specialKeys.includes(event.keyCode) || event.ctrlKey || event.metaKey) {
+                    return true;
+                }
+                
+                if (!allowedPattern.test(char)) {
+                    event.preventDefault();
+                    // Show error message
+                    const input = event.target;
+                    const errorId = input.id + '_error';
+                    const errorElement = document.getElementById(errorId);
+                    if (errorElement) {
+                        errorElement.textContent = 'Special characters are not allowed.';
+                        errorElement.classList.remove('hidden');
+                        setTimeout(() => {
+                            errorElement.classList.add('hidden');
+                        }, 3000);
+                    }
+                    return false;
+                }
+                return true;
+            };
+            
+            window.validateInput = function(input) {
+                const value = input.value;
+                const errorId = input.id + '_error';
+                const errorElement = document.getElementById(errorId);
+                
+                // Check for special characters (anything that's not alphanumeric or space)
+                const specialCharPattern = /[^a-zA-Z0-9\s]/g;
+                const hasSpecialChars = specialCharPattern.test(value);
+                
+                if (hasSpecialChars) {
+                    // Remove special characters immediately
+                    input.value = value.replace(specialCharPattern, '');
+                    
+                    if (errorElement) {
+                        errorElement.textContent = 'Special characters are not allowed and have been removed.';
+                        errorElement.classList.remove('hidden');
+                        setTimeout(() => {
+                            errorElement.classList.add('hidden');
+                        }, 3000);
+                    }
+                } else if (errorElement) {
+                    errorElement.classList.add('hidden');
+                }
+            };
+            
+            // Handle paste events to prevent special characters
+            window.handlePaste = function(event) {
+                event.preventDefault();
+                const paste = (event.clipboardData || window.clipboardData).getData('text');
+                // Remove special characters from pasted text
+                const cleaned = paste.replace(/[^a-zA-Z0-9\s]/g, '');
+                const input = event.target;
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const currentValue = input.value;
+                
+                // Insert cleaned text at cursor position
+                input.value = currentValue.substring(0, start) + cleaned + currentValue.substring(end);
+                input.setSelectionRange(start + cleaned.length, start + cleaned.length);
+                
+                // Trigger validation
+                validateInput(input);
+            };
         });
     </script>
 </body>

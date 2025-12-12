@@ -302,7 +302,10 @@ class Course extends BaseController
             $data = [
                 'title' => $this->request->getPost('title'),
                 'description' => $this->request->getPost('description'),
-                'teacher_id' => $teacherId,
+                'teacher_id' => null, // Will be set after teacher accepts
+                'pending_teacher_id' => $teacherId, // Pending assignment - requires teacher approval
+                'teacher_assignment_status' => 'pending',
+                'teacher_assignment_requested_at' => date('Y-m-d H:i:s'),
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
@@ -367,14 +370,14 @@ class Course extends BaseController
 
             $courseId = $this->courseModel->insert($data);
             
-            // Notify the teacher that they have been assigned to a new course
+            // Notify the teacher about pending assignment (requires acceptance)
             if ($courseId && $teacherId) {
                 $notificationModel = new \App\Models\NotificationModel();
                 $courseTitle = $this->request->getPost('title');
-                $notificationModel->add($teacherId, '📚 You have been assigned to teach the course: ' . esc($courseTitle) . '. Please check your courses to view details.');
+                $notificationModel->add($teacherId, '📚 You have been assigned to teach the course: ' . esc($courseTitle) . '. Please accept or reject this assignment.');
             }
             
-            $session->setFlashdata('success', 'Course created successfully and assigned to teacher!');
+            $session->setFlashdata('success', 'Course created successfully! Teacher assignment request sent. The teacher needs to accept or reject it.');
             
             return redirect()->to(base_url('courses'));
         } else {
@@ -564,7 +567,16 @@ class Course extends BaseController
             // For admin users, allow updating teacher_id and program_id
             if ($session->get('role') === 'admin') {
                 if (!empty($teacherId)) {
-                    $data['teacher_id'] = $teacherId;
+                    // Check if teacher is being changed
+                    $oldTeacherId = $course['teacher_id'] ?? null;
+                    if ($teacherId != $oldTeacherId) {
+                        // Use pending assignment mechanism - teacher needs to accept/reject
+                        $data['pending_teacher_id'] = $teacherId;
+                        $data['teacher_assignment_status'] = 'pending';
+                        $data['teacher_assignment_requested_at'] = date('Y-m-d H:i:s');
+                        // Don't change teacher_id yet - wait for teacher to accept
+                    }
+                    // If same teacher, keep existing assignment
                 }
                 
                 $programId = $this->request->getPost('program_id');
@@ -621,21 +633,23 @@ class Course extends BaseController
             
             $this->courseModel->update($id, $data);
             
-            // Notify teacher if assignment changed (admin only)
+            // Notify teacher if assignment changed (admin only) - pending assignment requires acceptance
             if ($session->get('role') === 'admin' && !empty($newTeacherId) && $newTeacherId != $oldTeacherId) {
                 $notificationModel = new \App\Models\NotificationModel();
                 $courseTitle = $this->request->getPost('title') ?? $course['title'] ?? 'a course';
                 
-                // Notify new teacher
-                $notificationModel->add($newTeacherId, '📚 You have been assigned to teach the course: ' . esc($courseTitle) . '. Please check your courses to view details.');
+                // Notify new teacher about pending assignment
+                $notificationModel->add($newTeacherId, '📚 You have been assigned to teach the course: ' . esc($courseTitle) . '. Please accept or reject this assignment.');
                 
                 // Notify old teacher if different
                 if (!empty($oldTeacherId) && $oldTeacherId != $newTeacherId) {
                     $notificationModel->add((int)$oldTeacherId, '⚠️ You have been unassigned from the course: ' . esc($courseTitle) . '.');
                 }
+                
+                $session->setFlashdata('success', 'Course updated successfully! Teacher assignment request sent. The teacher needs to accept or reject it.');
+            } else {
+                $session->setFlashdata('success', 'Course updated successfully!');
             }
-            
-            $session->setFlashdata('success', 'Course updated successfully!');
             
             $redirectTo = $session->get('role') === 'admin' ? base_url('courses') : base_url('my-courses');
             return redirect()->to($redirectTo);

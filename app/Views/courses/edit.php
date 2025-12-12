@@ -232,7 +232,8 @@
                                        value="<?= esc($course['title'] ?? old('title')) ?>"
                                        style="width: 100%; padding: 12px; border: 2px solid #999; border-radius: 3px; font-size: 14px;"
                                        onkeypress="return validateAlphanumericSpace(event)"
-                                       oninput="validateInput(this)">
+                                       oninput="validateInput(this)"
+                                       onpaste="handlePaste(event)">
                                 <?php if (isset($validation) && $validation->getError('title')): ?>
                                     <p style="margin-top: 5px; font-size: 12px; color: #d32f2f;"><?= $validation->getError('title') ?></p>
                                 <?php endif; ?>
@@ -675,7 +676,7 @@
                 const char = String.fromCharCode(event.which || event.keyCode);
                 // Allow: letters, numbers, spaces, backspace, delete, tab, enter
                 const allowedPattern = /^[a-zA-Z0-9\s]$/;
-                const specialKeys = [8, 9, 13, 27, 46]; // backspace, tab, enter, escape, delete
+                const specialKeys = [8, 9, 13, 27, 46, 37, 38, 39, 40]; // backspace, tab, enter, escape, delete, arrow keys
                 
                 if (specialKeys.includes(event.keyCode) || event.ctrlKey || event.metaKey) {
                     return true;
@@ -683,6 +684,17 @@
                 
                 if (!allowedPattern.test(char)) {
                     event.preventDefault();
+                    // Show error message
+                    const input = event.target;
+                    const errorId = input.id + '_error';
+                    const errorElement = document.getElementById(errorId);
+                    if (errorElement) {
+                        errorElement.textContent = 'Special characters are not allowed.';
+                        errorElement.style.display = 'block';
+                        setTimeout(() => {
+                            errorElement.style.display = 'none';
+                        }, 3000);
+                    }
                     return false;
                 }
                 return true;
@@ -698,7 +710,7 @@
                 const hasSpecialChars = specialCharPattern.test(value);
                 
                 if (hasSpecialChars) {
-                    // Remove special characters
+                    // Remove special characters immediately
                     input.value = value.replace(specialCharPattern, '');
                     
                     if (errorElement) {
@@ -711,6 +723,25 @@
                 } else if (errorElement) {
                     errorElement.style.display = 'none';
                 }
+            };
+            
+            // Handle paste events to prevent special characters
+            window.handlePaste = function(event) {
+                event.preventDefault();
+                const paste = (event.clipboardData || window.clipboardData).getData('text');
+                // Remove special characters from pasted text
+                const cleaned = paste.replace(/[^a-zA-Z0-9\s]/g, '');
+                const input = event.target;
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const currentValue = input.value;
+                
+                // Insert cleaned text at cursor position
+                input.value = currentValue.substring(0, start) + cleaned + currentValue.substring(end);
+                input.setSelectionRange(start + cleaned.length, start + cleaned.length);
+                
+                // Trigger validation
+                validateInput(input);
             };
         });
 
