@@ -62,7 +62,7 @@ abstract class BaseController extends Controller
 
     /**
      * Check if the logged-in user still exists in the database
-     * If user is soft-deleted, automatically log them out
+     * If user is soft-deleted or role changed, automatically log them out
      */
     protected function checkUserExists()
     {
@@ -90,6 +90,24 @@ abstract class BaseController extends Controller
         // If user doesn't exist or is soft-deleted, log them out
         if (!$user) {
             $session->setFlashdata('error', 'Your account has been removed. You have been logged out.');
+            $session->destroy();
+            
+            // Redirect to login if not already on login page
+            $currentUri = uri_string();
+            if ($currentUri !== 'login' && strpos($currentUri, 'login') === false) {
+                // Throw RedirectException which CodeIgniter will handle properly
+                throw new RedirectException(redirect()->to(base_url('login')));
+            }
+            return;
+        }
+
+        // Check if user's role in session matches the role in database
+        // If role changed, log them out (role was changed by admin)
+        $sessionRole = $session->get('role');
+        $dbRole = $user['role'];
+        
+        if ($sessionRole !== $dbRole) {
+            $session->setFlashdata('error', 'Your role has been changed. Please login again.');
             $session->destroy();
             
             // Redirect to login if not already on login page

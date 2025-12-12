@@ -2497,6 +2497,12 @@ $(document).ready(function() {
                         bgColor = 'bg-purple-50';
                         isClickable = true;
                         clickAction = 'view-materials';
+                    } else if (safeMsg.includes('role has been changed') || safeMsg.includes('account role')) {
+                        icon = 'fa-user-shield';
+                        iconColor = 'text-orange-500';
+                        bgColor = 'bg-orange-50';
+                        isClickable = false;
+                        clickAction = '';
                     }
                     
                     html += '<div class="flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 ' + 

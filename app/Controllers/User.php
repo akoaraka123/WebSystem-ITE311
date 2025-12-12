@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\UserModel;
+use App\Models\NotificationModel;
 use App\Controllers\BaseController;
 
 class User extends BaseController
@@ -97,6 +98,60 @@ class User extends BaseController
         }
 
         return false;
+    }
+
+    /**
+     * Invalidate all active sessions for a specific user
+     * This will force the user to log out on their next request
+     */
+    private function invalidateUserSession($userId)
+    {
+        // Check session files for active sessions
+        $sessionPath = WRITEPATH . 'session/';
+        if (!is_dir($sessionPath)) {
+            return false;
+        }
+
+        $sessionFiles = glob($sessionPath . 'ci_session*');
+        $sessionExpiration = 7200; // 2 hours from config
+        $sessionsDeleted = 0;
+
+        foreach ($sessionFiles as $file) {
+            // Check if file is readable and not expired
+            if (!is_readable($file)) {
+                continue; // Skip if file is not readable
+            }
+
+            try {
+                $fileTime = @filemtime($file);
+                if ($fileTime === false || $fileTime + $sessionExpiration < time()) {
+                    continue; // Session expired or can't read file time
+                }
+
+                $sessionData = @file_get_contents($file);
+                if ($sessionData === false) {
+                    continue; // Skip if can't read file
+                }
+
+                // Check if this session belongs to the user we're checking
+                if (preg_match('/userID";s:\d+:"' . $userId . '"/', $sessionData) || 
+                    preg_match('/"userID";i:' . $userId . '/', $sessionData)) {
+                    // Also check if they're logged in
+                    if (strpos($sessionData, 'isLoggedIn";b:1') !== false || 
+                        strpos($sessionData, '"isLoggedIn";b:1') !== false) {
+                        // Delete the session file to force logout
+                        if (@unlink($file)) {
+                            $sessionsDeleted++;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Skip this file if there's an error reading it
+                continue;
+            }
+        }
+
+        return $sessionsDeleted > 0;
     }
 
     public function create()
@@ -291,6 +346,10 @@ class User extends BaseController
             return redirect()->to(base_url('users'));
         }
 
+        // Check if role has changed
+        $oldRole = $user['role'];
+        $roleChanged = ($oldRole !== $newRole);
+
         // Prepare update data
         $updateData = [
             'name' => $newName,
@@ -310,6 +369,24 @@ class User extends BaseController
 
         // Update the user's information
         $this->userModel->update($userId, $updateData);
+        
+        // If role changed, invalidate the user's session to force logout and send notification
+        if ($roleChanged) {
+            $this->invalidateUserSession($userId);
+            
+            // Create notification for the user whose role was changed
+            $notificationModel = new NotificationModel();
+            $roleNames = [
+                'student' => 'Student',
+                'teacher' => 'Teacher',
+                'admin' => 'Administrator'
+            ];
+            $oldRoleName = $roleNames[$oldRole] ?? ucfirst($oldRole);
+            $newRoleName = $roleNames[$newRole] ?? ucfirst($newRole);
+            
+            $message = "🔐 Your account role has been changed from {$oldRoleName} to {$newRoleName}. Please login again to access your account with the new role.";
+            $notificationModel->add($userId, $message);
+        }
         
         $session->setFlashdata('success', 'User information updated successfully!');
         return redirect()->to(base_url('users'));
