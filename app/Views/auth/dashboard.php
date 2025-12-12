@@ -208,6 +208,28 @@
             background: #1976d2;
             border-bottom: 2px solid #1565c0;
         }
+        
+        /* Enrollment Modal Search Dropdown Styles */
+        #enrollmentStep1 .form-group, #enrollmentStep2 .form-group {
+            position: relative;
+        }
+        
+        #studentResults, #programResults {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 4px;
+            z-index: 1000;
+        }
+        
+        .student-result-item:hover, .program-result-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .student-result-item:active, .program-result-item:active {
+            background-color: #e5e7eb;
+        }
     </style>
 </head>
 <body class="bg-gray-50 <?= session('role') === 'student' ? 'student-theme' : (session('role') === 'admin' ? 'admin-theme' : (session('role') === 'teacher' ? 'teacher-theme' : '')) ?>">
@@ -1476,6 +1498,48 @@
 
         <!-- ADMIN DASHBOARD -->
         <?php if ($user['role'] === 'admin'): ?>
+        <script>
+            // Define openEnrollmentModal immediately - must be available before button click
+            window.openEnrollmentModal = function() {
+                console.log('openEnrollmentModal called');
+                const modal = document.getElementById('enrollmentModal');
+                if (!modal) {
+                    console.error('Enrollment modal element not found in DOM');
+                    alert('Enrollment modal is not available. Please refresh the page.');
+                    return;
+                }
+                modal.classList.remove('hidden');
+                
+                // Reset form if exists
+                const form = document.getElementById('enrollmentForm');
+                if (form) form.reset();
+                
+                // Clear message
+                const msg = document.getElementById('enrollmentMessage');
+                if (msg) msg.classList.add('hidden');
+                
+                // Call full implementation if available
+                if (typeof window._openEnrollmentModalFull === 'function') {
+                    window._openEnrollmentModalFull();
+                } else {
+                    // Basic reset
+                    const studentInput = document.getElementById('search_student');
+                    const programInput = document.getElementById('search_program');
+                    if (studentInput) studentInput.value = '';
+                    if (programInput) programInput.value = '';
+                }
+            };
+            
+            window.closeEnrollmentModal = function() {
+                const modal = document.getElementById('enrollmentModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+                if (typeof window._closeEnrollmentModalFull === 'function') {
+                    window._closeEnrollmentModalFull();
+                }
+            };
+        </script>
             <!-- Simplified Statistics Cards -->
             <div class="grid gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
                 <a href="<?= base_url('users') ?>" class="p-5 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
@@ -1484,9 +1548,9 @@
                             <p class="text-sm text-gray-600">Total Users</p>
                             <p class="mt-1 text-2xl font-bold text-gray-900"><?= $totalUsers ?? 0 ?></p>
                             <p class="mt-1 text-xs text-gray-500"><?= $totalStudents ?? 0 ?> Students • <?= $totalTeachers ?? 0 ?> Teachers</p>
-                        </div>
+                            </div>
                         <i class="text-3xl text-blue-500 fas fa-users"></i>
-                    </div>
+                        </div>
                 </a>
 
                 <a href="<?= base_url('courses') ?>" class="p-5 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
@@ -1497,8 +1561,8 @@
                             <p class="mt-1 text-xs text-gray-500">Active courses</p>
                         </div>
                         <i class="text-3xl text-green-500 fas fa-book"></i>
-                    </div>
-                </a>
+                        </div>
+                        </a>
 
                 <div class="p-5 bg-white rounded-lg shadow">
                     <div class="flex items-center justify-between">
@@ -1519,8 +1583,8 @@
                             <p class="mt-1 text-xs text-gray-500">Active programs</p>
                         </div>
                         <i class="text-3xl text-orange-500 fas fa-graduation-cap"></i>
-                    </div>
-                </a>
+                        </div>
+                        </a>
             </div>
 
             <!-- School Settings Info - Simplified -->
@@ -1529,14 +1593,14 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-4">
                         <i class="text-2xl text-blue-600 fas fa-calendar-alt"></i>
-                        <div>
+                    <div>
                             <p class="text-sm text-gray-600">Current: <span class="font-semibold text-gray-900"><?= esc($activeSchoolSettings['school_year']) ?> - <?= esc($activeSchoolSettings['semester']) ?></span></p>
                             <p class="text-xs text-gray-500 mt-1"><?= date('M d', strtotime($activeSchoolSettings['start_date'])) ?> - <?= date('M d, Y', strtotime($activeSchoolSettings['end_date'])) ?></p>
-                        </div>
-                    </div>
+                            </div>
+                            </div>
                     <a href="<?= base_url('school-setup') ?>" class="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium">
                         <i class="fas fa-cog mr-1"></i> Configure
-                    </a>
+                        </a>
                 </div>
             </div>
             <?php else: ?>
@@ -1547,8 +1611,8 @@
                         <p class="text-sm text-gray-700">School settings not configured</p>
                     </div>
                     <a href="<?= base_url('school-setup') ?>" class="px-3 py-1.5 text-sm text-white bg-yellow-600 rounded-md hover:bg-yellow-700 font-medium">
-                        Setup Now
-                    </a>
+                            Setup Now
+                        </a>
                 </div>
             </div>
             <?php endif; ?>
@@ -1644,11 +1708,11 @@
                         <div class="flex items-center justify-between mb-4">
                             <h2 class="text-xl font-semibold text-gray-800 flex items-center">
                                 <i class="fas fa-graduation-cap mr-2 text-gray-600"></i>
-                                <?= esc($programData['program_name']) ?>
+                                    <?= esc($programData['program_name']) ?>
                             </h2>
                             <span class="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-full">
-                                <?= count($programData['courses']) ?> <?= count($programData['courses']) == 1 ? 'Course' : 'Courses' ?>
-                            </span>
+                                    <?= count($programData['courses']) ?> <?= count($programData['courses']) == 1 ? 'Course' : 'Courses' ?>
+                                </span>
                         </div>
                         
                         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3" id="adminCoursesContainer-<?= esc($programKey) ?>">
@@ -1663,33 +1727,33 @@
                                         <h3 class="text-lg font-semibold text-gray-900 mb-3 course-title"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
                                         
                                         <div class="space-y-2 mb-4 text-sm text-gray-600">
-                                            <?php if (!empty($course['course_number'])): ?>
+                                                <?php if (!empty($course['course_number'])): ?>
                                                 <div class="flex items-center">
                                                     <i class="fas fa-hashtag mr-2 text-gray-400 w-4"></i>
                                                     <span><?= esc($course['course_number']) ?></span>
-                                                </div>
-                                            <?php endif; ?>
-                                            
-                                            <?php if (!empty($course['acad_year_name'])): ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($course['acad_year_name'])): ?>
                                                 <div class="flex items-center">
                                                     <i class="fas fa-calendar mr-2 text-gray-400 w-4"></i>
                                                     <span><?= esc($course['acad_year_name']) ?></span>
-                                                </div>
-                                            <?php endif; ?>
-                                            
-                                            <?php if (!empty($course['semester_name'])): ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($course['semester_name'])): ?>
                                                 <div class="flex items-center">
                                                     <i class="fas fa-calendar-alt mr-2 text-gray-400 w-4"></i>
                                                     <span><?= esc($course['semester_name']) ?></span>
-                                                </div>
-                                            <?php endif; ?>
-                                            
-                                            <?php if (!empty($course['teacher_name'])): ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($course['teacher_name'])): ?>
                                                 <div class="flex items-center">
                                                     <i class="fas fa-user-tie mr-2 text-gray-400 w-4"></i>
                                                     <span><?= esc($course['teacher_name']) ?></span>
-                                                </div>
-                                            <?php endif; ?>
+                                                    </div>
+                                                <?php endif; ?>
                                         </div>
                                         
                                         <div class="flex gap-2 mt-4">
@@ -3351,41 +3415,104 @@ $(document).ready(function() {
         // Enrollment Details Modal Functions
         let currentEnrollmentCourseId = null;
         
-        function openEnrollmentDetailsModal(courseId, courseTitle) {
+        window.openEnrollmentDetailsModal = function(courseId, courseTitle) {
+            try {
+                console.log('openEnrollmentDetailsModal called with courseId:', courseId, 'courseTitle:', courseTitle);
+                
             currentEnrollmentCourseId = courseId;
-            document.getElementById('enrollmentDetailsModal').classList.remove('hidden');
-            document.getElementById('enrollmentCourseTitle').textContent = courseTitle;
+                
+                const modal = document.getElementById('enrollmentDetailsModal');
+                const courseTitleEl = document.getElementById('enrollmentCourseTitle');
+                const loadingEl = document.getElementById('enrollmentLoading');
+                const contentEl = document.getElementById('enrollmentContent');
+                const errorEl = document.getElementById('enrollmentError');
+                
+                if (!modal || !courseTitleEl || !loadingEl || !contentEl || !errorEl) {
+                    console.error('Modal elements not found:', {
+                        modal: !!modal,
+                        courseTitleEl: !!courseTitleEl,
+                        loadingEl: !!loadingEl,
+                        contentEl: !!contentEl,
+                        errorEl: !!errorEl
+                    });
+                    alert('Enrollment details modal is not available. Please refresh the page.');
+                    return;
+                }
+                
+                modal.classList.remove('hidden');
+                courseTitleEl.textContent = courseTitle || 'Course';
             
             // Show loading
-            document.getElementById('enrollmentLoading').classList.remove('hidden');
-            document.getElementById('enrollmentContent').classList.add('hidden');
-            document.getElementById('enrollmentError').classList.add('hidden');
+                loadingEl.classList.remove('hidden');
+                contentEl.classList.add('hidden');
+                errorEl.classList.add('hidden');
             
             // Fetch enrollment details
-            fetch('<?= base_url('course/') ?>' + courseId + '/enrollments')
-                .then(response => response.json())
+                const url = '<?= base_url('course/') ?>' + courseId + '/enrollments';
+                console.log('Fetching enrollment details from:', url);
+                
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                })
+                    .then(response => {
+                        console.log('Response status:', response.status, 'statusText:', response.statusText);
+                        if (!response.ok) {
+                            // Try to get error message from response
+                            return response.json().then(err => {
+                                throw new Error(err.message || `HTTP error! status: ${response.status}`);
+                            }).catch(() => {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            });
+                        }
+                        return response.json();
+                    })
                 .then(data => {
-                    document.getElementById('enrollmentLoading').classList.add('hidden');
+                        console.log('Enrollment data received:', data);
+                        loadingEl.classList.add('hidden');
                     
                     if (data.success) {
                         renderEnrollmentDetails(data);
-                        document.getElementById('enrollmentContent').classList.remove('hidden');
+                            contentEl.classList.remove('hidden');
                     } else {
-                        document.getElementById('enrollmentError').classList.remove('hidden');
-                        document.getElementById('enrollmentError').textContent = data.message || 'Failed to load enrollment details';
+                            errorEl.classList.remove('hidden');
+                            errorEl.textContent = data.message || 'Failed to load enrollment details';
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('enrollmentLoading').classList.add('hidden');
-                    document.getElementById('enrollmentError').classList.remove('hidden');
-                    document.getElementById('enrollmentError').textContent = 'Failed to load enrollment details. Please try again.';
-                });
-        }
+                        console.error('Error fetching enrollment details:', error);
+                        loadingEl.classList.add('hidden');
+                        errorEl.classList.remove('hidden');
+                        errorEl.textContent = 'Failed to load enrollment details. Please try again. Error: ' + (error.message || 'Unknown error');
+                    });
+            } catch (error) {
+                console.error('Error in openEnrollmentDetailsModal:', error);
+                alert('An error occurred while opening enrollment details. Please try again.');
+            }
+        };
 
         function renderEnrollmentDetails(data) {
-            const summary = data.summary;
-            const enrollments = data.enrollments;
+            try {
+                // Ensure escapeHtml function exists
+                if (typeof escapeHtml === 'undefined') {
+                    window.escapeHtml = function(text) {
+                        const map = {
+                            '&': '&amp;',
+                            '<': '&lt;',
+                            '>': '&gt;',
+                            '"': '&quot;',
+                            "'": '&#039;'
+                        };
+                        return (text || '').replace(/[&<>"']/g, m => map[m]);
+                    };
+                }
+                
+                const summary = data.summary || { accepted: 0, pending: 0, rejected: 0, total: 0 };
+                const enrollments = data.enrollments || { accepted: [], pending: [], rejected: [] };
             
             // Update summary
             document.getElementById('enrollmentSummary').innerHTML = `
@@ -3423,7 +3550,7 @@ $(document).ready(function() {
                                 <i class="fas fa-check-circle mr-1"></i>Accepted
                             </span>
                             <button type="button" 
-                                    onclick="confirmRemoveStudentFromCourse(${enrollment.user_id}, ${currentEnrollmentCourseId}, '${escapeHtml(enrollment.student_name || 'Student')}', '${escapeHtml(document.getElementById('enrollmentCourseTitle').textContent)}')"
+                                    onclick="confirmRemoveStudentFromCourse(${enrollment.user_id}, ${currentEnrollmentCourseId}, '${escapeHtml(enrollment.student_name || 'Student')}', '${escapeHtml(document.getElementById('enrollmentCourseTitle').textContent)}', this)"
                                     class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                                     title="Remove student">
                                 <i class="fas fa-user-minus mr-1"></i> Remove
@@ -3478,13 +3605,99 @@ $(document).ready(function() {
             } else {
                 rejectedContainer.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No rejected enrollments.</p>';
             }
+            } catch (error) {
+                console.error('Error rendering enrollment details:', error);
+                const errorEl = document.getElementById('enrollmentError');
+                if (errorEl) {
+                    errorEl.classList.remove('hidden');
+                    errorEl.textContent = 'Error displaying enrollment details: ' + error.message;
+                }
+            }
         }
+        
+        // Confirm and remove student from course
+        window.confirmRemoveStudentFromCourse = function(studentId, courseId, studentName, courseTitle, buttonElement) {
+            if (!confirm(`Are you sure you want to remove "${studentName}" from "${courseTitle}"?\n\nThis will remove the student from the course enrollment.`)) {
+                return;
+            }
+            
+            console.log('Removing student:', { studentId, courseId, studentName, courseTitle });
+            
+            // Show loading indicator
+            let button = buttonElement;
+            if (!button && window.event) {
+                button = window.event.target?.closest('button');
+            }
+            
+            let originalHTML = '';
+            if (button) {
+                originalHTML = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Removing...';
+            }
+            
+            // Get CSRF token - use both header and body for compatibility
+            const csrfTokenName = '<?= csrf_token() ?>';
+            const csrfTokenValue = '<?= csrf_hash() ?>';
+            
+            // Use FormData for better CSRF compatibility with CodeIgniter
+            const formData = new FormData();
+            formData.append('student_id', studentId);
+            formData.append('course_id', courseId);
+            formData.append(csrfTokenName, csrfTokenValue);
+            
+            fetch('<?= base_url('course/teacher-remove-student') ?>', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert('✅ ' + (data.message || 'Student removed successfully'));
+                    
+                    // Reload enrollment details to update the list
+                    const courseTitleEl = document.getElementById('enrollmentCourseTitle');
+                    if (courseTitleEl && currentEnrollmentCourseId) {
+                        window.openEnrollmentDetailsModal(currentEnrollmentCourseId, courseTitleEl.textContent);
+                    } else {
+                        // If modal is still open, just reload the page
+                        location.reload();
+                    }
+                } else {
+                    alert('❌ ERROR: ' + (data.message || 'Failed to remove student'));
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = originalHTML;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error removing student:', error);
+                alert('❌ ERROR: An error occurred while removing the student. Please try again.');
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = originalHTML;
+                }
+            });
+        };
 
-        function closeEnrollmentDetailsModal() {
-            document.getElementById('enrollmentDetailsModal').classList.add('hidden');
-            document.getElementById('enrollmentContent').classList.add('hidden');
-            document.getElementById('enrollmentError').classList.add('hidden');
-        }
+        window.closeEnrollmentDetailsModal = function() {
+            try {
+                const modal = document.getElementById('enrollmentDetailsModal');
+                const contentEl = document.getElementById('enrollmentContent');
+                const errorEl = document.getElementById('enrollmentError');
+                
+                if (modal) modal.classList.add('hidden');
+                if (contentEl) contentEl.classList.add('hidden');
+                if (errorEl) errorEl.classList.add('hidden');
+            } catch (error) {
+                console.error('Error closing enrollment details modal:', error);
+            }
+        };
 
         // Modal backdrop already handles closing via onclick attribute
     </script>
@@ -3765,52 +3978,94 @@ $(document).ready(function() {
                                 <!-- Step 1: Select Student -->
                                 <div id="enrollmentStep1" class="mb-6">
                                     <h4 class="text-sm font-semibold text-gray-700 mb-3">Step 1: Select Student</h4>
-                                    <div class="form-group mb-3">
-                                        <label for="search_student" class="block text-sm font-medium text-gray-700 mb-2">Search Student</label>
+                                    <div class="form-group">
+                                        <label for="search_student" class="block text-sm font-medium text-gray-700 mb-2">Search Student *</label>
                                         <div class="relative">
-                                            <input type="text" id="search_student" placeholder="Type to search students..." class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                            <input type="text" 
+                                                   id="search_student" 
+                                                   placeholder="Type student name or email to search..." 
+                                                   class="w-full px-4 py-2.5 pl-10 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                   autocomplete="off"
+                                                   oninput="if(typeof window.filterStudents === 'function') { window.filterStudents(); } else { setTimeout(function(){ if(typeof window.filterStudents === 'function') window.filterStudents(); }, 50); }"
+                                                   onkeyup="if(typeof window.filterStudents === 'function') { window.filterStudents(); } else { setTimeout(function(){ if(typeof window.filterStudents === 'function') window.filterStudents(); }, 50); }">
+                                            <i class="absolute left-3 top-3.5 text-gray-400 fas fa-search"></i>
+                                            <button type="button" 
+                                                    onclick="clearStudentSelection()"
+                                                    id="clearStudentBtn"
+                                                    class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 hidden">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            <!-- Search Results Dropdown -->
+                                            <div id="studentResults" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto top-full">
+                                                <div id="studentResultsList" class="py-1">
+                                                    <!-- Results will be populated here -->
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="enrollment_student_id" class="block text-sm font-medium text-gray-700 mb-2">Student *</label>
-                                        <select id="enrollment_student_id" name="student_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" size="8">
-                                            <option value="" disabled selected style="display:none;">Start typing in the search bar to see students...</option>
-                                            <?php 
-                                            $userModel = new \App\Models\UserModel();
-                                            $students = $userModel->where('role', 'student')->findAll();
-                                            foreach ($students as $student): 
-                                            ?>
-                                                <option value="<?= $student['id'] ?>" data-name="<?= esc(strtolower($student['name'])) ?>" data-email="<?= esc(strtolower($student['email'])) ?>" style="display:none;"><?= esc($student['name']) ?> (<?= esc($student['email']) ?>)</option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <p class="text-xs text-gray-500 mt-1">Type in the search bar above to find and select a student</p>
+                                        </div>
+                                        <!-- Selected Student Display -->
+                                        <div id="selectedStudentDisplay" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900" id="selectedStudentName"></p>
+                                                        <p class="text-xs text-gray-500" id="selectedStudentEmail"></p>
+                                                    </div>
+                                                </div>
+                                                <button type="button" onclick="clearStudentSelection()" class="text-gray-400 hover:text-gray-600">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="enrollment_student_id" name="student_id" required>
+                                        <p class="text-xs text-gray-500 mt-2">Start typing to search for a student</p>
                                     </div>
                                 </div>
                                 
                                 <!-- Step 2: Select Program -->
                                 <div id="enrollmentStep2" class="mb-6">
                                     <h4 class="text-sm font-semibold text-gray-700 mb-3">Step 2: Enroll in Program</h4>
-                                    <div class="form-group mb-3">
-                                        <label for="search_program" class="block text-sm font-medium text-gray-700 mb-2">Search Program</label>
+                                    <div class="form-group">
+                                        <label for="search_program" class="block text-sm font-medium text-gray-700 mb-2">Search Program *</label>
                                         <div class="relative">
-                                            <input type="text" id="search_program" placeholder="Type to search programs..." class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                            <input type="text" 
+                                                   id="search_program" 
+                                                   placeholder="Type program code or name to search..." 
+                                                   class="w-full px-4 py-2.5 pl-10 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                   autocomplete="off"
+                                                   oninput="if(typeof window.filterPrograms === 'function') { window.filterPrograms(); } else { setTimeout(function(){ if(typeof window.filterPrograms === 'function') window.filterPrograms(); }, 50); }"
+                                                   onkeyup="if(typeof window.filterPrograms === 'function') { window.filterPrograms(); } else { setTimeout(function(){ if(typeof window.filterPrograms === 'function') window.filterPrograms(); }, 50); }">
+                                            <i class="absolute left-3 top-3.5 text-gray-400 fas fa-search"></i>
+                                            <button type="button" 
+                                                    onclick="clearProgramSelection()"
+                                                    id="clearProgramBtn"
+                                                    class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 hidden">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            <!-- Search Results Dropdown -->
+                                            <div id="programResults" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto top-full">
+                                                <div id="programResultsList" class="py-1">
+                                                    <!-- Results will be populated here -->
                                         </div>
                                     </div>
-                                    <div class="form-group mb-4">
-                                        <label for="enrollment_program_id" class="block text-sm font-medium text-gray-700 mb-2">Program *</label>
-                                        <select id="enrollment_program_id" name="program_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" size="8">
-                                            <option value="" disabled selected style="display:none;">Start typing in the search bar to see programs...</option>
-                                            <?php 
-                                            $programModel = new \App\Models\ProgramModel();
-                                            $programs = $programModel->where('is_active', 1)->findAll();
-                                            foreach ($programs as $program): 
-                                            ?>
-                                                <option value="<?= $program['id'] ?>" data-code="<?= esc(strtolower($program['code'])) ?>" data-name="<?= esc(strtolower($program['name'])) ?>" style="display:none;"><?= esc($program['code']) ?> - <?= esc($program['name']) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <p class="text-xs text-gray-500 mt-1">Type in the search bar above to find and select a program</p>
+                                        </div>
+                                        <!-- Selected Program Display -->
+                                        <div id="selectedProgramDisplay" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900" id="selectedProgramCode"></p>
+                                                        <p class="text-xs text-gray-500" id="selectedProgramName"></p>
+                                                    </div>
+                                                </div>
+                                                <button type="button" onclick="clearProgramSelection()" class="text-gray-400 hover:text-gray-600">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="enrollment_program_id" name="program_id" required>
+                                        <p class="text-xs text-gray-500 mt-2">Start typing to search for a program</p>
                                     </div>
                                 </div>
                                 
@@ -3834,201 +4089,422 @@ $(document).ready(function() {
     </div>
     
     <script>
-        // Enrollment Modal Functions
-        function openEnrollmentModal() {
-            document.getElementById('enrollmentModal').classList.remove('hidden');
-            document.getElementById('enrollmentForm').reset();
-            document.getElementById('enrollmentMessage').classList.add('hidden');
-            
-            // Reset search bars
-            document.getElementById('search_student').value = '';
-            document.getElementById('search_program').value = '';
-            
-            // Show all options
-            filterStudents('');
-            filterPrograms('');
-        }
+        // Store students and programs data for enrollment modal (separate from course student list)
+        let enrollmentStudents = [];
+        let enrollmentPrograms = [];
         
-        function closeEnrollmentModal() {
-            document.getElementById('enrollmentModal').classList.add('hidden');
-        }
-        
-        // Filter students based on search
-        function filterStudents(searchTerm) {
-            const select = document.getElementById('enrollment_student_id');
-            const options = select.querySelectorAll('option');
-            const term = searchTerm.toLowerCase().trim();
-            
-            // If no search term, hide all options except placeholder
-            if (term === '') {
-                options.forEach(option => {
-                    if (option.value === '' || option.hasAttribute('disabled')) {
-                        option.style.display = 'block';
-                    } else {
-                        option.style.display = 'none';
-                    }
-                });
-                return;
-            }
-            
-            // Hide placeholder and show matching options
-            options.forEach(option => {
-                if (option.hasAttribute('disabled')) {
-                    option.style.display = 'none';
-                    return;
-                }
+        // Full implementation of enrollment modal functions
+        window._openEnrollmentModalFull = function() {
+            try {
+                console.log('Loading enrollment data...');
                 
-                if (option.value === '') {
-                    option.style.display = 'none';
-                    return;
-                }
-                
-                const name = option.getAttribute('data-name') || '';
-                const email = option.getAttribute('data-email') || '';
-                const text = option.textContent.toLowerCase();
-                
-                if (name.includes(term) || email.includes(term) || text.includes(term)) {
-                    option.style.display = 'block';
+                // Load students and programs data FIRST (always reload to ensure fresh data)
+                if (typeof loadStudentsData === 'function') {
+                    loadStudentsData();
+                    console.log('Students loaded:', enrollmentStudents.length);
                 } else {
-                    option.style.display = 'none';
-                }
-            });
-        }
-        
-        // Filter programs based on search
-        function filterPrograms(searchTerm) {
-            const select = document.getElementById('enrollment_program_id');
-            const options = select.querySelectorAll('option');
-            const term = searchTerm.toLowerCase().trim();
-            
-            // If no search term, hide all options except placeholder
-            if (term === '') {
-                options.forEach(option => {
-                    if (option.value === '' || option.hasAttribute('disabled')) {
-                        option.style.display = 'block';
-                    } else {
-                        option.style.display = 'none';
+                    // Load data directly if function not available
+                    try {
+                        <?php 
+                        $userModel = new \App\Models\UserModel();
+                        $students = $userModel->where('role', 'student')->findAll();
+                        ?>
+                        enrollmentStudents = <?= json_encode(array_map(function($s) {
+                            return [
+                                'id' => (int)$s['id'],
+                                'name' => $s['name'],
+                                'email' => $s['email']
+                            ];
+                        }, $students)) ?>;
+                        console.log('Students loaded directly:', enrollmentStudents.length);
+                    } catch(e) {
+                        console.error('Error loading students:', e);
+                        enrollmentStudents = [];
                     }
-                });
-                return;
-            }
-            
-            // Hide placeholder and show matching options
-            options.forEach(option => {
-                if (option.hasAttribute('disabled')) {
-                    option.style.display = 'none';
-                    return;
                 }
                 
-                if (option.value === '') {
-                    option.style.display = 'none';
-                    return;
-                }
-                
-                const code = option.getAttribute('data-code') || '';
-                const name = option.getAttribute('data-name') || '';
-                const text = option.textContent.toLowerCase();
-                
-                if (code.includes(term) || name.includes(term) || text.includes(term)) {
-                    option.style.display = 'block';
+                if (typeof loadProgramsData === 'function') {
+                    loadProgramsData();
+                    console.log('Programs loaded:', enrollmentPrograms.length);
                 } else {
-                    option.style.display = 'none';
-                }
-            });
+                    // Load data directly if function not available
+                    try {
+                        <?php 
+                        $programModel = new \App\Models\ProgramModel();
+                        $programs = $programModel->where('is_active', 1)->findAll();
+                        ?>
+                        enrollmentPrograms = <?= json_encode(array_map(function($p) {
+                            return [
+                                'id' => (int)$p['id'],
+                                'code' => $p['code'],
+                                'name' => $p['name']
+                            ];
+                        }, $programs)) ?>;
+                        console.log('Programs loaded directly:', enrollmentPrograms.length);
+                    } catch(e) {
+                        console.error('Error loading programs:', e);
+                        enrollmentPrograms = [];
+                    }
         }
         
-        // Add event listeners for search
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchStudent = document.getElementById('search_student');
-            const searchProgram = document.getElementById('search_program');
-            const studentSelect = document.getElementById('enrollment_student_id');
-            const programSelect = document.getElementById('enrollment_program_id');
-            
-            if (searchStudent) {
-                searchStudent.addEventListener('input', function() {
-                    filterStudents(this.value);
-                });
-            }
-            
-            if (searchProgram) {
-                searchProgram.addEventListener('input', function() {
-                    filterPrograms(this.value);
-                });
-            }
-            
-            // When student is selected, remove it from the list
-            if (studentSelect) {
-                studentSelect.addEventListener('change', function(e) {
-                    const selectedOption = this.options[this.selectedIndex];
-                    if (selectedOption && selectedOption.value && !selectedOption.hasAttribute('disabled')) {
-                        // Hide the selected option
-                        selectedOption.style.display = 'none';
-                        
-                        // Extract name from option text (format: "Name (email)")
-                        const optionText = selectedOption.textContent;
-                        const nameMatch = optionText.match(/^([^(]+)/);
-                        if (nameMatch) {
-                            const name = nameMatch[1].trim();
-                            searchStudent.value = name;
-                        }
-                    }
-                });
+                // Reset everything
+                if (typeof clearStudentSelection === 'function') {
+                    clearStudentSelection();
+                } else if (typeof window.clearStudentSelection === 'function') {
+                    window.clearStudentSelection();
+                }
                 
-                // Double-click on student option to fill search
-                studentSelect.addEventListener('dblclick', function(e) {
-                    const selectedOption = this.options[this.selectedIndex];
-                    if (selectedOption && selectedOption.value && !selectedOption.hasAttribute('disabled')) {
-                        // Extract name from option text (format: "Name (email)")
-                        const optionText = selectedOption.textContent;
-                        const nameMatch = optionText.match(/^([^(]+)/);
-                        if (nameMatch) {
-                            const name = nameMatch[1].trim();
-                            searchStudent.value = name;
-                            filterStudents(name);
-                        }
-                    }
-                });
+                if (typeof clearProgramSelection === 'function') {
+                    clearProgramSelection();
+                } else if (typeof window.clearProgramSelection === 'function') {
+                    window.clearProgramSelection();
+                }
+            } catch (error) {
+                console.error('Error in full enrollment modal implementation:', error);
             }
-            
-            // When program is selected, remove it from the list
-            if (programSelect) {
-                programSelect.addEventListener('change', function(e) {
-                    const selectedOption = this.options[this.selectedIndex];
-                    if (selectedOption && selectedOption.value && !selectedOption.hasAttribute('disabled')) {
-                        // Hide the selected option
-                        selectedOption.style.display = 'none';
-                        
-                        // Extract program code or name from option text
-                        const optionText = selectedOption.textContent;
-                        searchProgram.value = optionText;
-                    }
-                });
-                
-                // Double-click on program option to fill search
-                programSelect.addEventListener('dblclick', function(e) {
-                    const selectedOption = this.options[this.selectedIndex];
-                    if (selectedOption && selectedOption.value && !selectedOption.hasAttribute('disabled')) {
-                        // Extract program code or name from option text
-                        const optionText = selectedOption.textContent;
-                        searchProgram.value = optionText;
-                        filterPrograms(optionText);
-                    }
-                });
-            }
-        });
+        };
         
-        function submitEnrollment() {
+        window._closeEnrollmentModalFull = function() {
+            try {
+                if (typeof clearStudentSelection === 'function') {
+                    clearStudentSelection();
+                } else if (typeof window.clearStudentSelection === 'function') {
+                    window.clearStudentSelection();
+                }
+                if (typeof clearProgramSelection === 'function') {
+                    clearProgramSelection();
+                } else if (typeof window.clearProgramSelection === 'function') {
+                    window.clearProgramSelection();
+            }
+            } catch (error) {
+                console.error('Error in full close modal implementation:', error);
+            }
+        };
+        
+        // Update the main function to call full implementation
+        window.openEnrollmentModal = function() {
+            console.log('openEnrollmentModal called');
+            const modal = document.getElementById('enrollmentModal');
+            if (!modal) {
+                console.error('Enrollment modal element not found in DOM');
+                alert('Enrollment modal is not available. Please refresh the page.');
+                    return;
+                }
+            modal.classList.remove('hidden');
+            
             const form = document.getElementById('enrollmentForm');
-            const formData = new FormData(form);
+            if (form) form.reset();
+            
+            const messageDiv = document.getElementById('enrollmentMessage');
+            if (messageDiv) messageDiv.classList.add('hidden');
+            
+            // Call full implementation
+            if (typeof window._openEnrollmentModalFull === 'function') {
+                window._openEnrollmentModalFull();
+            }
+        };
+        
+        window.closeEnrollmentModal = function() {
+            const modal = document.getElementById('enrollmentModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            if (typeof window._closeEnrollmentModalFull === 'function') {
+                window._closeEnrollmentModalFull();
+                }
+        };
+        
+        // Load students data
+        function loadStudentsData() {
+            try {
+                <?php 
+                $userModel = new \App\Models\UserModel();
+                $students = $userModel->where('role', 'student')->findAll();
+                ?>
+                enrollmentStudents = <?= json_encode(array_map(function($s) {
+                    return [
+                        'id' => (int)$s['id'],
+                        'name' => $s['name'],
+                        'email' => $s['email']
+                    ];
+                }, $students)) ?>;
+            } catch (e) {
+                console.error('Error loading students:', e);
+                enrollmentStudents = [];
+            }
+        }
+        
+        // Load programs data
+        function loadProgramsData() {
+            try {
+                <?php 
+                $programModel = new \App\Models\ProgramModel();
+                $programs = $programModel->where('is_active', 1)->findAll();
+                ?>
+                enrollmentPrograms = <?= json_encode(array_map(function($p) {
+                    return [
+                        'id' => (int)$p['id'],
+                        'code' => $p['code'],
+                        'name' => $p['name']
+                    ];
+                }, $programs)) ?>;
+            } catch (e) {
+                console.error('Error loading programs:', e);
+                enrollmentPrograms = [];
+            }
+        }
+        
+        // Student Search Functions
+        window.filterStudents = function() {
+            console.log('filterStudents called, enrollmentStudents:', enrollmentStudents.length);
+            const searchInput = document.getElementById('search_student');
+            if (!searchInput) {
+                console.error('search_student input not found');
+                return;
+            }
+            
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const resultsContainer = document.getElementById('studentResults');
+            const resultsList = document.getElementById('studentResultsList');
+            
+            if (!resultsContainer || !resultsList) {
+                console.error('Results container not found');
+                    return;
+                }
+                
+            // Show results even with 1-2 characters
+            // Only hide if completely empty
+            if (searchTerm === '') {
+                resultsContainer.classList.add('hidden');
+                    return;
+                }
+                
+            // Check if data is loaded
+            if (!enrollmentStudents || enrollmentStudents.length === 0) {
+                console.log('No students data, loading...');
+                if (typeof loadStudentsData === 'function') {
+                    loadStudentsData();
+                }
+                // Try again after a short delay
+                setTimeout(function() {
+                    window.filterStudents();
+                }, 100);
+                return;
+            }
+            
+            // Filter students
+            const filtered = enrollmentStudents.filter(student => {
+                const name = (student.name || '').toLowerCase();
+                const email = (student.email || '').toLowerCase();
+                return name.includes(searchTerm) || email.includes(searchTerm);
+            });
+            
+            console.log('Filtered students:', filtered.length);
+            
+            // Display results
+            if (filtered.length === 0) {
+                resultsList.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 text-center">No students found</div>';
+                } else {
+                resultsList.innerHTML = filtered.map(student => {
+                    const name = (student.name || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    const email = (student.email || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    return `
+                        <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer student-result-item transition-colors" 
+                             data-id="${student.id}" 
+                             data-name="${name}" 
+                             data-email="${email}">
+                            <p class="text-sm font-medium text-gray-900">${student.name}</p>
+                            <p class="text-xs text-gray-500">${student.email}</p>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Add click event listeners
+                resultsList.querySelectorAll('.student-result-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        if (typeof selectStudent === 'function') {
+                            selectStudent(
+                                parseInt(this.dataset.id),
+                                this.dataset.name,
+                                this.dataset.email
+                            );
+                        } else if (typeof window.selectStudent === 'function') {
+                            window.selectStudent(
+                                parseInt(this.dataset.id),
+                                this.dataset.name,
+                                this.dataset.email
+                            );
+                        }
+                    });
+                });
+            }
+            
+            resultsContainer.classList.remove('hidden');
+        };
+        
+        function selectStudent(id, name, email) {
+            const studentIdInput = document.getElementById('enrollment_student_id');
+            const nameDisplay = document.getElementById('selectedStudentName');
+            const emailDisplay = document.getElementById('selectedStudentEmail');
+            const display = document.getElementById('selectedStudentDisplay');
+            const searchInput = document.getElementById('search_student');
+            const clearBtn = document.getElementById('clearStudentBtn');
+            const results = document.getElementById('studentResults');
+            
+            if (studentIdInput) studentIdInput.value = id;
+            if (nameDisplay) nameDisplay.textContent = name;
+            if (emailDisplay) emailDisplay.textContent = email;
+            if (display) display.classList.remove('hidden');
+            if (searchInput) searchInput.value = name;
+            if (clearBtn) clearBtn.classList.remove('hidden');
+            if (results) results.classList.add('hidden');
+        }
+        
+        function clearStudentSelection() {
+            const studentIdInput = document.getElementById('enrollment_student_id');
+            const searchInput = document.getElementById('search_student');
+            const display = document.getElementById('selectedStudentDisplay');
+            const clearBtn = document.getElementById('clearStudentBtn');
+            const results = document.getElementById('studentResults');
+            
+            if (studentIdInput) studentIdInput.value = '';
+            if (searchInput) searchInput.value = '';
+            if (display) display.classList.add('hidden');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            if (results) results.classList.add('hidden');
+        }
+        
+        // Program Search Functions
+        window.filterPrograms = function() {
+            console.log('filterPrograms called, enrollmentPrograms:', enrollmentPrograms.length);
+            const searchInput = document.getElementById('search_program');
+            if (!searchInput) {
+                console.error('search_program input not found');
+                return;
+            }
+            
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const resultsContainer = document.getElementById('programResults');
+            const resultsList = document.getElementById('programResultsList');
+            
+            if (!resultsContainer || !resultsList) {
+                console.error('Program results container not found');
+                return;
+                        }
+            
+            // Show results even with 1-2 characters
+            // Only hide if completely empty
+            if (searchTerm === '') {
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+            
+            // Check if data is loaded
+            if (!enrollmentPrograms || enrollmentPrograms.length === 0) {
+                console.log('No programs data, loading...');
+                if (typeof loadProgramsData === 'function') {
+                    loadProgramsData();
+                }
+                // Try again after a short delay
+                setTimeout(function() {
+                    window.filterPrograms();
+                }, 100);
+                return;
+            }
+            
+            // Filter programs
+            const filtered = enrollmentPrograms.filter(program => {
+                const code = (program.code || '').toLowerCase();
+                const name = (program.name || '').toLowerCase();
+                return code.includes(searchTerm) || name.includes(searchTerm);
+            });
+            
+            console.log('Filtered programs:', filtered.length);
+            
+            // Display results
+            if (filtered.length === 0) {
+                resultsList.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 text-center">No programs found</div>';
+            } else {
+                resultsList.innerHTML = filtered.map(program => {
+                    const code = (program.code || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    const name = (program.name || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    return `
+                        <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer program-result-item transition-colors" 
+                             data-id="${program.id}" 
+                             data-code="${code}" 
+                             data-name="${name}">
+                            <p class="text-sm font-medium text-gray-900">${program.code}</p>
+                            <p class="text-xs text-gray-500">${program.name}</p>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Add click event listeners
+                resultsList.querySelectorAll('.program-result-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        if (typeof selectProgram === 'function') {
+                            selectProgram(
+                                parseInt(this.dataset.id),
+                                this.dataset.code,
+                                this.dataset.name
+                            );
+                        } else if (typeof window.selectProgram === 'function') {
+                            window.selectProgram(
+                                parseInt(this.dataset.id),
+                                this.dataset.code,
+                                this.dataset.name
+                            );
+                        }
+                    });
+                });
+            }
+            
+            resultsContainer.classList.remove('hidden');
+        };
+        
+        function selectProgram(id, code, name) {
+            const programIdInput = document.getElementById('enrollment_program_id');
+            const codeDisplay = document.getElementById('selectedProgramCode');
+            const nameDisplay = document.getElementById('selectedProgramName');
+            const display = document.getElementById('selectedProgramDisplay');
+            const searchInput = document.getElementById('search_program');
+            const clearBtn = document.getElementById('clearProgramBtn');
+            const results = document.getElementById('programResults');
+            
+            if (programIdInput) programIdInput.value = id;
+            if (codeDisplay) codeDisplay.textContent = code;
+            if (nameDisplay) nameDisplay.textContent = name;
+            if (display) display.classList.remove('hidden');
+            if (searchInput) searchInput.value = code + ' - ' + name;
+            if (clearBtn) clearBtn.classList.remove('hidden');
+            if (results) results.classList.add('hidden');
+        }
+        
+        function clearProgramSelection() {
+            const programIdInput = document.getElementById('enrollment_program_id');
+            const searchInput = document.getElementById('search_program');
+            const display = document.getElementById('selectedProgramDisplay');
+            const clearBtn = document.getElementById('clearProgramBtn');
+            const results = document.getElementById('programResults');
+            
+            if (programIdInput) programIdInput.value = '';
+            if (searchInput) searchInput.value = '';
+            if (display) display.classList.add('hidden');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            if (results) results.classList.add('hidden');
+        }
+        
+        // Define submitEnrollment first and make it globally available
+        window.submitEnrollment = function() {
             const messageDiv = document.getElementById('enrollmentMessage');
             
-            // Validate required fields
-            const studentId = formData.get('student_id');
-            const programId = formData.get('program_id');
+            // Get values directly from hidden inputs
+            const studentId = document.getElementById('enrollment_student_id').value;
+            const programId = document.getElementById('enrollment_program_id').value;
             
             if (!studentId || !programId) {
                 messageDiv.className = 'mb-4 p-3 rounded-md bg-red-50 border border-red-200';
-                messageDiv.innerHTML = '<p class="text-sm text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>Please fill in all required fields.</p>';
+                messageDiv.innerHTML = '<p class="text-sm text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>Please select both a student and a program.</p>';
                 messageDiv.classList.remove('hidden');
                 return;
             }
@@ -4040,8 +4516,8 @@ $(document).ready(function() {
             
             // Prepare data
             const data = {
-                student_id: studentId,
-                program_id: programId,
+                student_id: parseInt(studentId),
+                program_id: parseInt(programId),
                 course_ids: [],
                 '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
             };
@@ -4075,7 +4551,99 @@ $(document).ready(function() {
                 messageDiv.className = 'mb-4 p-3 rounded-md bg-red-50 border border-red-200';
                 messageDiv.innerHTML = '<p class="text-sm text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>An error occurred. Please try again.</p>';
             });
+        };
+        
+        // Make other functions globally available (ensure they're on window object)
+        window.openEnrollmentModal = openEnrollmentModal;
+        window.closeEnrollmentModal = closeEnrollmentModal;
+        window.selectStudent = selectStudent;
+        window.selectProgram = selectProgram;
+        window.clearStudentSelection = clearStudentSelection;
+        window.clearProgramSelection = clearProgramSelection;
+        window.filterStudents = filterStudents;
+        window.filterPrograms = filterPrograms;
+        
+        // Load data immediately (before DOMContentLoaded to ensure it's available)
+        try {
+            <?php 
+            $userModel = new \App\Models\UserModel();
+            $students = $userModel->where('role', 'student')->findAll();
+            ?>
+            enrollmentStudents = <?= json_encode(array_map(function($s) {
+                return [
+                    'id' => (int)$s['id'],
+                    'name' => $s['name'],
+                    'email' => $s['email']
+                ];
+            }, $students)) ?>;
+            console.log('Students pre-loaded:', enrollmentStudents.length);
+        } catch(e) {
+            console.error('Error pre-loading students:', e);
+            enrollmentStudents = [];
         }
+        
+        try {
+            <?php 
+            $programModel = new \App\Models\ProgramModel();
+            $programs = $programModel->where('is_active', 1)->findAll();
+            ?>
+            enrollmentPrograms = <?= json_encode(array_map(function($p) {
+                return [
+                    'id' => (int)$p['id'],
+                    'code' => $p['code'],
+                    'name' => $p['name']
+                ];
+            }, $programs)) ?>;
+            console.log('Programs pre-loaded:', enrollmentPrograms.length);
+        } catch(e) {
+            console.error('Error pre-loading programs:', e);
+            enrollmentPrograms = [];
+        }
+        
+        // Setup event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Also load data via functions as backup
+            if (typeof loadStudentsData === 'function') {
+                loadStudentsData();
+            }
+            if (typeof loadProgramsData === 'function') {
+                loadProgramsData();
+            }
+            
+            // Student search
+            const searchStudent = document.getElementById('search_student');
+            if (searchStudent) {
+                searchStudent.addEventListener('input', filterStudents);
+                searchStudent.addEventListener('focus', function() {
+                    if (this.value && !document.getElementById('enrollment_student_id').value) {
+                        filterStudents();
+                    }
+                });
+            }
+            
+            // Program search
+            const searchProgram = document.getElementById('search_program');
+            if (searchProgram) {
+                searchProgram.addEventListener('input', filterPrograms);
+                searchProgram.addEventListener('focus', function() {
+                    if (this.value && !document.getElementById('enrollment_program_id').value) {
+                        filterPrograms();
+                    }
+                });
+            }
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#enrollmentStep1')) {
+                    const results = document.getElementById('studentResults');
+                    if (results) results.classList.add('hidden');
+                }
+                if (!e.target.closest('#enrollmentStep2')) {
+                    const results = document.getElementById('programResults');
+                    if (results) results.classList.add('hidden');
+                }
+            });
+        });
     </script>
     
     <!-- Enrolled Students by Program Modal -->

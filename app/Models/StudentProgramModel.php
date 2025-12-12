@@ -59,6 +59,20 @@ class StudentProgramModel extends Model
     }
 
     /**
+     * Check if student is enrolled in ANY program
+     * Returns the enrollment record if found, null otherwise
+     */
+    public function getStudentActiveEnrollment($userId)
+    {
+        return $this->select('student_programs.*, programs.code as program_code, programs.name as program_name')
+                   ->join('programs', 'programs.id = student_programs.program_id')
+                   ->where('student_programs.user_id', $userId)
+                   ->where('student_programs.status', 'active')
+                   ->orderBy('student_programs.enrollment_date', 'DESC')
+                   ->first();
+    }
+
+    /**
      * Enroll student in a program
      */
     public function enrollStudent($userId, $programId, $acadYearId = null)

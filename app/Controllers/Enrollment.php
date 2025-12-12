@@ -112,18 +112,42 @@ class Enrollment extends BaseController
             }
         }
 
+        // Check if student is already enrolled in ANY program BEFORE attempting enrollment
+        $existingEnrollment = $this->studentProgramModel->getStudentActiveEnrollment($studentId);
+        
+        if ($existingEnrollment) {
+            // Student is already enrolled in a program
+            $existingProgramCode = $existingEnrollment['program_code'] ?? 'a program';
+            $existingProgramName = $existingEnrollment['program_name'] ?? '';
+            $newProgramCode = $program['code'] ?? 'the program';
+            $newProgramName = $program['name'] ?? '';
+            
+            // Check if trying to enroll in the same program
+            if ($existingEnrollment['program_id'] == $programId) {
+                return $this->response->setStatusCode(400)
+                    ->setJSON([
+                        'success' => false, 
+                        'message' => 'Student is already enrolled in ' . esc($existingProgramCode) . ' (' . esc($existingProgramName) . '). Multiple enrollments are not allowed. A student can only be enrolled once in a program.', 
+                        'csrf_hash' => csrf_hash()
+                    ]);
+            } else {
+                // Trying to enroll in a different program
+                return $this->response->setStatusCode(400)
+                    ->setJSON([
+                        'success' => false, 
+                        'message' => 'Student is already enrolled in ' . esc($existingProgramCode) . ' (' . esc($existingProgramName) . '). Cannot enroll in ' . esc($newProgramCode) . ' (' . esc($newProgramName) . '). A student can only be enrolled in one program at a time.', 
+                        'csrf_hash' => csrf_hash()
+                    ]);
+            }
+        }
+
         try {
             // Step 1: Enroll student in program (academic year is optional)
             $programEnrollmentId = $this->studentProgramModel->enrollStudent($studentId, $programId, $acadYearId);
             
             if (!$programEnrollmentId) {
-                // Check if already enrolled
-                if ($this->studentProgramModel->isEnrolledInProgram($studentId, $programId, $acadYearId)) {
-                    // Already enrolled in program, continue to course enrollment
-                } else {
-                    return $this->response->setStatusCode(500)
-                        ->setJSON(['success' => false, 'message' => 'Failed to enroll student in program', 'csrf_hash' => csrf_hash()]);
-                }
+                return $this->response->setStatusCode(500)
+                    ->setJSON(['success' => false, 'message' => 'Failed to enroll student in program', 'csrf_hash' => csrf_hash()]);
             }
 
             $messages = [];

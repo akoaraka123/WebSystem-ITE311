@@ -1311,44 +1311,54 @@ class Course extends BaseController
                 ->setJSON(['success' => false, 'message' => 'Access denied', 'csrf_hash' => csrf_hash()]);
         }
 
-        // Get all enrollments for this course
-        $enrollments = $this->enrollmentModel->getCourseEnrollments($courseId);
-        
-        // Organize by status and approval
-        $organized = [
-            'accepted' => [],
-            'pending' => [], // Waiting for teacher approval
-            'rejected' => []
-        ];
-
-        foreach ($enrollments as $enrollment) {
-            $status = $enrollment['status'] ?? 'pending';
-            $teacherApproved = (int)($enrollment['teacher_approved'] ?? 0);
+        try {
+            // Get all enrollments for this course
+            $enrollments = $this->enrollmentModel->getCourseEnrollments($courseId);
             
-            if ($status === 'accepted' && $teacherApproved == 1) {
-                $organized['accepted'][] = $enrollment;
-            } elseif ($status === 'pending' && $teacherApproved == 0) {
-                $organized['pending'][] = $enrollment;
-            } elseif ($status === 'rejected') {
-                $organized['rejected'][] = $enrollment;
-            }
-        }
+            // Organize by status and approval
+            $organized = [
+                'accepted' => [],
+                'pending' => [], // Waiting for teacher approval
+                'rejected' => []
+            ];
 
-        return $this->response->setJSON([
-            'success' => true,
-            'course' => [
-                'id' => $course['id'],
-                'title' => $course['title']
-            ],
-            'enrollments' => $organized,
-            'summary' => [
-                'accepted' => count($organized['accepted']),
-                'pending' => count($organized['pending']),
-                'rejected' => count($organized['rejected']),
-                'total' => count($enrollments)
-            ],
-            'csrf_hash' => csrf_hash()
-        ]);
+            foreach ($enrollments as $enrollment) {
+                $status = $enrollment['status'] ?? 'pending';
+                $teacherApproved = (int)($enrollment['teacher_approved'] ?? 0);
+                
+                if ($status === 'accepted' && $teacherApproved == 1) {
+                    $organized['accepted'][] = $enrollment;
+                } elseif ($status === 'pending' && $teacherApproved == 0) {
+                    $organized['pending'][] = $enrollment;
+                } elseif ($status === 'rejected') {
+                    $organized['rejected'][] = $enrollment;
+                }
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'course' => [
+                    'id' => $course['id'],
+                    'title' => $course['title']
+                ],
+                'enrollments' => $organized,
+                'summary' => [
+                    'accepted' => count($organized['accepted']),
+                    'pending' => count($organized['pending']),
+                    'rejected' => count($organized['rejected']),
+                    'total' => count($enrollments)
+                ],
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error in getEnrollmentDetails: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to load enrollment details: ' . $e->getMessage(),
+                    'csrf_hash' => csrf_hash()
+                ]);
+        }
     }
 
     /**
@@ -1672,12 +1682,21 @@ class Course extends BaseController
             if ($removed) {
                 // Create notification for student
                 $notif = new \App\Models\NotificationModel();
-                $removedBy = ($role === 'admin') ? 'admin' : 'your teacher';
-                $notif->add($studentId, 'You have been removed from the course: ' . ($course['title'] ?? 'a course') . ' by ' . $removedBy . '.');
+                $courseTitle = $course['title'] ?? 'a course';
+                $studentName = $student['name'] ?? 'Unknown';
+                
+                // Notify student
+                $notif->add($studentId, '🔴 You have been removed from the course: ' . $courseTitle . ' by your teacher.');
+                
+                // Notify teacher (when teacher removes a student, they should also get a notification)
+                $teacherId = $session->get('userID');
+                if ($role === 'teacher' && !empty($teacherId)) {
+                    $notif->add((int)$teacherId, '✅ You have removed student "' . $studentName . '" from your course: ' . $courseTitle);
+                }
                 
                 // If admin removed, also notify the teacher
                 if ($role === 'admin' && !empty($course['teacher_id'])) {
-                    $notif->add((int)$course['teacher_id'], 'Admin removed a student (' . ($student['name'] ?? 'Unknown') . ') from your course: ' . ($course['title'] ?? ''));
+                    $notif->add((int)$course['teacher_id'], 'Admin removed a student (' . $studentName . ') from your course: ' . $courseTitle);
                 }
                 
                 return $this->response->setJSON([
