@@ -220,7 +220,7 @@
                     <div class="flex items-center">
                         <i class="fas fa-graduation-cap text-2xl mr-3 text-white"></i>
                         <div>
-                            <h1 class="text-xl font-bold text-white">LearnHub</h1>
+                            <h1 class="text-xl font-bold text-white">ANA ANA LANGS</h1>
                             <p class="text-xs text-white opacity-90">LMS Platform</p>
                         </div>
                     </div>
@@ -1476,190 +1476,116 @@
 
         <!-- ADMIN DASHBOARD -->
         <?php if ($user['role'] === 'admin'): ?>
-            <!-- Statistics Cards -->
-            <div class="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
-                <div class="p-6 bg-white rounded-lg shadow stat-card border-l-4 border-blue-500">
+            <!-- Simplified Statistics Cards -->
+            <div class="grid gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+                <a href="<?= base_url('users') ?>" class="p-5 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Total Users</p>
-                            <p class="mt-2 text-3xl font-bold text-gray-900"><?= $totalUsers ?? 0 ?></p>
-                            <div class="mt-2 flex items-center text-xs text-gray-500">
-                                <span class="mr-3"><i class="fas fa-user-graduate mr-1"></i><?= $totalStudents ?? 0 ?> Students</span>
-                                <span class="mr-3"><i class="fas fa-chalkboard-teacher mr-1"></i><?= $totalTeachers ?? 0 ?> Teachers</span>
-                                <span><i class="fas fa-user-shield mr-1"></i><?= $totalAdmins ?? 0 ?> Admins</span>
-                            </div>
+                            <p class="text-sm text-gray-600">Total Users</p>
+                            <p class="mt-1 text-2xl font-bold text-gray-900"><?= $totalUsers ?? 0 ?></p>
+                            <p class="mt-1 text-xs text-gray-500"><?= $totalStudents ?? 0 ?> Students • <?= $totalTeachers ?? 0 ?> Teachers</p>
                         </div>
-                        <div class="p-3 bg-blue-100 rounded-full">
-                            <i class="text-2xl text-blue-600 fas fa-users"></i>
-                        </div>
+                        <i class="text-3xl text-blue-500 fas fa-users"></i>
                     </div>
-                    <div class="mt-4">
-                        <a href="<?= base_url('users') ?>" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                            Manage Users <i class="fas fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
+                </a>
 
-                <div class="p-6 bg-white rounded-lg shadow stat-card border-l-4 border-green-500">
+                <a href="<?= base_url('courses') ?>" class="p-5 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Total Courses</p>
-                            <p class="mt-2 text-3xl font-bold text-gray-900"><?= $totalCourses ?? 0 ?></p>
-                            <p class="mt-1 text-xs text-gray-500">Active courses in system</p>
+                            <p class="text-sm text-gray-600">Total Courses</p>
+                            <p class="mt-1 text-2xl font-bold text-gray-900"><?= $totalCourses ?? 0 ?></p>
+                            <p class="mt-1 text-xs text-gray-500">Active courses</p>
                         </div>
-                        <div class="p-3 bg-green-100 rounded-full">
-                            <i class="text-2xl text-green-600 fas fa-book"></i>
-                        </div>
+                        <i class="text-3xl text-green-500 fas fa-book"></i>
                     </div>
-                    <div class="mt-4">
-                        <a href="<?= base_url('courses') ?>" class="text-sm text-green-600 hover:text-green-800 font-medium">
-                            Manage Courses <i class="fas fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
+                </a>
 
-                <div class="p-6 bg-white rounded-lg shadow stat-card border-l-4 border-purple-500">
+                <div class="p-5 bg-white rounded-lg shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Total Enrollments</p>
-                            <p class="mt-2 text-3xl font-bold text-gray-900"><?= $totalEnrollments ?? 0 ?></p>
+                            <p class="text-sm text-gray-600">Enrollments</p>
+                            <p class="mt-1 text-2xl font-bold text-gray-900"><?= $totalEnrollments ?? 0 ?></p>
                             <p class="mt-1 text-xs text-gray-500">Student enrollments</p>
                         </div>
-                        <div class="p-3 bg-purple-100 rounded-full">
-                            <i class="text-2xl text-purple-600 fas fa-user-check"></i>
-                        </div>
+                        <i class="text-3xl text-purple-500 fas fa-user-check"></i>
                     </div>
                 </div>
 
-                <div class="p-6 bg-white rounded-lg shadow stat-card border-l-4 border-orange-500">
+                <a href="<?= base_url('school-setup') ?>" class="p-5 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Programs</p>
-                            <p class="mt-2 text-3xl font-bold text-gray-900"><?= $totalPrograms ?? 0 ?></p>
+                            <p class="text-sm text-gray-600">Programs</p>
+                            <p class="mt-1 text-2xl font-bold text-gray-900"><?= $totalPrograms ?? 0 ?></p>
                             <p class="mt-1 text-xs text-gray-500">Active programs</p>
                         </div>
-                        <div class="p-3 bg-orange-100 rounded-full">
-                            <i class="text-2xl text-orange-600 fas fa-graduation-cap"></i>
-                        </div>
+                        <i class="text-3xl text-orange-500 fas fa-graduation-cap"></i>
                     </div>
-                    <div class="mt-4">
-                        <a href="<?= base_url('school-setup') ?>" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
-                            View Programs <i class="fas fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
+                </a>
             </div>
 
-            <!-- School Settings Info -->
+            <!-- School Settings Info - Simplified -->
             <?php if (!empty($activeSchoolSettings ?? [])): ?>
-            <div class="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow border-l-4 border-blue-500">
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            <i class="fas fa-calendar-alt mr-2 text-blue-600"></i>
-                            Current School Year & Semester
-                        </h3>
-                        <div class="grid grid-cols-2 gap-4 mt-3">
-                            <div>
-                                <p class="text-sm text-gray-600">School Year</p>
-                                <p class="text-lg font-bold text-gray-900"><?= esc($activeSchoolSettings['school_year']) ?></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">Semester</p>
-                                <p class="text-lg font-bold text-gray-900"><?= esc($activeSchoolSettings['semester']) ?></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">Start Date</p>
-                                <p class="text-base font-semibold text-gray-900"><?= date('M d, Y', strtotime($activeSchoolSettings['start_date'])) ?></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">End Date</p>
-                                <p class="text-base font-semibold text-gray-900"><?= date('M d, Y', strtotime($activeSchoolSettings['end_date'])) ?></p>
-                            </div>
+                    <div class="flex items-center gap-4">
+                        <i class="text-2xl text-blue-600 fas fa-calendar-alt"></i>
+                        <div>
+                            <p class="text-sm text-gray-600">Current: <span class="font-semibold text-gray-900"><?= esc($activeSchoolSettings['school_year']) ?> - <?= esc($activeSchoolSettings['semester']) ?></span></p>
+                            <p class="text-xs text-gray-500 mt-1"><?= date('M d', strtotime($activeSchoolSettings['start_date'])) ?> - <?= date('M d, Y', strtotime($activeSchoolSettings['end_date'])) ?></p>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <a href="<?= base_url('school-setup') ?>" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-                            <i class="fas fa-cog mr-2"></i>
-                            Configure
-                        </a>
-                    </div>
+                    <a href="<?= base_url('school-setup') ?>" class="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        <i class="fas fa-cog mr-1"></i> Configure
+                    </a>
                 </div>
             </div>
             <?php else: ?>
-            <div class="mb-8 p-6 bg-yellow-50 rounded-lg shadow border-l-4 border-yellow-500">
+            <div class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            <i class="fas fa-exclamation-triangle mr-2 text-yellow-600"></i>
-                            School Settings Not Configured
-                        </h3>
-                        <p class="text-sm text-gray-600">Please configure school year, semester, and dates to get started.</p>
+                    <div class="flex items-center gap-3">
+                        <i class="text-xl text-yellow-600 fas fa-exclamation-triangle"></i>
+                        <p class="text-sm text-gray-700">School settings not configured</p>
                     </div>
-                    <div class="ml-4">
-                        <a href="<?= base_url('school-setup') ?>" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700">
-                            <i class="fas fa-cog mr-2"></i>
-                            Setup Now
-                        </a>
-                    </div>
+                    <a href="<?= base_url('school-setup') ?>" class="px-3 py-1.5 text-sm text-white bg-yellow-600 rounded-md hover:bg-yellow-700 font-medium">
+                        Setup Now
+                    </a>
                 </div>
             </div>
             <?php endif; ?>
 
-            <!-- Quick Actions -->
-            <div class="mb-8">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-bolt mr-2 text-yellow-500"></i>
-                    Quick Actions
-                </h3>
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <a href="<?= base_url('users') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-blue-500">
-                        <div class="flex-shrink-0 p-3 bg-blue-100 rounded-lg">
-                            <i class="text-2xl text-blue-600 fas fa-user-plus"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-900">Add New User</p>
-                            <p class="text-xs text-gray-500">Create student/teacher</p>
+            <!-- Quick Actions - Simplified -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    <a href="<?= base_url('users') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+                        <i class="text-2xl text-blue-500 fas fa-user-plus mr-3"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Add User</p>
+                            <p class="text-xs text-gray-500">Create account</p>
                         </div>
                     </a>
 
-                    <button type="button" onclick="openEnrollmentModal()" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-green-500 text-left w-full">
-                        <div class="flex-shrink-0 p-3 bg-green-100 rounded-lg">
-                            <i class="text-2xl text-green-600 fas fa-user-graduate"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-900">Enroll Student Program</p>
-                            <p class="text-xs text-gray-500">Program & Course</p>
+                    <button type="button" onclick="openEnrollmentModal()" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow text-left w-full">
+                        <i class="text-2xl text-green-500 fas fa-user-graduate mr-3"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Enroll Student</p>
+                            <p class="text-xs text-gray-500">To program</p>
                         </div>
                     </button>
 
-                    <button type="button" onclick="openEnrolledStudentsModal()" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-indigo-500 text-left w-full">
-                        <div class="flex-shrink-0 p-3 bg-indigo-100 rounded-lg">
-                            <i class="text-2xl text-indigo-600 fas fa-users"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-900">View Enrolled Students</p>
-                            <p class="text-xs text-gray-500">By Program</p>
+                    <button type="button" onclick="openEnrolledStudentsModal()" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow text-left w-full">
+                        <i class="text-2xl text-purple-500 fas fa-users mr-3"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">View Students</p>
+                            <p class="text-xs text-gray-500">By program</p>
                         </div>
                     </button>
 
-                    <a href="<?= base_url('school-setup') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-purple-500">
-                        <div class="flex-shrink-0 p-3 bg-purple-100 rounded-lg">
-                            <i class="text-2xl text-purple-600 fas fa-cog"></i>
-                        </div>
-                        <div class="ml-4">
+                    <a href="<?= base_url('school-setup') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+                        <i class="text-2xl text-orange-500 fas fa-cog mr-3"></i>
+                        <div>
                             <p class="text-sm font-medium text-gray-900">School Setup</p>
-                            <p class="text-xs text-gray-500">Configure settings</p>
-                        </div>
-                    </a>
-
-                    <a href="<?= base_url('courses') ?>" class="flex items-center p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-l-4 border-orange-500">
-                        <div class="flex-shrink-0 p-3 bg-orange-100 rounded-lg">
-                            <i class="text-2xl text-orange-600 fas fa-tasks"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-900">Manage All</p>
-                            <p class="text-xs text-gray-500">Courses & Users</p>
+                            <p class="text-xs text-gray-500">Configure</p>
                         </div>
                     </a>
                 </div>
@@ -1714,103 +1640,66 @@
                 </div>
 
                 <?php foreach ($groupedCoursesByProgram as $programKey => $programData): ?>
-                    <div class="program-section-admin mb-8" data-program-name="<?= esc(strtolower($programData['program_name'])) ?>">
-                        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg p-6 mb-4">
-                            <h2 class="text-2xl font-bold text-white flex items-center justify-between">
-                                <span class="flex items-center">
-                                    <i class="fas fa-graduation-cap mr-3 text-3xl"></i>
-                                    <?= esc($programData['program_name']) ?>
-                                </span>
-                                <span class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-lg">
-                                    <?= count($programData['courses']) ?> <?= count($programData['courses']) == 1 ? 'Course' : 'Courses' ?>
-                                </span>
+                    <div class="program-section-admin mb-6" data-program-name="<?= esc(strtolower($programData['program_name'])) ?>">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                                <i class="fas fa-graduation-cap mr-2 text-gray-600"></i>
+                                <?= esc($programData['program_name']) ?>
                             </h2>
+                            <span class="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-full">
+                                <?= count($programData['courses']) ?> <?= count($programData['courses']) == 1 ? 'Course' : 'Courses' ?>
+                            </span>
                         </div>
                         
-                        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="adminCoursesContainer-<?= esc($programKey) ?>">
+                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3" id="adminCoursesContainer-<?= esc($programKey) ?>">
                             <?php foreach ($programData['courses'] as $course): ?>
-                                <div class="overflow-hidden bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 course-item-admin" 
+                                <div class="bg-white rounded-lg shadow hover:shadow-md transition-shadow course-item-admin" 
                                      id="course-<?= esc($course['id']) ?>"
                                      data-school-year="<?= esc($course['acad_year_name'] ?? '') ?>"
                                      data-semester="<?= esc($course['semester_name'] ?? '') ?>"
                                      data-course-code="<?= esc($course['course_number'] ?? '') ?>"
                                      data-program-name="<?= esc(strtolower($programData['program_name'])) ?>">
-                                    <div class="p-6">
-                                        <div class="flex items-center justify-between mb-4">
-                                            <h3 class="text-lg font-semibold text-gray-900 course-title"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
-                                        </div>
+                                    <div class="p-5">
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-3 course-title"><?= esc($course['title'] ?? 'Untitled Course') ?></h3>
                                         
-                                        <div class="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                            <h4 class="text-sm font-semibold text-gray-700 mb-2">
-                                                <i class="mr-1 fas fa-info-circle"></i> Course Information
-                                            </h4>
-                                            <div class="space-y-1.5 text-xs">
-                                                <?php if (!empty($course['course_number'])): ?>
-                                                    <div class="flex items-center text-gray-700">
-                                                        <i class="mr-2 w-4 text-gray-500 fas fa-hashtag"></i>
-                                                        <span class="font-medium">Course Code:</span>
-                                                        <span class="ml-1"><?= esc($course['course_number']) ?></span>
-                                                    </div>
-                                                <?php endif; ?>
-                                                
-                                                <?php if (!empty($course['acad_year_name'])): ?>
-                                                    <div class="flex items-center text-gray-700">
-                                                        <i class="mr-2 w-4 text-gray-500 fas fa-calendar"></i>
-                                                        <span class="font-medium">Academic Year:</span>
-                                                        <span class="ml-1"><?= esc($course['acad_year_name']) ?></span>
-                                                    </div>
-                                                <?php endif; ?>
-                                                
-                                                <?php if (!empty($course['semester_name'])): ?>
-                                                    <div class="flex items-center text-gray-700">
-                                                        <i class="mr-2 w-4 text-gray-500 fas fa-calendar-alt"></i>
-                                                        <span class="font-medium">Semester:</span>
-                                                        <span class="ml-1"><?= esc($course['semester_name']) ?></span>
-                                                    </div>
-                                                <?php endif; ?>
-                                                
-                                                <?php if (!empty($course['teacher_name'])): ?>
-                                                    <div class="flex items-center text-gray-700">
-                                                        <i class="mr-2 w-4 text-gray-500 fas fa-user-tie"></i>
-                                                        <span class="font-medium">Teacher:</span>
-                                                        <span class="ml-1"><?= esc($course['teacher_name']) ?></span>
-                                                    </div>
-                                                <?php endif; ?>
-                                                
-                                                <?php 
-                                                $dateStart = $course['schedule_date_start'] ?? '';
-                                                $dateEnd = $course['schedule_date_end'] ?? '';
-                                                if ($dateStart || $dateEnd): 
-                                                ?>
-                                                <div class="flex items-center text-gray-700">
-                                                    <i class="mr-2 w-4 text-gray-500 fas fa-calendar-check"></i>
-                                                    <span class="font-medium">Schedule Period:</span>
-                                                    <span class="ml-1">
-                                                        <?php if ($dateStart && $dateEnd): ?>
-                                                            <?= date('M d, Y', strtotime($dateStart)) ?> - <?= date('M d, Y', strtotime($dateEnd)) ?>
-                                                        <?php elseif ($dateStart): ?>
-                                                            Start: <?= date('M d, Y', strtotime($dateStart)) ?>
-                                                        <?php elseif ($dateEnd): ?>
-                                                            End: <?= date('M d, Y', strtotime($dateEnd)) ?>
-                                                        <?php endif; ?>
-                                                    </span>
+                                        <div class="space-y-2 mb-4 text-sm text-gray-600">
+                                            <?php if (!empty($course['course_number'])): ?>
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-hashtag mr-2 text-gray-400 w-4"></i>
+                                                    <span><?= esc($course['course_number']) ?></span>
                                                 </div>
-                                                <?php endif; ?>
-                                            </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['acad_year_name'])): ?>
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-calendar mr-2 text-gray-400 w-4"></i>
+                                                    <span><?= esc($course['acad_year_name']) ?></span>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['semester_name'])): ?>
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-calendar-alt mr-2 text-gray-400 w-4"></i>
+                                                    <span><?= esc($course['semester_name']) ?></span>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!empty($course['teacher_name'])): ?>
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-user-tie mr-2 text-gray-400 w-4"></i>
+                                                    <span><?= esc($course['teacher_name']) ?></span>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
-                                        
-                                        <?php if (!empty($course['description'])): ?>
-                                            <p class="mb-4 text-sm text-gray-600"><?= esc($course['description']) ?></p>
-                                        <?php endif; ?>
                                         
                                         <div class="flex gap-2 mt-4">
                                             <a href="<?= base_url('course/' . $course['id']) ?>" 
-                                               class="flex-1 text-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors">
-                                                <i class="fas fa-eye mr-2"></i> View
+                                               class="flex-1 text-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                                <i class="fas fa-eye mr-1"></i> View
                                             </a>
                                             <a href="<?= base_url('edit-course/' . $course['id']) ?>" 
-                                               class="flex-1 text-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors">
-                                                <i class="fas fa-edit mr-2"></i> Edit
+                                               class="flex-1 text-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100">
+                                                <i class="fas fa-edit mr-1"></i> Edit
                                             </a>
                                         </div>
                                     </div>
@@ -1837,68 +1726,6 @@
             </div>
             <?php endif; ?>
 
-            <!-- Recent File Uploads -->
-            <div class="mt-8">
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-file-upload mr-2 text-gray-500"></i>
-                        Recent File Uploads
-                    </h3>
-                    <p class="mt-1 text-sm text-gray-500">All files uploaded by teachers</p>
-                </div>
-                
-                <?php if (!empty($recentUploads ?? [])): ?>
-                    <div class="bg-white rounded-lg shadow">
-                        <div class="overflow-hidden">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">File Name</th>
-                                        <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Uploaded By</th>
-                                        <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Course</th>
-                                        <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Date</th>
-                                        <th scope="col" class="relative px-6 py-3">
-                                            <span class="sr-only">Actions</span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <?php foreach ($recentUploads as $upload): ?>
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="flex items-center">
-                                                    <i class="mr-2 text-gray-400 fas fa-file-alt"></i>
-                                                    <div class="text-sm font-medium text-gray-900"><?= esc($upload['file_name'] ?? 'Untitled File') ?></div>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900"><?= esc($upload['teacher_name'] ?? 'Unknown') ?></div>
-                                                <div class="text-sm text-gray-500"><?= esc($upload['teacher_email'] ?? 'unknown@example.com') ?></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900"><?= esc($upload['course_title'] ?? 'Untitled Course') ?></div>
-                                            </td>
-                                            <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                                <?= date('M j, Y g:i A', strtotime($upload['created_at'] ?? 'now')) ?>
-                                            </td>
-                                            <td class="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
-                                                <a href="<?= base_url('materials/download/'.($upload['id'] ?? '')) ?>" 
-                                                   class="text-blue-600 hover:text-blue-900">Download</a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                <?php else: ?>
-                    <div class="p-8 text-center bg-white rounded-lg shadow">
-                        <i class="mx-auto text-4xl text-gray-300 fas fa-file-upload"></i>
-                        <h3 class="mt-4 text-lg font-medium text-gray-900">No Recent Uploads</h3>
-                        <p class="mt-1 text-gray-500">No files have been uploaded by teachers yet.</p>
-                    </div>
-                <?php endif; ?>
-            </div>
         <?php endif; ?>
 
         <?php if (!empty($flash['error'])): ?>

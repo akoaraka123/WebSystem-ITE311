@@ -14,7 +14,7 @@ $currentUri = uri_string();
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="<?= base_url($isLoggedIn ? 'dashboard' : 'home') ?>">
             <i class="fas fa-graduation-cap me-2"></i>
-            <span class="fw-bold">LearnHub LMS</span>
+            <span class="fw-bold">ANA ANA LANGS LMS</span>
         </a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">

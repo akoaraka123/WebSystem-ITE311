@@ -325,7 +325,7 @@
                     <div class="flex items-center">
                         <i class="fas fa-graduation-cap text-2xl mr-3 text-white"></i>
                         <div>
-                            <h1 class="text-xl font-bold text-white">LearnHub</h1>
+                            <h1 class="text-xl font-bold text-white">ANA ANA LANGS</h1>
                             <p class="text-xs text-white opacity-90">LMS Platform</p>
                         </div>
                     </div>
